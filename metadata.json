@@ -1,0 +1,6 @@
+{
+  "name": "Simulador de Religião",
+  "description": "Um jogo de estratégia e narrativa baseado no estilo Plague Inc., onde o jogador cria, evolui e espalha uma religião original pelo mundo com objetivos específicos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

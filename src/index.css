@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+@theme {
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+/* Custom Scrollbar styled for ancient scrolls */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #171308;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cfb53b;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e6ca4a;
+}
+
+/* Thematic classes */
+.bg-parchment-gradient {
+  background: radial-gradient(circle at center, #2e2612 0%, #1e1a0c 100%);
+}
+
+.text-gold {
+  color: #cfb53b;
+}
+
+.border-gold {
+  borderColor: #cfb53b;
+}
+
+.bg-crimson {
+  background-color: #8b0000;
+}
+
+/* Floating animations for tactical indicators */
+@keyframes floatUp {
+  0% {
+    transform: translate(-50%, 0) scale(0.85);
+    opacity: 0;
+  }
+  15% {
+    transform: translate(-50%, -10px) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -48px) scale(0.95);
+    opacity: 0;
+  }
+}
+
+.animate-float-fade {
+  animation: floatUp 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
