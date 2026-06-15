@@ -214,6 +214,105 @@ export const INITIAL_DOGMAS: Dogma[] = [
     purchased: false,
     effect: 'Duplica a velocidade de infiltração na mente dos governantes mundiais.'
   },
+  {
+    id: 'radio_comunitaria',
+    name: 'Rádio Comunitária',
+    description: 'Transmita mensagens de esperança por emissoras locais e redes alternativas nos centros urbanos mais vibrantes.',
+    costFaith: 45,
+    costFervor: 0,
+    purchased: false,
+    effect: '+30% conversão em países com regime Vibrante (Brasil, México, África do Sul).'
+  },
+  {
+    id: 'assistencia_medica',
+    name: 'Assistência Médica',
+    description: 'Leve enfermeiros e remédios às regiões mais esquecidas pela providência estatal.',
+    costFaith: 50,
+    costFervor: 0,
+    purchased: false,
+    effect: 'Reduz a violência em -2 por ciclo nos 2 países com maior violência do mundo.'
+  },
+  {
+    id: 'embaixadas_fe',
+    name: 'Embaixadas da Fé',
+    description: 'Estabeleça escritórios de diálogo permanentes junto aos ministérios das nações mais hostis.',
+    costFaith: 65,
+    costFervor: 10,
+    purchased: false,
+    effect: 'A cada ciclo, o país com maior resistência perde -1 ponto automaticamente.'
+  },
+  {
+    id: 'rede_ajuda_mutua',
+    name: 'Rede de Ajuda Mútua',
+    description: 'Crie uma rede de apoio entre comunidades carentes, fortalecendo laços horizontais de solidariedade.',
+    costFaith: 45,
+    costFervor: 5,
+    purchased: false,
+    effect: '+10% conversão em países com regime Vibrante ou Autoritário.'
+  },
+  {
+    id: 'circulos_estudo',
+    name: 'Círculos de Estudo',
+    description: 'Promova debates abertos sobre textos sagrados em universidades e centros culturais das democracias.',
+    costFaith: 40,
+    costFervor: 0,
+    purchased: false,
+    effect: '+15% conversão em democracias; +5 Fé por ciclo.'
+  },
+  {
+    id: 'jornadas_peregrinacao',
+    name: 'Jornadas de Peregrinação',
+    description: 'Organize caravanas de fiéis que percorrem o globo, levando a mensagem a todos os povos.',
+    costFaith: 50,
+    costFervor: 10,
+    purchased: false,
+    effect: '+30% na taxa de conversão global base em todos os países ativos.'
+  },
+  {
+    id: 'clubes_jovens',
+    name: 'Clubes de Jovens',
+    description: 'Ofereça atividades esportivas e culturais para adolescentes nas periferias das grandes cidades vibrantes.',
+    costFaith: 35,
+    costFervor: 0,
+    purchased: false,
+    effect: '+25% conversão em países com regime Vibrante (Brasil, México, África do Sul).'
+  },
+  {
+    id: 'selos_solidariedade',
+    name: 'Selos de Solidariedade',
+    description: 'Cunhe selos postais comemorativos que divulgam sua mensagem filantrópica nas sociedades mais letradas.',
+    costFaith: 30,
+    costFervor: 0,
+    purchased: false,
+    effect: '+5 Fé por ciclo; +10% conversão em países com alta alfabetização (liberal, estável, democracia).'
+  },
+  {
+    id: 'guardioes_memoria',
+    name: 'Guardiões da Memória',
+    description: 'Crie arquivos históricos que preservam relatos de milagres e testemunhos de fé para as gerações futuras.',
+    costFaith: 60,
+    costFervor: 15,
+    purchased: false,
+    effect: 'Eventos do tipo Êxtase e Profecia geram +50% mais Fé quando ocorrem.'
+  },
+  {
+    id: 'mercados_partilha',
+    name: 'Mercados da Partilha',
+    description: 'Incentive feiras livres onde fiéis trocam bens sem moeda, gerando capital social e espiritual.',
+    costFaith: 55,
+    costFervor: 0,
+    purchased: false,
+    effect: 'Ao ser comprado: -5 resistência em todos os países. Passivo: +3 Fé por ciclo.'
+  },
+  {
+    id: 'liga_benfeitores',
+    name: 'Liga dos Benfeitores',
+    description: 'Una empresários convertidos em uma rede de financiamento ético para projetos sociais e espirituais.',
+    costFaith: 80,
+    costFervor: 20,
+    purchased: false,
+    effect: '+10 Fé por ciclo; reduz lentamente a resistência em países liberais e democráticos.'
+  },
 
   // MÍSTICA (Mystic)
   {
@@ -297,6 +396,116 @@ export const INITIAL_DOGMAS: Dogma[] = [
     purchased: false,
     traitRequirement: 'Prophetic',
     effect: 'Reduz o custo em fé da conversão de líderes políticos em 50% globalmente.'
+  },
+  {
+    id: 'cadernos_apocalipse',
+    name: 'Cadernos do Apocalipse',
+    description: 'Distribua panfletos com cálculos do fim dos tempos. A narrativa profética circula constantemente.',
+    costFaith: 45,
+    costFervor: 0,
+    purchased: false,
+    traitRequirement: 'Prophetic',
+    effect: '+10% conversão global constante em todos os países ativos.'
+  },
+  {
+    id: 'sinais_ceus',
+    name: 'Sinais nos Céus',
+    description: 'Instale observatórios populares que anunciam alinhamentos planetários como presságios divinos.',
+    costFaith: 50,
+    costFervor: 10,
+    purchased: false,
+    traitRequirement: 'Prophetic',
+    effect: 'Sempre que um evento narrativo disparar, gera +20 Fervor adicional imediato.'
+  },
+  {
+    id: 'profecia_seca',
+    name: 'Profecia da Seca',
+    description: 'Anuncie com exatidão o período de estiagem em regiões agrícolas, ganhando crédito quando se cumprir.',
+    costFaith: 70,
+    costFervor: 5,
+    purchased: false,
+    traitRequirement: 'Prophetic',
+    effect: '+30% conversão em países agrícolas (Brasil, Índia, Egito, África do Sul).'
+  },
+  {
+    id: 'rolos_fogo',
+    name: 'Os Rolos de Fogo',
+    description: 'Textos proféticos descrevem incêndios e catástrofes como anúncios divinos. Cada evento confirma a profecia.',
+    costFaith: 85,
+    costFervor: 15,
+    purchased: false,
+    traitRequirement: 'Prophetic',
+    effect: 'No ciclo imediatamente após qualquer evento narrativo, conversão global aumenta em ×1.4.'
+  },
+  {
+    id: 'vidente_nacoes',
+    name: 'Vidente das Nações',
+    description: 'Um líder profético viaja pelo mundo anunciando julgamento sobre governos corruptos.',
+    costFaith: 90,
+    costFervor: 10,
+    purchased: false,
+    traitRequirement: 'Prophetic',
+    effect: 'Reduz em 25% o custo de Fé da ação de Infiltrar Líder em regimes opressores e autoritários.'
+  },
+  {
+    id: 'relogio_juizo',
+    name: 'Relógio do Juízo Final',
+    description: 'Crie um contador público simbólico que mede o tempo até o colapso da civilização. A Ordem Tecnocrática recua.',
+    costFaith: 100,
+    costFervor: 30,
+    purchased: false,
+    traitRequirement: 'Prophetic',
+    effect: '+15 Fervor por ciclo; a Ordem Tecnocrática avança 30% mais devagar.'
+  },
+  {
+    id: 'arca_alianca_profetica',
+    name: 'Arca da Aliança',
+    description: 'Reconstrua uma suposta arca sagrada que, segundo a profecia, trará pragas se o mundo não se converter.',
+    costFaith: 110,
+    costFervor: 20,
+    purchased: false,
+    traitRequirement: 'Prophetic',
+    effect: 'Ao ser comprado: -20 resistência em todos os países, mas +5 violência globalmente.'
+  },
+  {
+    id: 'eco_trombetas',
+    name: 'Eco das Trombetas',
+    description: 'Toquem-se trombetas ritualísticas nas capitais ao amanhecer, recordando o apocalipse iminente.',
+    costFaith: 65,
+    costFervor: 15,
+    purchased: false,
+    traitRequirement: 'Prophetic',
+    effect: '+25% conversão nos países mais populosos (China, Índia, EUA, Brasil).'
+  },
+  {
+    id: 'pergaminho_terremotos',
+    name: 'O Pergaminho dos Terremotos',
+    description: 'Profetize abalos em falhas geológicas conhecidas. Quando desastres ocorrem, o fervor explode.',
+    costFaith: 75,
+    costFervor: 20,
+    purchased: false,
+    traitRequirement: 'Prophetic',
+    effect: 'Quando eventos de penalidade ou neutros ocorrem, gera +40 Fervor adicional imediato.'
+  },
+  {
+    id: 'cronicas_colapso',
+    name: 'Crônicas do Colapso',
+    description: 'Publique relatos de civilizações passadas que ruíram por desobediência espiritual. Democracias e teocracias vacilam.',
+    costFaith: 95,
+    costFervor: 10,
+    purchased: false,
+    traitRequirement: 'Prophetic',
+    effect: 'Resistência de democracias e teocracias cai -1 por ciclo passivamente; +5 Fé por ciclo.'
+  },
+  {
+    id: 'calice_redencao',
+    name: 'Cálice da Redenção',
+    description: 'Anuncie que quando o último governante incrédulo cair, a redenção se completará. Os 80% crentes aceleram o chamado.',
+    costFaith: 150,
+    costFervor: 40,
+    purchased: false,
+    traitRequirement: 'Prophetic',
+    effect: 'Em qualquer país com mais de 80% de infiltração do líder, a conversão acelera em ×2.0.'
   },
 
   // ATIVISTA (Activist)

@@ -144,11 +144,32 @@ export default function App() {
         const hasGlobalCharity = activeDogmaIds.includes('caridade_global');
         const hasTemploAbrigo = activeDogmaIds.includes('templos_sociais');
         const hasLobbyPolitico = activeDogmaIds.includes('lobby_politico');
+        const hasRadioComunitaria = activeDogmaIds.includes('radio_comunitaria');
+        const hasAssistenciaMedica = activeDogmaIds.includes('assistencia_medica');
+        const hasEmbaixadasFe = activeDogmaIds.includes('embaixadas_fe');
+        const hasRedeAjudaMutua = activeDogmaIds.includes('rede_ajuda_mutua');
+        const hasCirculosEstudo = activeDogmaIds.includes('circulos_estudo');
+        const hasJornadasPeregrinacao = activeDogmaIds.includes('jornadas_peregrinacao');
+        const hasClubesJovens = activeDogmaIds.includes('clubes_jovens');
+        const hasSelosSolidariedade = activeDogmaIds.includes('selos_solidariedade');
+        const hasGuardioesMemoria = activeDogmaIds.includes('guardioes_memoria');
+        const hasMercadosPartilha = activeDogmaIds.includes('mercados_partilha');
+        const hasLigaBenfeitores = activeDogmaIds.includes('liga_benfeitores');
         const hasBorderSantiago = activeDogmaIds.includes('camino_santiago');
         const hasMiracleRelics = activeDogmaIds.includes('reliquias_sagradas');
         const hasProphecyRevelations = activeDogmaIds.includes('livro_revelacoes');
         const hasCelestialSigns = activeDogmaIds.includes('sinais_celestes');
         const hasOraclesIndia = activeDogmaIds.includes('mensageiros_divinos');
+        const hasCadernosApocalipse = activeDogmaIds.includes('cadernos_apocalipse');
+        const hasSinaisCeus = activeDogmaIds.includes('sinais_ceus');
+        const hasProfeciaSeca = activeDogmaIds.includes('profecia_seca');
+        const hasRolosFogo = activeDogmaIds.includes('rolos_fogo');
+        const hasVidenteNacoes = activeDogmaIds.includes('vidente_nacoes');
+        const hasRelogioJuizo = activeDogmaIds.includes('relogio_juizo');
+        const hasEcoTrombetas = activeDogmaIds.includes('eco_trombetas');
+        const hasPergaminhoTerremotos = activeDogmaIds.includes('pergaminho_terremotos');
+        const hasCronicasColapso = activeDogmaIds.includes('cronicas_colapso');
+        const hasCaliceRedencao = activeDogmaIds.includes('calice_redencao');
         const hasJusticeCommissions = activeDogmaIds.includes('comissoes_justica');
         const hasMartyrsFervor = activeDogmaIds.includes('martires_revolucao');
         const hasPeaceActions = activeDogmaIds.includes('reconciliacao_nações');
@@ -201,11 +222,20 @@ export default function App() {
               growthFactor *= 1.35;
             }
 
+            // Universal new dogmas
+            if (hasRadioComunitaria && c.regimeType === 'vibrante') growthFactor *= 1.3;
+            if (hasRedeAjudaMutua && ['vibrante', 'autoritario'].includes(c.regimeType)) growthFactor *= 1.1;
+            if (hasCirculosEstudo && ['democracia', 'liberal', 'estavel'].includes(c.regimeType)) growthFactor *= 1.15;
+            if (hasJornadasPeregrinacao) growthFactor *= 1.3;
+            if (hasClubesJovens && c.regimeType === 'vibrante') growthFactor *= 1.25;
+            if (hasSelosSolidariedade && ['liberal', 'estavel', 'democracia'].includes(c.regimeType)) growthFactor *= 1.1;
+            if (hasLigaBenfeitores && ['liberal', 'democracia'].includes(c.regimeType)) resistance = Math.max(0, resistance - 0.5);
+
             if (hasJusticeCommissions && ['opressor', 'autoritario'].includes(c.regimeType)) {
               growthFactor *= 2.2;
             }
 
-            // Sinais Celestiais: bônus apenas no ciclo imediatamente após o evento disparar (não enquanto o popup existir)
+            // Sinais Celestiais: bônus apenas no ciclo imediatamente após o evento disparar
             if (hasCelestialSigns && prev.cycle - prev.lastEventCycle === 1) {
               growthFactor *= 1.5;
             }
@@ -215,8 +245,16 @@ export default function App() {
             }
 
             if (hasOraclesIndia && c.id === 'india') {
-              growthFactor *= 1.5; // focused on India only, reduced from 2.0x
+              growthFactor *= 1.5;
             }
+
+            // Prophetic new dogmas
+            if (hasCadernosApocalipse) growthFactor *= 1.10;
+            if (hasProfeciaSeca && ['brazil', 'india', 'egypt', 'south_africa'].includes(c.id)) growthFactor *= 1.3;
+            if (hasRolosFogo && prev.cycle - prev.lastEventCycle === 1) growthFactor *= 1.4;
+            if (hasEcoTrombetas && ['china', 'india', 'usa', 'brazil'].includes(c.id)) growthFactor *= 1.25;
+            if (hasCronicasColapso && ['democracia', 'teocracia'].includes(c.regimeType)) resistance = Math.max(0, resistance - 1);
+            if (hasCaliceRedencao && leaderInfiltration >= 80) growthFactor *= 2.0;
 
             if (hasFestivalsFusion && prev.religionTrait === 'Syncretist') {
               growthFactor *= 1.45;
@@ -271,6 +309,20 @@ export default function App() {
           return { ...c, converts, resistance, violence, leaderInfiltration };
         });
 
+        // Post-map passive dogma effects
+        if (hasAssistenciaMedica) {
+          const sorted = [...updatedCountries].sort((a, b) => b.violence - a.violence);
+          sorted.slice(0, 2).forEach(topViolent => {
+            const idx = updatedCountries.findIndex(x => x.id === topViolent.id);
+            if (idx !== -1) updatedCountries[idx] = { ...updatedCountries[idx], violence: Math.max(0, updatedCountries[idx].violence - 2) };
+          });
+        }
+        if (hasEmbaixadasFe && updatedCountries.length > 0) {
+          const mostResistant = updatedCountries.reduce((max, c) => c.resistance > max.resistance ? c : max, updatedCountries[0]);
+          const idx = updatedCountries.findIndex(x => x.id === mostResistant.id);
+          if (idx !== -1) updatedCountries[idx] = { ...updatedCountries[idx], resistance: Math.max(0, updatedCountries[idx].resistance - 1) };
+        }
+
         // Neighbor passive dispersion (15% chance per cycle to seed neighbor)
         const connectedIds = updatedCountries.filter(c => c.converts >= c.population * 0.08).map(c => c.id);
         if (connectedIds.length > 0 && Math.random() < 0.15) {
@@ -302,6 +354,11 @@ export default function App() {
         faithGained += Math.floor(totalConvertsCount / 10000000); // 1 point of faith for every 10M converts
         if (hasTemploAbrigo) faithGained += 5;
         if (hasDigitalPreaching) faithGained += 2;
+        if (hasCirculosEstudo) faithGained += 5;
+        if (hasSelosSolidariedade) faithGained += 5;
+        if (hasMercadosPartilha) faithGained += 3;
+        if (hasLigaBenfeitores) faithGained += 10;
+        if (hasCronicasColapso) faithGained += 5;
         if (usaLeaderConverted) faithGained = Math.floor(faithGained * 1.4);
         if (japanLeaderConverted) faithGained = Math.floor(faithGained * 1.2);
 
@@ -323,8 +380,9 @@ export default function App() {
           fervorGained += oppressedResistCount * 3;
         }
         if (brassilLeaderConverted) {
-          fervorGained += 3; // brazillian spiritual heat
+          fervorGained += 3;
         }
+        if (hasRelogioJuizo) fervorGained += 15;
 
         // 4. Adversary Rival Artificial Intelligence Progression (reactive model)
         const activeCountriesCount = updatedCountries.filter(c => c.converts > 0).length;
@@ -345,6 +403,7 @@ export default function App() {
 
         // Syncretist coexists better with rival ideologies
         if (prev.religionTrait === 'Syncretist') rivalIncrement *= 0.7;
+        if (hasRelogioJuizo) rivalIncrement *= 0.7;
 
         const updatedRivalProgress = Math.min(100, prev.rivalProgress + rivalIncrement);
 
@@ -448,6 +507,13 @@ export default function App() {
             if (hasMiracleRelics && picked.impactType === 'ecstasy') {
               eventFaithBonus = Math.floor(eventFaithBonus * 1.5);
               eventFervorBonus += 30;
+            }
+            if (hasGuardioesMemoria && ['ecstasy', 'prophecy'].includes(picked.impactType)) {
+              eventFaithBonus = Math.floor(eventFaithBonus * 1.5);
+            }
+            if (hasSinaisCeus) eventFervorBonus += 20;
+            if (hasPergaminhoTerremotos && ['penalty', 'neutral'].includes(picked.impactType)) {
+              eventFervorBonus += 40;
             }
 
             // Push to logs
@@ -701,6 +767,16 @@ export default function App() {
     if (countryObj.id === 'japan') baseFaith -= 10;
     if (countryObj.id === 'russia') baseFaith -= 5;
 
+    // Grande Julgamento: -50% custo globalmente
+    const hasGrandeJulgamento = state.dogmas.some(d => d.id === 'reforma_escatologica' && d.purchased);
+    if (hasGrandeJulgamento) { baseFaith = Math.floor(baseFaith * 0.5); baseFervor = Math.floor(baseFervor * 0.5); }
+
+    // Vidente das Nações: -25% custo adicional em opressores/autoritários
+    const hasVidenteNacoesActive = state.dogmas.some(d => d.id === 'vidente_nacoes' && d.purchased);
+    if (hasVidenteNacoesActive && ['opressor', 'autoritario'].includes(countryObj.regimeType)) {
+      baseFaith = Math.floor(baseFaith * 0.75);
+    }
+
     if (state.faith < baseFaith || state.fervor < baseFervor) return;
 
     // Trigger visual floating text feedback on country coordinates
@@ -794,18 +870,24 @@ export default function App() {
       // Update countries resistance directly if buying specific resistance reducing dogmas
       const updatedCountries = prev.countries.map((c) => {
         let resistance = c.resistance;
+        let violence = c.violence;
         if (dogmaId === 'templos_sociais') {
           resistance = Math.max(0, resistance - 10);
         }
         if (dogmaId === 'alianca_universal') {
-          // grants passive 20% leader conversion instantly
           return { ...c, leaderInfiltration: Math.min(100, c.leaderInfiltration + 20) };
         }
         if (dogmaId === 'reconciliacao_nações') {
-          // activist locks violence limits to 10%
           return { ...c, violence: Math.min(10, c.violence), resistance: Math.max(0, resistance - 15) };
         }
-        return { ...c, resistance };
+        if (dogmaId === 'mercados_partilha') {
+          resistance = Math.max(0, resistance - 5);
+        }
+        if (dogmaId === 'arca_alianca_profetica') {
+          resistance = Math.max(0, resistance - 20);
+          violence = Math.min(100, violence + 5);
+        }
+        return { ...c, resistance, violence };
       });
 
       // Update list
