@@ -45,6 +45,7 @@ export default function App() {
       resistanceStreak: 0,
       isGameOver: false,
       gameOverReason: null,
+      totalTemples: 0,
       lastEventCycle: -99,
       lastEventTimestamp: 0,
       eventCooldowns: {}
@@ -288,8 +289,27 @@ export default function App() {
               let leaderGrowth = 0.2; // 0.2% basic conversion speed per cycle
               if (hasLobbyPolitico) leaderGrowth *= 2.0;
               if (hasEcumenicalAlliance) leaderGrowth *= 1.3;
-              
+              // Prophetic temple: +0.15 leader infiltration per level
+              if (prev.religionTrait === 'Prophetic' && c.templeLevel > 0) {
+                leaderGrowth += 0.15 * c.templeLevel;
+              }
               leaderInfiltration = Math.min(100, leaderInfiltration + leaderGrowth);
+            }
+          }
+
+          // Temple passive effects (applied regardless of converts > 0 check)
+          if (c.templeLevel > 0) {
+            growthFactor *= (1 + 0.03 * c.templeLevel);
+            if (prev.religionTrait === 'Mistical') {
+              if (c.templeLevel >= 2) resistance = Math.max(0, resistance - 0.5);
+              if (c.templeLevel >= 4) resistance = Math.max(0, resistance - 0.5);
+            }
+            if (prev.religionTrait === 'Activist') {
+              violence = Math.max(0, violence - (0.5 * c.templeLevel));
+              if (c.templeLevel >= 2) resistance = Math.max(0, resistance - 0.3);
+            }
+            if (prev.religionTrait === 'Syncretist') {
+              if (c.templeLevel >= 2) resistance = Math.max(0, resistance - (0.5 * (c.templeLevel - 1)));
             }
           }
 
@@ -366,6 +386,23 @@ export default function App() {
         if (hasMercadosPartilha) faithGained += 3;
         if (hasLigaBenfeitores) faithGained += 10;
         if (hasCronicasColapso) faithGained += 5;
+        // Temple global faith/fervor bonuses
+        updatedCountries.forEach((c) => {
+          if (c.templeLevel === 0) return;
+          if (prev.religionTrait === 'Mistical') {
+            if (c.templeLevel >= 3) faithGained += c.templeLevel >= 4 ? 15 : 5;
+          }
+          if (prev.religionTrait === 'Prophetic') {
+            if (c.templeLevel >= 3) { faithGained += 8; fervorGained += 3; }
+          }
+          if (prev.religionTrait === 'Activist') {
+            if (c.templeLevel >= 4) faithGained += 10;
+          }
+          if (prev.religionTrait === 'Syncretist') {
+            if (c.templeLevel >= 4) faithGained += 20;
+          }
+        });
+
         if (usaLeaderConverted) faithGained = Math.floor(faithGained * 1.4);
         if (japanLeaderConverted) faithGained = Math.floor(faithGained * 1.2);
         if (russiaLeaderConverted) faithGained = Math.floor(faithGained * 1.1); // centralização aumenta Fé
@@ -412,6 +449,9 @@ export default function App() {
         // Syncretist coexists better with rival ideologies
         if (prev.religionTrait === 'Syncretist') rivalIncrement *= 0.7;
         if (hasRelogioJuizo) rivalIncrement *= 0.7;
+        // Prophetic L4 temple: rival slows globally per such temple
+        const propheticL4Temples = updatedCountries.filter(c => prev.religionTrait === 'Prophetic' && c.templeLevel >= 4).length;
+        if (propheticL4Temples > 0) rivalIncrement *= Math.pow(0.85, propheticL4Temples);
 
         const updatedRivalProgress = Math.min(100, prev.rivalProgress + rivalIncrement);
 
@@ -658,6 +698,7 @@ export default function App() {
       resistanceStreak: 0,
       isGameOver: false,
       gameOverReason: null,
+      totalTemples: 0,
       lastEventCycle: -99,
       lastEventTimestamp: 0,
       eventCooldowns: {}
@@ -689,6 +730,7 @@ export default function App() {
       resistanceStreak: 0,
       isGameOver: false,
       gameOverReason: null,
+      totalTemples: 0,
       lastEventCycle: -99,
       lastEventTimestamp: 0,
       eventCooldowns: {}
@@ -717,10 +759,9 @@ export default function App() {
 
       const updated = prev.countries.map((c) => {
         if (c.id === countryId) {
-          // If first seeding, set followers to 8,000, else add a solid pocket
           const currentConverts = c.converts;
           const newConverts = currentConverts === 0 ? 8000 : Math.min(c.population, currentConverts + 200000);
-          return { ...c, converts: newConverts, resistance: Math.max(0, c.resistance - 2) };
+          return { ...c, converts: newConverts, resistance: Math.max(0, c.resistance - 2), missionariesSent: c.missionariesSent + 1 };
         }
         return c;
       });
@@ -901,6 +942,72 @@ export default function App() {
         fervor: prev.fervor - 10 + 15, // generates fervor
         countries: updated,
         logs: [`[RITUAL] Cânticos transcendentais atraem arrebatamento massivo em ${country.name}! +15 Fervor extra gerado!`, ...prev.logs]
+      };
+    });
+  };
+
+  // Temple names per trait and level
+  const TEMPLE_NAMES: Record<string, string[]> = {
+    Mistical:    ['Gruta Sagrada', 'Círculo de Visões', 'Torre dos Sonhos', 'Catedral do Êxtase'],
+    Prophetic:   ['Sala das Escrituras', 'Torre do Vigia', 'Arquivo das Profecias', 'Templo do Apocalipse'],
+    Activist:    ['Centro Comunitário', 'Hospital da Fé', 'Academia Popular', 'Sede da Revolução Pacífica'],
+    Syncretist:  ['Espaço Intercultural', 'Mesclário dos Povos', 'Biblioteca Universal', 'Templo da Harmonia Eterna'],
+  };
+
+  const TEMPLE_COSTS = [
+    { faith: 40, fervor: 10 },
+    { faith: 70, fervor: 20 },
+    { faith: 110, fervor: 35 },
+    { faith: 160, fervor: 55 },
+  ];
+
+  const TEMPLE_MILESTONE_MESSAGES: Record<number, string> = {
+    3:  'Os alicerces do Sagrado se firmam no mundo.',
+    6:  'Seis Pilares da Fé guardam os continentes.',
+    10: 'A Era dos Templos chegou — a doutrina é arquitetura.',
+    16: 'O mundo foi santificado. Cada nação abriga a Luz Eterna!',
+  };
+
+  // Action callback 5: Open Temple in a country
+  const openTemple = (countryId: string) => {
+    const countryObj = state.countries.find((c) => c.id === countryId);
+    if (!countryObj) return;
+
+    const nextLevel = countryObj.templeLevel + 1;
+    if (nextLevel > 4) return;
+
+    const cost = TEMPLE_COSTS[nextLevel - 1];
+    if (state.faith < cost.faith || state.fervor < cost.fervor) return;
+
+    const templeName = TEMPLE_NAMES[state.religionTrait]?.[nextLevel - 1] ?? 'Templo';
+
+    addFloatingText(`🏛️ ${templeName}!`, countryObj.coordinates.x, countryObj.coordinates.y - 8, 'text-[#cfb53b] font-bold font-serif', countryObj.id);
+    addFloatingText(`-${cost.faith} Fé`, countryObj.coordinates.x, countryObj.coordinates.y, 'text-red-500 font-bold font-mono', countryObj.id);
+
+    setState((prev) => {
+      const newTotalTemples = prev.totalTemples + 1;
+      const updatedCountries = prev.countries.map((c) =>
+        c.id === countryId ? { ...c, templeLevel: nextLevel } : c
+      );
+
+      const logs = [...prev.logs];
+      logs.unshift(`[TEMPLO] Uma ${templeName} foi erguida em ${countryObj.name}! A fé se materializa em pedra e doutrina.`);
+
+      const milestoneMsg = TEMPLE_MILESTONE_MESSAGES[newTotalTemples];
+      if (milestoneMsg) {
+        logs.unshift(`[MARCO SAGRADO] ${milestoneMsg}`);
+        playSound('success');
+      } else {
+        playSound('click');
+      }
+
+      return {
+        ...prev,
+        faith: prev.faith - cost.faith,
+        fervor: prev.fervor - cost.fervor,
+        totalTemples: newTotalTemples,
+        countries: updatedCountries,
+        logs: logs.slice(0, 20),
       };
     });
   };
@@ -1276,6 +1383,10 @@ export default function App() {
               onPacifyCountry={pacifyCountry}
               onInfiltrateLeader={infiltrateLeader}
               onPerformEcstasyRitual={performEcstasyRitual}
+              onOpenTemple={openTemple}
+              totalTemples={state.totalTemples}
+              templeCosts={TEMPLE_COSTS}
+              templeNames={TEMPLE_NAMES}
               floatingTexts={floatingTexts}
             />
           )}

@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { Country, ReligionTrait } from '../types';
-import { Crosshair, ShieldAlert, HeartHandshake, Skull, Crown, Star, Network } from 'lucide-react';
+import { Crosshair, ShieldAlert, HeartHandshake, Skull, Crown, Star, Network, Building2 } from 'lucide-react';
 import WorldMapFlat from './WorldMapFlat';
 
 const CONTINENTS = [
@@ -72,6 +72,10 @@ interface WorldMapProps {
   onPacifyCountry: (countryId: string) => void;
   onInfiltrateLeader: (countryId: string) => void;
   onPerformEcstasyRitual: (countryId: string) => void;
+  onOpenTemple: (countryId: string) => void;
+  totalTemples: number;
+  templeCosts: { faith: number; fervor: number }[];
+  templeNames: Record<string, string[]>;
   floatingTexts?: { id: number; text: string; x: number; y: number; colorClass: string; countryId?: string }[];
 }
 
@@ -86,6 +90,10 @@ export default function WorldMap({
   onPacifyCountry,
   onInfiltrateLeader,
   onPerformEcstasyRitual,
+  onOpenTemple,
+  totalTemples,
+  templeCosts,
+  templeNames,
   floatingTexts = []
 }: WorldMapProps) {
   const selectedCountry = countries.find((c) => c.id === selectedCountryId);
@@ -121,6 +129,15 @@ export default function WorldMap({
 
   const getEcstasyCost = () => {
     return { faith: 50, fervor: 10 };
+  };
+
+  const getTempleUnlockLevel = (c: Country): number => {
+    const convertPct = c.population > 0 ? (c.converts / c.population) * 100 : 0;
+    if (c.missionariesSent >= 10 && convertPct >= 50 && c.templeLevel >= 3) return 4;
+    if (c.missionariesSent >= 6 && convertPct >= 25 && c.templeLevel >= 2) return 3;
+    if (c.missionariesSent >= 3 && convertPct >= 10 && c.templeLevel >= 1) return 2;
+    if (c.missionariesSent >= 1 && convertPct >= 2) return 1;
+    return 0;
   };
 
   return (
@@ -372,6 +389,60 @@ export default function WorldMap({
                   </span>
                 </button>
               )}
+
+              {/* ACTION 5: Open Temple */}
+              {(() => {
+                const availableLevel = getTempleUnlockLevel(selectedCountry);
+                const nextLevel = selectedCountry.templeLevel + 1;
+                const canBuildNext = availableLevel >= nextLevel && nextLevel <= 4;
+                const cost = nextLevel <= 4 ? templeCosts[nextLevel - 1] : null;
+                const canAfford = cost ? faith >= cost.faith && fervor >= cost.fervor : false;
+                const traitNames = templeNames[trait] ?? [];
+                const currentTempleName = selectedCountry.templeLevel > 0 ? traitNames[selectedCountry.templeLevel - 1] : null;
+                const nextTempleName = nextLevel <= 4 ? traitNames[nextLevel - 1] : null;
+
+                return (
+                  <div className="flex flex-col gap-1 border-t border-[#cfb53b]/10 pt-2 mt-1">
+                    <div className="flex justify-between items-center text-[10px] font-mono text-[#dfcfa0]/60">
+                      <span className="flex items-center gap-1">
+                        <Building2 className="w-3 h-3 text-[#cfb53b]" />
+                        Templo: {currentTempleName ? <span className="text-[#cfb53b] font-bold ml-1">{currentTempleName}</span> : <span className="text-zinc-500 ml-1">Nenhum</span>}
+                      </span>
+                      <span>Missionários: {selectedCountry.missionariesSent}</span>
+                    </div>
+
+                    {selectedCountry.templeLevel >= 4 ? (
+                      <div className="py-1.5 px-3 rounded bg-amber-950/40 border border-[#cfb53b]/30 text-[10px] text-[#cfb53b] font-bold text-center">
+                        🏛️ Santuário Máximo Atingido
+                      </div>
+                    ) : canBuildNext && cost ? (
+                      <button
+                        onClick={() => onOpenTemple(selectedCountry.id)}
+                        disabled={!canAfford}
+                        className={`py-2 px-3 rounded text-xs font-bold flex justify-between items-center transition-all ${
+                          canAfford
+                            ? 'bg-[#1a2a1a] hover:bg-[#213021] text-green-300 border border-green-700/50 cursor-pointer'
+                            : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                        }`}
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <Building2 className="w-4 h-4 text-green-400" /> Abrir {nextTempleName}
+                        </span>
+                        <span className="font-mono text-[9px] bg-black/30 px-1.5 py-0.5 rounded flex gap-1">
+                          <span>{cost.faith} Fé</span>
+                          <span>{cost.fervor} Fervor</span>
+                        </span>
+                      </button>
+                    ) : (
+                      <div className="py-1.5 px-3 rounded bg-zinc-900/50 border border-zinc-700/30 text-[10px] text-zinc-500 text-center">
+                        {selectedCountry.missionariesSent === 0
+                          ? 'Envie missionários para desbloquear templos'
+                          : `Próximo templo: ${nextTempleName} — requer mais conversões`}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
             </div>
           </div>

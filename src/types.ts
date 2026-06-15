@@ -20,6 +20,8 @@ export interface Country {
   specialTrait: string;
   specialTraitDesc: string;
   coordinates: { x: number; y: number }; // for map visual rendering
+  missionariesSent: number;
+  templeLevel: number; // 0 = none, 1-4 = temple tier
 }
 
 export interface Dogma {
@@ -68,6 +70,7 @@ export interface GameState {
   resistanceStreak: number; // counts consecutive cycles with global average resistance > 85%
   isGameOver: boolean;
   gameOverReason: 'victory' | 'resistance' | 'bankrupt' | 'rival' | null;
+  totalTemples: number;
   lastEventCycle: number; // cycle number when the last random event was triggered
   lastEventTimestamp: number; // ms timestamp of the last event (for 2-min global cooldown)
   eventCooldowns: { [eventId: string]: number }; // cycle number each event last fired (individual 25-cycle cooldown)
