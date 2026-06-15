@@ -189,6 +189,13 @@ export default function App() {
         const brassilLeaderConverted = isLeaderConverted('brazil');
         const russiaLeaderConverted = isLeaderConverted('russia');
         const saudiLeaderConverted = isLeaderConverted('saudi_arabia');
+        const chinaLeaderConverted = isLeaderConverted('china');
+        const indiaLeaderConverted = isLeaderConverted('india');
+        const germanyLeaderConverted = isLeaderConverted('germany');
+        const egyptLeaderConverted = isLeaderConverted('egypt');
+        const southAfricaLeaderConverted = isLeaderConverted('south_africa');
+        const mexicoLeaderConverted = isLeaderConverted('mexico');
+        const australiaLeaderConverted = isLeaderConverted('australia');
 
         // 2. Perform Country conversions and status updates
         let totalConvertsCount = 0;
@@ -292,14 +299,13 @@ export default function App() {
             resistance = limitResistance;
           }
 
-          // Leaders converted affect resistance
-          if (saudiLeaderConverted && c.id === 'saudi_arabia') {
-            resistance = 0;
-          }
-
-          if (hasBorderSantiago && c.id === 'egypt') {
-            // bypass Egito closed border penalty
-          }
+          // Leaders converted — passive bonuses
+          if (saudiLeaderConverted && c.id === 'saudi_arabia') resistance = 0;
+          if (chinaLeaderConverted && ['china', 'india', 'japan'].includes(c.id)) growthFactor *= 1.5;
+          if (indiaLeaderConverted && ['india', 'south_africa', 'egypt'].includes(c.id)) growthFactor *= 1.3;
+          if (germanyLeaderConverted && ['germany', 'russia'].includes(c.id)) resistance = Math.max(0, resistance * 0.7);
+          if (southAfricaLeaderConverted && c.id === 'south_africa') violence = Math.min(5, violence);
+          if (mexicoLeaderConverted && ['mexico', 'usa', 'brazil'].includes(c.id)) violence = Math.max(0, violence - 1);
 
           totalConvertsCount += converts;
           totalPopCount += pop;
@@ -332,10 +338,11 @@ export default function App() {
           if (candidates.length > 0) {
             const target = candidates[Math.floor(Math.random() * candidates.length)];
             
-            // Validate closed boundaries (Egito, Arabia Saudita, Australia require active transmission if dogmas aren't in place)
+            // Validate closed boundaries
             let allowed = true;
-            if (target.id === 'australia' && !hasBorderSantiago) allowed = false;
-            if (target.id === 'egypt' && !hasBorderSantiago) allowed = false;
+            if (target.id === 'australia' && !hasBorderSantiago && !australiaLeaderConverted) allowed = false;
+            if (target.id === 'egypt' && !hasBorderSantiago && !egyptLeaderConverted) allowed = false;
+            if (target.id === 'saudi_arabia' && !hasBorderSantiago && !egyptLeaderConverted) allowed = false;
             
             if (allowed) {
               const targetIdx = updatedCountries.findIndex((c) => c.id === target.id);
@@ -361,6 +368,7 @@ export default function App() {
         if (hasCronicasColapso) faithGained += 5;
         if (usaLeaderConverted) faithGained = Math.floor(faithGained * 1.4);
         if (japanLeaderConverted) faithGained = Math.floor(faithGained * 1.2);
+        if (russiaLeaderConverted) faithGained = Math.floor(faithGained * 1.1); // centralização aumenta Fé
 
         // Fervor gained: generated based on average global resistance (persecution turns values into power!)
         const avgResistance = totalResistanceSum / updatedCountries.length;
@@ -762,22 +770,60 @@ export default function App() {
     const countryObj = state.countries.find((c) => c.id === countryId);
     if (!countryObj) return;
 
-    let baseFaith = 40;
-    let baseFervor = 15;
-    if (countryObj.id === 'japan') baseFaith -= 10;
-    if (countryObj.id === 'russia') baseFaith -= 5;
+    // Custo escalado por resistência e regime
+    const baseResistance = countryObj.resistance;
+    let baseFaith = Math.round(30 + Math.max(0, baseResistance - 30) * 0.8);
+    let baseFervor = Math.round(10 + Math.max(0, baseResistance - 30) * 0.3);
+    if (['opressor', 'teocracia'].includes(countryObj.regimeType)) {
+      baseFaith = Math.round(baseFaith * 1.5);
+      baseFervor = Math.round(baseFervor * 1.5);
+    }
+    // Mais barato quando já está quase convertido (> 50%)
+    if (countryObj.leaderInfiltration > 50) {
+      baseFaith = Math.round(baseFaith * 0.7);
+      baseFervor = Math.round(baseFervor * 0.7);
+    }
+
+    // Rússia convertida: infiltrações globais 20% mais baratas
+    const russiaLeaderActive = state.countries.find(c => c.id === 'russia')?.leaderInfiltration >= 100;
+    if (russiaLeaderActive) { baseFaith = Math.round(baseFaith * 0.8); baseFervor = Math.round(baseFervor * 0.8); }
 
     // Grande Julgamento: -50% custo globalmente
     const hasGrandeJulgamento = state.dogmas.some(d => d.id === 'reforma_escatologica' && d.purchased);
     if (hasGrandeJulgamento) { baseFaith = Math.floor(baseFaith * 0.5); baseFervor = Math.floor(baseFervor * 0.5); }
 
-    // Vidente das Nações: -25% custo adicional em opressores/autoritários
+    // Vidente das Nações: -25% custo em opressores/autoritários
     const hasVidenteNacoesActive = state.dogmas.some(d => d.id === 'vidente_nacoes' && d.purchased);
     if (hasVidenteNacoesActive && ['opressor', 'autoritario'].includes(countryObj.regimeType)) {
       baseFaith = Math.floor(baseFaith * 0.75);
     }
 
     if (state.faith < baseFaith || state.fervor < baseFervor) return;
+
+    // Contra-inteligência: chance de ser detectado baseada na resistência
+    const isHardRegime = ['opressor', 'teocracia'].includes(countryObj.regimeType);
+    let counterIntelChance = 0;
+    if (baseResistance > 60) counterIntelChance = 0.30;
+    else if (baseResistance > 40) counterIntelChance = 0.15;
+
+    if (Math.random() < counterIntelChance) {
+      const faithPenalty = Math.max(5, Math.floor(baseFaith * 0.3));
+      addFloatingText('DETECTADO!', countryObj.coordinates.x, countryObj.coordinates.y, 'text-red-500 font-bold font-mono', countryObj.id);
+      addFloatingText(`-${faithPenalty} Fé`, countryObj.coordinates.x, countryObj.coordinates.y + 5, 'text-red-400 font-bold font-mono', countryObj.id);
+      setState(prev => ({
+        ...prev,
+        faith: prev.faith - faithPenalty,
+        fervor: prev.fervor + (isHardRegime ? 20 : 0),
+        countries: prev.countries.map(c => c.id === countryId
+          ? { ...c, resistance: Math.min(100, c.resistance + 10) }
+          : c),
+        logs: [
+          `[CONTRA-INTELIGÊNCIA] Agentes em ${countryObj.name} detectaram a operação! Resistência sobe +10.${isHardRegime ? ' Perseguição gera +20 Fervor.' : ''}`,
+          ...prev.logs
+        ]
+      }));
+      return;
+    }
 
     // Trigger visual floating text feedback on country coordinates
     addFloatingText(`-${baseFaith} Fé`, countryObj.coordinates.x, countryObj.coordinates.y, "text-red-500 font-bold font-mono", countryObj.id);
@@ -1249,6 +1295,9 @@ export default function App() {
               countries={state.countries}
               faith={state.faith}
               fervor={state.fervor}
+              hasGrandeJulgamento={state.dogmas.some(d => d.id === 'reforma_escatologica' && d.purchased)}
+              hasVidenteNacoes={state.dogmas.some(d => d.id === 'vidente_nacoes' && d.purchased)}
+              russiaConverted={(state.countries.find(c => c.id === 'russia')?.leaderInfiltration ?? 0) >= 100}
               onInfiltrateLeader={infiltrateLeader}
             />
           )}
