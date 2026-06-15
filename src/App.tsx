@@ -45,7 +45,9 @@ export default function App() {
       resistanceStreak: 0,
       isGameOver: false,
       gameOverReason: null,
-      lastEventCycle: -99
+      lastEventCycle: -99,
+      lastEventTimestamp: 0,
+      eventCooldowns: {}
     };
   });
 
@@ -395,15 +397,23 @@ export default function App() {
           playSound(gameOverReason === 'victory' ? 'success' : 'gameover');
         }
 
-        // 7. Narrative Random Event Dice roll (20% chance)
+        // 7. Narrative Random Event Dice roll (10% chance, 2-min global cooldown, 25-cycle individual cooldown)
         let newlyTriggeredEvent: GameEvent | null = null;
         let updatedLogs = [...prev.logs];
 
-        if (Math.random() < 0.20 && !isGameOver) {
-          // Filter valid events based on player's chosen custom trait requirement
-          const validEvents = RANDOM_EVENTS_POOL.filter(
-            (e) => !e.traitRequirement || e.traitRequirement === prev.religionTrait
-          );
+        const EVENT_GLOBAL_COOLDOWN_MS = 120000; // 2 minutes real time
+        const EVENT_INDIVIDUAL_COOLDOWN_CYCLES = 25;
+        const now = Date.now();
+        const globalCooldownPassed = (now - prev.lastEventTimestamp) >= EVENT_GLOBAL_COOLDOWN_MS;
+
+        if (Math.random() < 0.10 && !isGameOver && globalCooldownPassed) {
+          // Filter by trait and individual cooldown
+          const validEvents = RANDOM_EVENTS_POOL.filter((e) => {
+            const traitOk = !e.traitRequirement || e.traitRequirement === prev.religionTrait;
+            const lastFired = prev.eventCooldowns[e.id] ?? -999;
+            const cooldownOk = (prev.cycle - lastFired) >= EVENT_INDIVIDUAL_COOLDOWN_CYCLES;
+            return traitOk && cooldownOk;
+          });
 
           if (validEvents.length > 0) {
             const picked = validEvents[Math.floor(Math.random() * validEvents.length)];
@@ -453,6 +463,10 @@ export default function App() {
         }
 
         const nextCycle = prev.cycle + 1;
+        const updatedEventCooldowns = newlyTriggeredEvent
+          ? { ...prev.eventCooldowns, [newlyTriggeredEvent.id]: prev.cycle }
+          : prev.eventCooldowns;
+
         return {
           ...prev,
           cycle: nextCycle,
@@ -466,6 +480,8 @@ export default function App() {
           eventActive: isGameOver ? null : (newlyTriggeredEvent || prev.eventActive),
           paused: isGameOver ? false : (newlyTriggeredEvent ? true : prev.paused),
           lastEventCycle: newlyTriggeredEvent ? prev.cycle : prev.lastEventCycle,
+          lastEventTimestamp: newlyTriggeredEvent ? now : prev.lastEventTimestamp,
+          eventCooldowns: updatedEventCooldowns,
           logs: updatedLogs
         };
       });
@@ -568,7 +584,9 @@ export default function App() {
       resistanceStreak: 0,
       isGameOver: false,
       gameOverReason: null,
-      lastEventCycle: -99
+      lastEventCycle: -99,
+      lastEventTimestamp: 0,
+      eventCooldowns: {}
     });
     playSound('success');
   };
@@ -597,7 +615,9 @@ export default function App() {
       resistanceStreak: 0,
       isGameOver: false,
       gameOverReason: null,
-      lastEventCycle: -99
+      lastEventCycle: -99,
+      lastEventTimestamp: 0,
+      eventCooldowns: {}
     });
   };
 

@@ -69,4 +69,6 @@ export interface GameState {
   isGameOver: boolean;
   gameOverReason: 'victory' | 'resistance' | 'bankrupt' | 'rival' | null;
   lastEventCycle: number; // cycle number when the last random event was triggered
+  lastEventTimestamp: number; // ms timestamp of the last event (for 2-min global cooldown)
+  eventCooldowns: { [eventId: string]: number }; // cycle number each event last fired (individual 25-cycle cooldown)
 }
