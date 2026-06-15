@@ -64,7 +64,7 @@ export default function RivalPanel({
           </div>
         );
       case 'PerpetualPeace':
-        const countriesOver20 = countries.filter((c) => c.violence > 19.99).length;
+        const countriesOver20 = countries.filter((c) => c.violence >= 20).length;
         const totalCountriesPercentSafe = ((12 - countriesOver20) / 12) * 100;
         return (
           <div className="bg-[#241d00] border border-orange-700/30 p-4 rounded-lg">

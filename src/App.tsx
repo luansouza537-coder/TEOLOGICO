@@ -277,7 +277,10 @@ export default function App() {
             if (target.id === 'egypt' && !hasBorderSantiago) allowed = false;
             
             if (allowed) {
-              target.converts = 100; // Seed
+              const targetIdx = updatedCountries.findIndex((c) => c.id === target.id);
+              if (targetIdx !== -1) {
+                updatedCountries[targetIdx] = { ...updatedCountries[targetIdx], converts: 100 };
+              }
               prev.logs.unshift(`Dispersão: Missionários que cruzaram de ${sourceId.toUpperCase()} semearam os primeiros cultos em ${target.name}!`);
             }
           }
@@ -358,7 +361,7 @@ export default function App() {
         } else if (updatedRivalProgress >= 100) {
           isGameOver = true;
           gameOverReason = 'rival';
-        } else if (prev.faith === 0 && prev.fervor === 0 && totalConvertsCount === 0) {
+        } else if (prev.faith <= 0 && prev.fervor <= 0 && totalConvertsCount === 0) {
           isGameOver = true;
           gameOverReason = 'bankrupt';
         }
@@ -397,8 +400,8 @@ export default function App() {
                   if (c.converts === 0) c.converts = 1000;
                   c.converts = Math.min(c.population, Math.floor(c.converts + mod));
                 } else if (mod < 0) {
-                  // loss (persecution deletes some followers)
-                  c.converts = Math.max(0, Math.min(c.population, Math.floor(c.converts * 0.5)));
+                  // loss (persecution removes the exact mod amount from followers)
+                  c.converts = Math.max(0, Math.floor(c.converts + mod));
                 }
               }
             });
@@ -434,8 +437,8 @@ export default function App() {
           resistanceStreak: newStreak,
           isGameOver,
           gameOverReason,
-          eventActive: newlyTriggeredEvent || prev.eventActive,
-          paused: newlyTriggeredEvent ? true : prev.paused,
+          eventActive: isGameOver ? null : (newlyTriggeredEvent || prev.eventActive),
+          paused: isGameOver ? false : (newlyTriggeredEvent ? true : prev.paused),
           logs: updatedLogs
         };
       });
