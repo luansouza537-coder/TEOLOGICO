@@ -13,13 +13,42 @@ import LeadersPanel from './components/LeadersPanel';
 import RivalPanel from './components/RivalPanel';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Gamepad2, Info, BookOpen, AlertTriangle } from 'lucide-react';
 
+const TEMPLE_NAMES: Record<string, string[]> = {
+  Mistical:   ['Gruta Sagrada', 'Círculo de Visões', 'Torre dos Sonhos', 'Catedral do Êxtase'],
+  Prophetic:  ['Sala das Escrituras', 'Torre do Vigia', 'Arquivo das Profecias', 'Templo do Apocalipse'],
+  Activist:   ['Centro Comunitário', 'Hospital da Fé', 'Academia Popular', 'Sede da Revolução Pacífica'],
+  Syncretist: ['Espaço Intercultural', 'Mesclário dos Povos', 'Biblioteca Universal', 'Templo da Harmonia Eterna'],
+};
+
+const TEMPLE_COSTS = [
+  { faith: 40, fervor: 10 },
+  { faith: 70, fervor: 20 },
+  { faith: 110, fervor: 35 },
+  { faith: 160, fervor: 55 },
+];
+
+const TEMPLE_MILESTONE_MESSAGES: Record<number, string> = {
+  3:  'Os alicerces do Sagrado se firmam no mundo.',
+  6:  'Seis Pilares da Fé guardam os continentes.',
+  10: 'A Era dos Templos chegou — a doutrina é arquitetura.',
+  16: 'O mundo foi santificado. Cada nação abriga a Luz Eterna!',
+};
+
 export default function App() {
   const [state, setState] = useState<GameState>(() => {
     const saved = localStorage.getItem('religion_simulator_state_v2');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Ensure reset doesn't freeze the screen if it was loaded as paused/gameover
+        // Migrate old saves: fill missing fields added in later versions
+        if (parsed.totalTemples === undefined) parsed.totalTemples = 0;
+        if (parsed.countries) {
+          parsed.countries = parsed.countries.map((c: any) => ({
+            ...c,
+            missionariesSent: c.missionariesSent ?? 0,
+            templeLevel: c.templeLevel ?? 0,
+          }));
+        }
         return parsed;
       } catch (e) {
         console.error('Falha ao restaurar dados de localStorage:', e);
@@ -295,11 +324,18 @@ export default function App() {
               }
               leaderInfiltration = Math.min(100, leaderInfiltration + leaderGrowth);
             }
+            // Temple growth bonus (inside converts > 0 block so growthFactor exists)
+            if (c.templeLevel > 0) {
+              growthFactor *= (1 + 0.03 * c.templeLevel);
+            }
+
+            // Leader converted — growth bonuses (inside converts > 0 so growthFactor exists)
+            if (chinaLeaderConverted && ['china', 'india', 'japan'].includes(c.id)) growthFactor *= 1.5;
+            if (indiaLeaderConverted && ['india', 'south_africa', 'egypt'].includes(c.id)) growthFactor *= 1.3;
           }
 
-          // Temple passive effects (applied regardless of converts > 0 check)
+          // Temple passive effects on resistance/violence (valid even when converts === 0)
           if (c.templeLevel > 0) {
-            growthFactor *= (1 + 0.03 * c.templeLevel);
             if (prev.religionTrait === 'Mistical') {
               if (c.templeLevel >= 2) resistance = Math.max(0, resistance - 0.5);
               if (c.templeLevel >= 4) resistance = Math.max(0, resistance - 0.5);
@@ -319,10 +355,8 @@ export default function App() {
             resistance = limitResistance;
           }
 
-          // Leaders converted — passive bonuses
+          // Leaders converted — non-growth passive bonuses
           if (saudiLeaderConverted && c.id === 'saudi_arabia') resistance = 0;
-          if (chinaLeaderConverted && ['china', 'india', 'japan'].includes(c.id)) growthFactor *= 1.5;
-          if (indiaLeaderConverted && ['india', 'south_africa', 'egypt'].includes(c.id)) growthFactor *= 1.3;
           if (germanyLeaderConverted && ['germany', 'russia'].includes(c.id)) resistance = Math.max(0, resistance * 0.7);
           if (southAfricaLeaderConverted && c.id === 'south_africa') violence = Math.min(5, violence);
           if (mexicoLeaderConverted && ['mexico', 'usa', 'brazil'].includes(c.id)) violence = Math.max(0, violence - 1);
@@ -671,11 +705,10 @@ export default function App() {
   const handleStartGame = (name: string, trait: ReligionTrait, goal: VictoryGoalType) => {
     // Fresh countries initialization (giving focus to USA first)
     const presetCountries = INITIAL_COUNTRIES.map((c) => {
-      // Clean previous logs and followers
       if (c.id === 'usa') {
-        return { ...c, converts: 120, leaderInfiltration: 5, resistance: 15, violence: 45 };
+        return { ...c, converts: 120, leaderInfiltration: 5, resistance: 15, violence: 45, missionariesSent: 0, templeLevel: 0 };
       }
-      return { ...c, converts: 0, leaderInfiltration: 0 };
+      return { ...c, converts: 0, leaderInfiltration: 0, missionariesSent: 0, templeLevel: 0 };
     });
 
     setState({
@@ -722,7 +755,7 @@ export default function App() {
       gameSpeed: 1,
       selectedCountryId: 'usa',
       dogmas: INITIAL_DOGMAS.map(d => ({ ...d, purchased: false })),
-      countries: INITIAL_COUNTRIES.map(c => ({ ...c, converts: c.id === 'usa' ? 120 : 0, leaderInfiltration: c.id === 'usa' ? 5 : 0 })),
+      countries: INITIAL_COUNTRIES.map(c => ({ ...c, converts: c.id === 'usa' ? 120 : 0, leaderInfiltration: c.id === 'usa' ? 5 : 0, missionariesSent: 0, templeLevel: 0 })),
       logs: ['Espaço cósmico silencioso. Inicie seu Credo para ver o desenrolar da fé.'],
       eventActive: null,
       rivalProgress: 0,
@@ -944,28 +977,6 @@ export default function App() {
         logs: [`[RITUAL] Cânticos transcendentais atraem arrebatamento massivo em ${country.name}! +15 Fervor extra gerado!`, ...prev.logs]
       };
     });
-  };
-
-  // Temple names per trait and level
-  const TEMPLE_NAMES: Record<string, string[]> = {
-    Mistical:    ['Gruta Sagrada', 'Círculo de Visões', 'Torre dos Sonhos', 'Catedral do Êxtase'],
-    Prophetic:   ['Sala das Escrituras', 'Torre do Vigia', 'Arquivo das Profecias', 'Templo do Apocalipse'],
-    Activist:    ['Centro Comunitário', 'Hospital da Fé', 'Academia Popular', 'Sede da Revolução Pacífica'],
-    Syncretist:  ['Espaço Intercultural', 'Mesclário dos Povos', 'Biblioteca Universal', 'Templo da Harmonia Eterna'],
-  };
-
-  const TEMPLE_COSTS = [
-    { faith: 40, fervor: 10 },
-    { faith: 70, fervor: 20 },
-    { faith: 110, fervor: 35 },
-    { faith: 160, fervor: 55 },
-  ];
-
-  const TEMPLE_MILESTONE_MESSAGES: Record<number, string> = {
-    3:  'Os alicerces do Sagrado se firmam no mundo.',
-    6:  'Seis Pilares da Fé guardam os continentes.',
-    10: 'A Era dos Templos chegou — a doutrina é arquitetura.',
-    16: 'O mundo foi santificado. Cada nação abriga a Luz Eterna!',
   };
 
   // Action callback 5: Open Temple in a country

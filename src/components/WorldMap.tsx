@@ -132,11 +132,13 @@ export default function WorldMap({
   };
 
   const getTempleUnlockLevel = (c: Country): number => {
+    const sent = c.missionariesSent ?? 0;
+    const level = c.templeLevel ?? 0;
     const convertPct = c.population > 0 ? (c.converts / c.population) * 100 : 0;
-    if (c.missionariesSent >= 10 && convertPct >= 50 && c.templeLevel >= 3) return 4;
-    if (c.missionariesSent >= 6 && convertPct >= 25 && c.templeLevel >= 2) return 3;
-    if (c.missionariesSent >= 3 && convertPct >= 10 && c.templeLevel >= 1) return 2;
-    if (c.missionariesSent >= 1 && convertPct >= 2) return 1;
+    if (sent >= 10 && convertPct >= 50 && level >= 3) return 4;
+    if (sent >= 6 && convertPct >= 25 && level >= 2) return 3;
+    if (sent >= 3 && convertPct >= 10 && level >= 1) return 2;
+    if (sent >= 1 && convertPct >= 2) return 1;
     return 0;
   };
 
