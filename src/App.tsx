@@ -44,7 +44,8 @@ export default function App() {
       rivalName: 'A Ordem Tecnocrática',
       resistanceStreak: 0,
       isGameOver: false,
-      gameOverReason: null
+      gameOverReason: null,
+      lastEventCycle: -99
     };
   });
 
@@ -185,7 +186,12 @@ export default function App() {
 
             // Apply religion core trait influence
             if (prev.religionTrait === 'Syncretist') {
-              growthFactor *= 0.75; // converts slower as per request
+              // Slower globally but accepted in open societies
+              if (['liberal', 'estavel', 'democracia'].includes(c.regimeType)) {
+                growthFactor *= 0.78; // 0.65 * 1.2 ≈ slight boost in democracies vs oppressive
+              } else {
+                growthFactor *= 0.65;
+              }
             }
 
             // Apply active relevant dogmas and government regimes modifiers
@@ -197,7 +203,8 @@ export default function App() {
               growthFactor *= 2.2;
             }
 
-            if (hasCelestialSigns && (prev.eventActive?.id === 'global_economic_crisis' || c.id === 'mexico')) {
+            // Sinais Celestiais: bônus apenas no ciclo imediatamente após o evento disparar (não enquanto o popup existir)
+            if (hasCelestialSigns && prev.cycle - prev.lastEventCycle === 1) {
               growthFactor *= 1.5;
             }
 
@@ -205,8 +212,8 @@ export default function App() {
               growthFactor *= 1.4;
             }
 
-            if (hasOraclesIndia && ['china', 'india'].includes(c.id)) {
-              growthFactor *= 2.0; // massive boost
+            if (hasOraclesIndia && c.id === 'india') {
+              growthFactor *= 1.5; // focused on India only, reduced from 2.0x
             }
 
             if (hasFestivalsFusion && prev.religionTrait === 'Syncretist') {
@@ -302,6 +309,10 @@ export default function App() {
         if (avgResistance > 35) {
           fervorGained += Math.floor(avgResistance / 25);
         }
+        // Syncretist generates less fervor — coexistence avoids confrontation but weakens defensive power
+        if (prev.religionTrait === 'Syncretist') {
+          fervorGained = Math.floor(fervorGained * 0.5);
+        }
         if (hasMartyrsFervor && prev.religionTrait === 'Activist') {
           // Additional fervor from oppressive regimes under resistance
           const oppressedResistCount = updatedCountries.filter(
@@ -313,12 +324,26 @@ export default function App() {
           fervorGained += 3; // brazillian spiritual heat
         }
 
-        // 4. Adversary Rival Artificial Intelligence Progression
-        // The rival grows in influence. Spreads faster the higher global average resistance is (doubting the spirit makes them follow the technocracy)
-        let rivalIncrement = 0.6 + (avgResistance / 180);
-        if (prev.religionTrait === 'Syncretist') {
-          rivalIncrement *= 0.8; // they coexist better, rival thrives lesser
-        }
+        // 4. Adversary Rival Artificial Intelligence Progression (reactive model)
+        const activeCountriesCount = updatedCountries.filter(c => c.converts > 0).length;
+        const convertedRate2 = totalPopCount > 0 ? (totalConvertsCount / totalPopCount) : 0;
+
+        let rivalIncrement = 0.4; // base reduced from 0.6
+
+        // Rival thrives when faith is weak or resistance is high
+        if (avgResistance > 60) rivalIncrement += 0.8;
+        else if (avgResistance > 40) rivalIncrement += 0.4;
+
+        // Rival fills the void when player has little presence
+        if (activeCountriesCount < 3) rivalIncrement += 0.4;
+
+        // Rival retreats before established faith
+        if (convertedRate2 > 0.5) rivalIncrement *= 0.5;
+        else if (convertedRate2 > 0.25) rivalIncrement *= 0.75;
+
+        // Syncretist coexists better with rival ideologies
+        if (prev.religionTrait === 'Syncretist') rivalIncrement *= 0.7;
+
         const updatedRivalProgress = Math.min(100, prev.rivalProgress + rivalIncrement);
 
         // 5. Evaluate Warning Streak (governos contra você se resistência > 85%)
@@ -427,9 +452,10 @@ export default function App() {
           updatedLogs = updatedLogs.slice(0, 20);
         }
 
+        const nextCycle = prev.cycle + 1;
         return {
           ...prev,
-          cycle: prev.cycle + 1,
+          cycle: nextCycle,
           faith: prev.faith + faithGained,
           fervor: prev.fervor + fervorGained,
           countries: updatedCountries,
@@ -439,6 +465,7 @@ export default function App() {
           gameOverReason,
           eventActive: isGameOver ? null : (newlyTriggeredEvent || prev.eventActive),
           paused: isGameOver ? false : (newlyTriggeredEvent ? true : prev.paused),
+          lastEventCycle: newlyTriggeredEvent ? prev.cycle : prev.lastEventCycle,
           logs: updatedLogs
         };
       });
@@ -540,7 +567,8 @@ export default function App() {
       rivalName: 'A Ordem Tecnocrática',
       resistanceStreak: 0,
       isGameOver: false,
-      gameOverReason: null
+      gameOverReason: null,
+      lastEventCycle: -99
     });
     playSound('success');
   };
@@ -568,7 +596,8 @@ export default function App() {
       rivalName: 'A Ordem Tecnocrática',
       resistanceStreak: 0,
       isGameOver: false,
-      gameOverReason: null
+      gameOverReason: null,
+      lastEventCycle: -99
     });
   };
 

@@ -68,4 +68,5 @@ export interface GameState {
   resistanceStreak: number; // counts consecutive cycles with global average resistance > 85%
   isGameOver: boolean;
   gameOverReason: 'victory' | 'resistance' | 'bankrupt' | 'rival' | null;
+  lastEventCycle: number; // cycle number when the last random event was triggered
 }
