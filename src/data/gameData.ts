@@ -385,137 +385,572 @@ export const INITIAL_DOGMAS: Dogma[] = [
 ];
 
 export const RANDOM_EVENTS_POOL: GameEvent[] = [
-  // GENERAL EVENTS
+
+  // ── UNIVERSAIS (10) ──────────────────────────────────────────────────────────
+
   {
-    id: 'global_economic_crisis',
-    title: 'Crise Financeira Global',
-    description: 'A quebra imprevista de fundos de investimento gera recessão mundial, medo e insegurança.',
-    impactType: 'neutral',
-    actionEffects: {
-      globalFaithMod: 15,
-      countryViolenceMod: { usa: 15, mexico: 10, brazil: 10, south_africa: 15 }
-    }
-  },
-  {
-    id: 'world_peace_summit',
-    title: 'Cúpula Mundial da Paz',
-    description: 'Líderes internacionais reúnem-se e proclamam tratados de cooperação internacional temporária.',
-    impactType: 'bonus',
-    actionEffects: {
-      countryViolenceMod: { usa: -15, germany: -10, china: -5, russia: -10 },
-      countryResistanceMod: { germany: -10, usa: -5 }
-    }
-  },
-  {
-    id: 'border_restriction_clash',
+    id: 'universal_fronteiras_blindadas',
     title: 'Fronteiras Blindadas',
-    description: 'Devido a tensões geopolíticas, vários países fecham aeroportos e erguem defesas terrestres.',
+    description: 'Uma coalizão de países opressores fecha suas fronteiras para estrangeiros, alegando segurança nacional. Missionários são expulsos.',
     impactType: 'penalty',
     actionEffects: {
-      countryResistanceMod: { egypt: 20, saudi_arabia: 15, australia: 25, germany: 10 }
+      globalFervorMod: 20,
+      countryResistanceMod: { egypt: 25, saudi_arabia: 20, russia: 15, china: 15 }
+    }
+  },
+  {
+    id: 'universal_pandemia_silenciosa',
+    title: 'Pandemia Silenciosa',
+    description: 'Um vírus altamente contagioso se espalha pelo globo. Governos impõem quarentenas. O medo coletivo abre corações para a fé.',
+    impactType: 'neutral',
+    actionEffects: {
+      countryConvertsMod: { usa: 500000, china: 2000000, india: 2000000, brazil: 300000, germany: 100000, russia: 200000 },
+      countryResistanceMod: { china: 15, russia: 10, saudi_arabia: 10 }
+    }
+  },
+  {
+    id: 'universal_terremoto_megacidade',
+    title: 'Terremoto em Megacidade',
+    description: 'Um terremoto de magnitude 7,8 atinge uma grande metrópole, causando destruição e desamparo. A busca por sentido explode.',
+    impactType: 'neutral',
+    actionEffects: {
+      globalFervorMod: 30,
+      countryConvertsMod: { japan: 500000, mexico: 800000, usa: 300000 },
+      countryViolenceMod: { japan: 15, mexico: 10 }
+    }
+  },
+  {
+    id: 'universal_tratado_desarmamento',
+    title: 'Tratado de Desarmamento Nuclear',
+    description: 'As maiores potências militares assinam um tratado histórico de redução de arsenais. O mundo respira aliviado e abre-se ao diálogo.',
+    impactType: 'bonus',
+    actionEffects: {
+      globalFaithMod: 20,
+      countryResistanceMod: { usa: -15, russia: -15, china: -10 }
+    }
+  },
+  {
+    id: 'universal_arqueologia_revolucionaria',
+    title: 'Registro Arqueológico Revolucionário',
+    description: 'Escavações na Mesopotâmia encontram tabletes de 5.000 anos que contradizem narrativas religiosas estabelecidas. O vácuo espiritual é imediato.',
+    impactType: 'neutral',
+    actionEffects: {
+      countryConvertsMod: { usa: 400000, germany: 150000, egypt: 300000, india: 500000 },
+      countryResistanceMod: { saudi_arabia: 10, russia: 8, china: 8 }
+    }
+  },
+  {
+    id: 'universal_furacao',
+    title: 'Furacão de Categorias Múltiplas',
+    description: 'Uma temporada recorde de furacões devasta o Caribe e o Golfo do México. Milhares de desabrigados clamam por respostas.',
+    impactType: 'penalty',
+    actionEffects: {
+      globalFervorMod: 40,
+      countryViolenceMod: { mexico: 25, usa: 15 },
+      countryResistanceMod: { mexico: 15, usa: 10 }
+    }
+  },
+  {
+    id: 'universal_grande_debate',
+    title: 'O Grande Debate',
+    description: 'Uma transmissão internacional reúne pensadores para discutir fé e ciência. A audiência mundial questiona suas certezas.',
+    impactType: 'neutral',
+    actionEffects: {
+      countryConvertsMod: { germany: 80000, usa: 300000, brazil: 200000 },
+      countryResistanceMod: { egypt: 10, saudi_arabia: 10, india: 8 }
+    }
+  },
+  {
+    id: 'universal_marcha_aposentados',
+    title: 'A Grande Marcha dos Aposentados',
+    description: 'Milhões de idosos protestam contra cortes de pensões em capitais europeias. A repressão policial choca o mundo.',
+    impactType: 'persecution',
+    actionEffects: {
+      globalFervorMod: 60,
+      countryConvertsMod: { germany: 60000, russia: 100000 },
+      countryResistanceMod: { germany: -12 }
+    }
+  },
+  {
+    id: 'universal_ilha_refugiados',
+    title: 'A Ilha dos Refugiados Esquecidos',
+    description: 'Uma ilha no Mediterrâneo abriga dezenas de milhares de refugiados à espera de acolhida. A comoção global abre fronteiras e corações.',
+    impactType: 'bonus',
+    actionEffects: {
+      countryConvertsMod: { germany: 100000, egypt: 200000, south_africa: 150000 },
+      countryResistanceMod: { germany: -15, egypt: -10, south_africa: -12 }
+    }
+  },
+  {
+    id: 'universal_fabrica_ocupada',
+    title: 'A Fábrica Ocupada pelos Trabalhadores',
+    description: 'Operários de uma fábrica ocupam as instalações após demissões em massa. O exército intervém. A indignação alimenta a busca espiritual.',
+    impactType: 'persecution',
+    actionEffects: {
+      globalFervorMod: 40,
+      countryConvertsMod: { india: 800000, china: 500000 },
+      countryViolenceMod: { brazil: 5, mexico: 5, south_africa: 5 }
     }
   },
 
-  // MÍSTICA (Mystic-oriented events)
+  // ── MÍSTICO (10) ─────────────────────────────────────────────────────────────
+
   {
-    id: 'mystic_miracle',
+    id: 'mystic_milagre_asturias',
     title: 'Milagre nas Astúrias',
-    description: 'Peregrinos alegam visões arrebatadoras e curas milagrosas de males crônicos. O fervor atinge picos históricos.',
+    description: 'Uma fonte termal na Europa jorra água com propriedades curativas inexplicáveis. Peregrinos de todo o continente chegam em procissão.',
     impactType: 'ecstasy',
     traitRequirement: 'Mistical',
     actionEffects: {
       globalFaithMod: 40,
       globalFervorMod: 20,
-      countryConvertsMod: { germany: 35000, usa: 150000, brazil: 1800000 }
+      countryConvertsMod: { germany: 200000, usa: 400000, brazil: 800000 }
     }
   },
   {
-    id: 'mystic_vision',
+    id: 'mystic_estatua_chora',
     title: 'Estátua que Chora no México',
-    description: 'Milhares viajam em procissão de êxtase para contemplar um efígie sagrada. Ciência falha em refutar.',
+    description: 'Milhares testemunham uma imagem sagrada derramando lágrimas de sangue. A ciência não consegue explicar. A comoção é global.',
     impactType: 'ecstasy',
     traitRequirement: 'Mistical',
     actionEffects: {
-      globalFaithMod: 30,
-      countryConvertsMod: { mexico: 1400000, usa: 300000 },
-      countryResistanceMod: { mexico: -15 }
+      globalFervorMod: 50,
+      countryConvertsMod: { mexico: 2000000, brazil: 2500000, usa: 300000 },
+      countryResistanceMod: { mexico: -10, brazil: -5, usa: -5, germany: -5, india: -5 }
+    }
+  },
+  {
+    id: 'mystic_arvore_deserto',
+    title: 'A Árvore que Floresce no Deserto',
+    description: 'No Saara, uma acácia completamente seca floresce da noite para o dia. Peregrinos acreditam ser um sinal divino inegável.',
+    impactType: 'ecstasy',
+    traitRequirement: 'Mistical',
+    actionEffects: {
+      globalFervorMod: 20,
+      countryConvertsMod: { egypt: 500000, south_africa: 200000 },
+      countryResistanceMod: { egypt: -12 }
+    }
+  },
+  {
+    id: 'mystic_cura_coletiva',
+    title: 'Cura Coletiva em Santuário',
+    description: 'Centenas de enfermos relatam curas instantâneas ao visitar um santuário misterioso. Médicos não encontram explicação.',
+    impactType: 'ecstasy',
+    traitRequirement: 'Mistical',
+    actionEffects: {
+      globalFaithMod: 50,
+      countryResistanceMod: { germany: -12, australia: -8, usa: -8 }
+    }
+  },
+  {
+    id: 'mystic_sombra_dancante',
+    title: 'A Sombra Dançante',
+    description: 'Uma sombra inexplicável dança sobre uma cidade sagrada ao pôr do sol por sete dias. Teólogos do mundo divergem sobre o significado.',
+    impactType: 'neutral',
+    actionEffects: {
+      globalFervorMod: 20,
+      countryResistanceMod: { egypt: 8, saudi_arabia: 8, india: 5 }
+    }
+  },
+  {
+    id: 'mystic_reliquia_submersa',
+    title: 'Relíquia Submersa',
+    description: 'Pescadores encontram um antigo objeto sagrado no fundo do mar. O achado vira notícia mundial. Multidões buscam respostas.',
+    impactType: 'ecstasy',
+    traitRequirement: 'Mistical',
+    actionEffects: {
+      globalFaithMod: 15,
+      countryConvertsMod: { japan: 400000, australia: 150000, usa: 300000, brazil: 500000 }
+    }
+  },
+  {
+    id: 'mystic_extase_passaros',
+    title: 'O Êxtase dos Pássaros',
+    description: 'Bandos de aves formam símbolos no céu durante uma semana inteira. Fenômeno sem explicação científica divide opiniões.',
+    impactType: 'neutral',
+    traitRequirement: 'Mistical',
+    actionEffects: {
+      globalFaithMod: 20,
+      countryResistanceMod: { germany: 8, japan: 8, australia: 5 }
+    }
+  },
+  {
+    id: 'mystic_catedral_sal',
+    title: 'A Catedral de Sal',
+    description: 'Uma mina de sal revela uma formação natural que lembra perfeitamente uma catedral gótica. Peregrinos acorrem de todo o mundo.',
+    impactType: 'ecstasy',
+    traitRequirement: 'Mistical',
+    actionEffects: {
+      globalFervorMod: 25,
+      countryConvertsMod: { russia: 500000, egypt: 300000, germany: 100000 }
+    }
+  },
+  {
+    id: 'mystic_aurora_vaticano',
+    title: 'Aurora de Sangue',
+    description: 'Durante uma tempestade solar, o céu se tinge de vermelho vivo por três noites seguidas sobre grandes cidades. Peregrinos chegam em massa.',
+    impactType: 'ecstasy',
+    traitRequirement: 'Mistical',
+    actionEffects: {
+      globalFervorMod: 30,
+      countryConvertsMod: { usa: 300000, germany: 150000, brazil: 400000, south_africa: 100000 }
+    }
+  },
+  {
+    id: 'mystic_lago_vinho',
+    title: 'O Lago que se Torna Vinho',
+    description: 'Um pequeno lago adquire cor e sabor de vinho tinto por 40 dias. Cientistas não conseguem explicar. A peregrinação é imediata.',
+    impactType: 'ecstasy',
+    traitRequirement: 'Mistical',
+    actionEffects: {
+      globalFaithMod: 40,
+      countryConvertsMod: { russia: 600000, egypt: 250000 },
+      countryResistanceMod: { russia: -10 }
     }
   },
 
-  // PROFÉTICA (Prophetic-oriented events)
+  // ── PROFÉTICO (10) ───────────────────────────────────────────────────────────
+
   {
-    id: 'prophecy_eclipse',
-    title: 'Grande Eclipse de Sangue se Alinha',
-    description: 'Como anunciado meses atrás nos panfletos proféticos, a Lua cobre o Sol perfeitamente ao meio-dia. Multidões correm para converter-se!',
+    id: 'prophecy_eclipse_sangue',
+    title: 'Grande Eclipse de Sangue',
+    description: 'Um eclipse lunar avermelhado dura o dobro do normal. O fenômeno raro foi anunciado com meses de antecedência. Conversões explodem.',
     impactType: 'prophecy',
     traitRequirement: 'Prophetic',
     actionEffects: {
       globalFaithMod: 50,
-      countryConvertsMod: { mexico: 2800000, brazil: 3500000, egypt: 800000, india: 4000000 }
+      countryConvertsMod: { mexico: 3000000, brazil: 4000000, india: 5000000, egypt: 1000000 },
+      countryResistanceMod: { egypt: -20, saudi_arabia: -20, india: -15 }
     }
   },
   {
-    id: 'prophecy_revelation',
-    title: 'Profecia Alimentar se Cumpre',
-    description: 'Secas severas anunciadas pelos profetas assolam lavouras na Ásia. Pragas confirmam o julgamento prenunciado.',
+    id: 'prophecy_quebra_safra',
+    title: 'Quebra na Safra de Trigo',
+    description: 'Após meses de estiagem, colheitas fracassam em países do leste europeu. Pragas confirmam o julgamento prenunciado pelos profetas.',
     impactType: 'prophecy',
     traitRequirement: 'Prophetic',
     actionEffects: {
-      globalFervorMod: 35,
-      countryConvertsMod: { india: 5000000, china: 2000000 },
-      countryResistanceMod: { india: -25, china: -10 }
+      globalFaithMod: 35,
+      countryConvertsMod: { russia: 2000000, egypt: 500000, india: 1000000 },
+      countryResistanceMod: { russia: -15, egypt: -10 }
+    }
+  },
+  {
+    id: 'prophecy_tres_eclipses',
+    title: 'O Eclipse das Três Luas',
+    description: 'Três eclipses em uma mesma semana, fenômeno nunca registrado. Pânico espiritual global. Os profetas foram os únicos que previram.',
+    impactType: 'prophecy',
+    traitRequirement: 'Prophetic',
+    actionEffects: {
+      globalFervorMod: 30,
+      countryConvertsMod: { brazil: 4000000, india: 5000000, usa: 600000, germany: 200000 },
+      countryResistanceMod: { egypt: 10, saudi_arabia: 10 }
+    }
+  },
+  {
+    id: 'prophecy_quebra_bolsa',
+    title: 'A Quebra da Bolsa',
+    description: 'Uma bolha financeira estoura em três continentes na mesma semana. Crise econômica súbita. O materialismo entra em colapso.',
+    impactType: 'prophecy',
+    traitRequirement: 'Prophetic',
+    actionEffects: {
+      globalFaithMod: 30,
+      countryResistanceMod: { usa: -15, germany: -12, australia: -10, japan: -12 }
+    }
+  },
+  {
+    id: 'prophecy_praga_silenciosa',
+    title: 'A Praga Silenciosa',
+    description: 'Uma doença que causa perda de voz por 40 dias ataca três capitais simultaneamente. O silêncio forçado leva populações à meditação.',
+    impactType: 'prophecy',
+    traitRequirement: 'Prophetic',
+    actionEffects: {
+      globalFervorMod: 30,
+      countryConvertsMod: { usa: 1000000, germany: 300000, china: 2000000 }
+    }
+  },
+  {
+    id: 'prophecy_rio_secou',
+    title: 'O Rio que Secou e Renasceu',
+    description: 'Um rio sagrado seca por três dias e, exatamente no quarto dia, volta a fluir com águas esverdeadas. Exatamente como foi profetizado.',
+    impactType: 'prophecy',
+    traitRequirement: 'Prophetic',
+    actionEffects: {
+      countryConvertsMod: { egypt: 1500000, saudi_arabia: 200000 },
+      countryResistanceMod: { egypt: -10, saudi_arabia: -5 }
+    }
+  },
+  {
+    id: 'prophecy_sinal_noturno',
+    title: 'O Sinal no Céu Noturno',
+    description: 'Uma aurora boreal jamais vista naquela latitude surge na noite de um solstício. Astrônomos se calam. Os profetas já haviam avisado.',
+    impactType: 'prophecy',
+    traitRequirement: 'Prophetic',
+    actionEffects: {
+      globalFaithMod: 20,
+      countryConvertsMod: { usa: 500000, russia: 600000, germany: 200000, china: 1000000 }
+    }
+  },
+  {
+    id: 'prophecy_fim_calendario',
+    title: 'O Fim do Calendário',
+    description: 'Uma reinterpretação de um calendário antigo viraliza nas redes. Multidões acreditam que o mundo se transformará — e os profetas confirmam.',
+    impactType: 'prophecy',
+    traitRequirement: 'Prophetic',
+    actionEffects: {
+      globalFervorMod: 20,
+      countryConvertsMod: { brazil: 1500000, mexico: 800000, india: 1000000 }
+    }
+  },
+  {
+    id: 'prophecy_estrela_deserto',
+    title: 'A Estrela que Caiu no Deserto',
+    description: 'Um meteoro cruza o céu e explode sobre o Saara, visível em três continentes. Nenhum astrônomo havia previsto. Os profetas, sim.',
+    impactType: 'prophecy',
+    traitRequirement: 'Prophetic',
+    actionEffects: {
+      globalFervorMod: 20,
+      countryConvertsMod: { egypt: 800000, south_africa: 400000, saudi_arabia: 150000 }
+    }
+  },
+  {
+    id: 'prophecy_ano_sem_verao',
+    title: 'O Ano sem Verão',
+    description: 'Uma erupção vulcânica lança cinzas à estratosfera. Colheitas fracassam no hemisfério norte. A fome acende o desespero espiritual.',
+    impactType: 'prophecy',
+    traitRequirement: 'Prophetic',
+    actionEffects: {
+      countryConvertsMod: { russia: 1500000, brazil: 2000000, india: 2500000, mexico: 600000 },
+      countryResistanceMod: { egypt: 10, china: 10, russia: 8 }
     }
   },
 
-  // ATIVISTA (Activist-oriented events)
+  // ── ATIVISTA (10) ────────────────────────────────────────────────────────────
+
   {
-    id: 'activist_persecution_saudi',
-    title: 'Prisões Arbitrárias em Riad',
-    description: 'O governo teocrático local encarcera e pune publicamente pregadores que advogavam pela igualdade política.',
+    id: 'activist_greve_minerios',
+    title: 'A Greve dos Minérios',
+    description: 'Trabalhadores de minas param de extrair recursos para regimes opressores. A repressão é violenta. O mundo observa.',
     impactType: 'persecution',
     traitRequirement: 'Activist',
     actionEffects: {
-      globalFervorMod: 75,
-      countryConvertsMod: { saudi_arabia: -100 },
-      countryResistanceMod: { saudi_arabia: 15 }
+      globalFervorMod: 50,
+      countryResistanceMod: { china: 15, russia: 12, saudi_arabia: 10 }
     }
   },
   {
-    id: 'activist_soup_solidarity',
-    title: 'Cozinhas da Esperança em Johannesburg',
-    description: 'Voluntários criam dezenas de refeitórios autogeridos alimentando famílias desabrigadas na África do Sul. Exemplo de ativismo civil.',
+    id: 'activist_martir_mianmar',
+    title: 'O Mártir',
+    description: 'Um jovem ativista é executado publicamente por um regime autoritário. As imagens correm o mundo. A indignação é global.',
+    impactType: 'persecution',
+    traitRequirement: 'Activist',
+    actionEffects: {
+      globalFervorMod: 80,
+      countryConvertsMod: { china: 1000000, russia: 500000, egypt: 300000 }
+    }
+  },
+  {
+    id: 'activist_cozinhas_comunitarias',
+    title: 'Cozinhas Comunitárias se Espalham',
+    description: 'Uma rede independente de cozinhas comunitárias alimenta milhões por dia em cidades pobres. O ativismo humanitário ganha força.',
     impactType: 'bonus',
     traitRequirement: 'Activist',
     actionEffects: {
-      globalFaithMod: 30,
-      countryConvertsMod: { south_africa: 1500000, brazil: 800000 },
-      countryViolenceMod: { south_africa: -25, brazil: -10 }
+      globalFaithMod: 25,
+      countryConvertsMod: { south_africa: 500000, brazil: 600000, india: 800000 },
+      countryViolenceMod: { south_africa: -20, brazil: -15, mexico: -15 }
+    }
+  },
+  {
+    id: 'activist_voto_feminino',
+    title: 'O Voto Feminino Sagrado',
+    description: 'Movimentos feministas conquistam leis históricas de igualdade de gênero em três países. A mobilização popular atinge níveis nunca vistos.',
+    impactType: 'bonus',
+    traitRequirement: 'Activist',
+    actionEffects: {
+      countryConvertsMod: { usa: 600000, germany: 200000, australia: 150000 },
+      countryResistanceMod: { germany: -10, usa: -8, australia: -8 }
+    }
+  },
+  {
+    id: 'activist_marcha_sem_teto',
+    title: 'A Marcha dos Sem-Teto',
+    description: 'Pessoas em situação de rua ocupam terras improdutivas em 12 cidades. Governos reagem com força bruta. O fervor dos oprimidos explode.',
+    impactType: 'persecution',
+    traitRequirement: 'Activist',
+    actionEffects: {
+      globalFervorMod: 60,
+      countryConvertsMod: { south_africa: 400000, brazil: 500000, mexico: 400000 },
+      countryViolenceMod: { brazil: 10, mexico: 10, south_africa: 10 }
+    }
+  },
+  {
+    id: 'activist_lei_anticorrupcao',
+    title: 'Lei Anticorrupção Histórica',
+    description: 'Parlamentos de quatro países aprovam uma lei rígida contra corrupção, inspirada em princípios de justiça social. A esperança renova a fé.',
+    impactType: 'bonus',
+    traitRequirement: 'Activist',
+    actionEffects: {
+      countryConvertsMod: { usa: 300000, germany: 100000, brazil: 200000, south_africa: 100000 },
+      countryResistanceMod: { usa: -15, germany: -12, australia: -10 }
+    }
+  },
+  {
+    id: 'activist_crise_saneamento',
+    title: 'Crise no Saneamento Básico',
+    description: 'Surtos de cólera atingem cidades na África subsaariana. Governos locais colapsam. A urgência humanitária convoca ativistas de todo o mundo.',
+    impactType: 'penalty',
+    traitRequirement: 'Activist',
+    actionEffects: {
+      globalFervorMod: 30,
+      countryResistanceMod: { south_africa: 20, egypt: 15 }
+    }
+  },
+  {
+    id: 'activist_pacto_aguas',
+    title: 'O Pacto das Águas',
+    description: 'Comunidades ribeirinhas organizam-se para proteger nascentes. Recebem apoio internacional e viram símbolo de resistência pacífica.',
+    impactType: 'bonus',
+    traitRequirement: 'Activist',
+    actionEffects: {
+      countryConvertsMod: { brazil: 1500000 },
+      countryViolenceMod: { brazil: -5 }
+    }
+  },
+  {
+    id: 'activist_greve_geral',
+    title: 'Greve Geral no Leste Asiático',
+    description: 'Milhões de trabalhadores param por 15 dias. A polícia prende líderes sindicais. A repressão alimenta o fervor dos que buscam justiça.',
+    impactType: 'persecution',
+    traitRequirement: 'Activist',
+    actionEffects: {
+      globalFervorMod: 45,
+      countryConvertsMod: { japan: 400000, china: 600000 }
+    }
+  },
+  {
+    id: 'activist_tratado_comercio',
+    title: 'Tratado de Livre Comércio Popular',
+    description: 'Um bloco do sul global assina acordos que reduzem tarifas para produtos essenciais. A dignidade econômica fortalece a fé comunitária.',
+    impactType: 'bonus',
+    traitRequirement: 'Activist',
+    actionEffects: {
+      globalFaithMod: 15,
+      countryConvertsMod: { brazil: 500000, south_africa: 200000, india: 400000, mexico: 300000 }
     }
   },
 
-  // SINCRETISTA (Syncretist-oriented events)
+  // ── SINCRETISTA (10) ─────────────────────────────────────────────────────────
+
   {
-    id: 'syncretist_holiday_fusion',
+    id: 'sync_mescla_solsticio',
     title: 'Mescla do Solstício',
-    description: 'Líderes de comunidades e igrejas antigas nos EUA concordam em compartilhar celebrações em um rito conjunto.',
+    description: 'Uma celebração popular funde o solstício de inverno com rituais indígenas e elementos de várias tradições. Adotada em dezenas de países.',
     impactType: 'bonus',
     traitRequirement: 'Syncretist',
     actionEffects: {
-      globalFaithMod: 25,
-      countryConvertsMod: { usa: 4500000, germany: 800000 },
-      countryResistanceMod: { usa: -15, germany: -10 }
+      countryConvertsMod: { usa: 1000000, germany: 300000, brazil: 1000000, india: 1500000 },
+      countryResistanceMod: { usa: -5, germany: -8, brazil: -5, india: -5, australia: -5 }
     }
   },
   {
-    id: 'syncretist_temple_coexistence',
-    title: 'Templos Compartilhados em Nova Déli',
-    description: 'Um santuário hindu milenar abre um altar ecumênico para acomodar orações da nossa nova fé.',
+    id: 'sync_alianca_teologos',
+    title: 'A Aliança dos Teólogos',
+    description: 'Líderes de cinco tradições espirituais assinam um pacto de cooperação inter-religiosa. O ecumenismo avança em escala histórica.',
     impactType: 'bonus',
     traitRequirement: 'Syncretist',
     actionEffects: {
-      globalFaithMod: 30,
-      countryConvertsMod: { india: 11000000 },
-      countryResistanceMod: { india: -20 }
+      globalFaithMod: 20,
+      countryResistanceMod: { germany: -20, usa: -15, india: -15, brazil: -12, australia: -15 }
+    }
+  },
+  {
+    id: 'sync_museu_fes',
+    title: 'O Museu das Fés',
+    description: 'Um grande museu inter-religioso é inaugurado na Europa, com exposições permanentes de diversas tradições. Curiosidade espiritual aumenta.',
+    impactType: 'bonus',
+    traitRequirement: 'Syncretist',
+    actionEffects: {
+      countryConvertsMod: { germany: 300000, russia: 300000, usa: 200000 },
+      countryResistanceMod: { germany: -10, usa: -5, australia: -5 }
+    }
+  },
+  {
+    id: 'sync_festival_luz',
+    title: 'O Festival da Luz Mista',
+    description: 'Um festival noturno mistura símbolos de diferentes crenças em 12 países. A adesão é massiva, mas conservadores protestam vigorosamente.',
+    impactType: 'neutral',
+    traitRequirement: 'Syncretist',
+    actionEffects: {
+      countryConvertsMod: { usa: 400000, germany: 150000, japan: 200000, brazil: 500000 },
+      countryResistanceMod: { saudi_arabia: 8, egypt: 8, russia: 8 }
+    }
+  },
+  {
+    id: 'sync_livro_traducoes',
+    title: 'O Livro das Mil Traduções',
+    description: 'Editoras independentes traduzem textos sagrados antigos para centenas de línguas. O conhecimento espiritual torna-se acessível a todos.',
+    impactType: 'bonus',
+    traitRequirement: 'Syncretist',
+    actionEffects: {
+      globalFaithMod: 20,
+      countryConvertsMod: { egypt: 300000, south_africa: 200000, australia: 100000, mexico: 300000 }
+    }
+  },
+  {
+    id: 'sync_tregua_templos',
+    title: 'A Trégua dos Templos',
+    description: 'Um acordo histórico permite que diferentes grupos espirituais compartilhem o mesmo complexo de templos em cidade sagrada. Paz rara.',
+    impactType: 'neutral',
+    traitRequirement: 'Syncretist',
+    actionEffects: {
+      globalFaithMod: 15,
+      countryViolenceMod: { egypt: -20, saudi_arabia: -15 }
+    }
+  },
+  {
+    id: 'sync_sincretismo_pop',
+    title: 'Sincretismo Pop',
+    description: 'Artistas mundialmente famosos incorporam símbolos de várias tradições espirituais em shows e videoclipes. Jovens aderem em massa.',
+    impactType: 'bonus',
+    traitRequirement: 'Syncretist',
+    actionEffects: {
+      globalFervorMod: 10,
+      countryConvertsMod: { usa: 800000, brazil: 1000000, india: 1500000, germany: 200000 }
+    }
+  },
+  {
+    id: 'sync_templo_subterraneo',
+    title: 'O Templo Subterrâneo',
+    description: 'Escavações encontram um templo com afrescos de três tradições espirituais antigas convivendo em harmonia. A história reescreve o presente.',
+    impactType: 'bonus',
+    traitRequirement: 'Syncretist',
+    actionEffects: {
+      globalFaithMod: 20,
+      countryResistanceMod: { egypt: -15, saudi_arabia: -10, germany: -8 }
+    }
+  },
+  {
+    id: 'sync_casamento_real',
+    title: 'O Casamento Real',
+    description: 'O herdeiro de um trono europeu casa-se com uma plebeia de tradição distinta. O evento desafia conservadores e emociona o mundo.',
+    impactType: 'neutral',
+    traitRequirement: 'Syncretist',
+    actionEffects: {
+      countryConvertsMod: { usa: 300000, germany: 100000, australia: 100000, india: 400000 },
+      countryViolenceMod: { saudi_arabia: 5, russia: 5, egypt: 5 }
+    }
+  },
+  {
+    id: 'sync_rede_dialogo',
+    title: 'Rede de Diálogo Aberto',
+    description: 'Uma rede de TV independente lança um programa que promove debates respeitosos entre visões de mundo distintas. O diálogo abre mentes.',
+    impactType: 'bonus',
+    traitRequirement: 'Syncretist',
+    actionEffects: {
+      globalFaithMod: 20,
+      countryResistanceMod: { germany: -12, usa: -10, australia: -10, japan: -10 }
     }
   }
+
 ];
