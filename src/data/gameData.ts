@@ -87,7 +87,7 @@ export const INITIAL_COUNTRIES: Country[] = [
     name: 'Brasil',
     population: 214000000,
     converts: 0,
-    resistance: 10,
+    resistance: 25,
     violence: 60,
     leaderInfiltration: 0,
     leaderName: 'Presidente Silva',

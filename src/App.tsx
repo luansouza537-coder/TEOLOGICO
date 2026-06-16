@@ -264,7 +264,7 @@ export default function App() {
             cyclesPresent += 1;
 
             // Base growth compound rate per cycle
-            let growthFactor = 0.007;
+            let growthFactor = 0.002;
 
             // OBSTÁCULO 1 — BARREIRAS LINGUÍSTICAS E CULTURAIS
             const linguisticLen = (getDoc('doc_tradition') === 'B' || getDoc('doc_education') === 'A') ? 10 : 15;
@@ -549,10 +549,11 @@ export default function App() {
             if (target.id === 'egypt' && !hasBorderSantiago && !egyptLeaderConverted) allowed = false;
             if (target.id === 'saudi_arabia' && !hasBorderSantiago && !egyptLeaderConverted) allowed = false;
             
-            if (allowed) {
+            // Dispersal only seeds countries where player has already sent at least 1 missionary
+            if (allowed && target.missionariesSent >= 1) {
               const targetIdx = updatedCountries.findIndex((c) => c.id === target.id);
               if (targetIdx !== -1) {
-                updatedCountries[targetIdx] = { ...updatedCountries[targetIdx], converts: 100 };
+                updatedCountries[targetIdx] = { ...updatedCountries[targetIdx], converts: 10 };
               }
               prev.logs.unshift(`Dispersão: Missionários que cruzaram de ${sourceId.toUpperCase()} semearam os primeiros cultos em ${target.name}!`);
             }
