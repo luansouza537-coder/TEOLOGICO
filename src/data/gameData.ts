@@ -20,7 +20,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     specialTraitDesc: 'Canais de mídia de massa dão +30% de converts por pregação, mas democracias vigiam o ativismo agressivo.',
     coordinates: { x: 18, y: 35 },
     missionariesSent: 0,
-    templeLevel: 0
+    templeLevel: 0,
+    cyclesPresent: 1,
+    lastConflictCycle: -99,
+    localReligionStrength: 15
   },
   {
     id: 'china',
@@ -36,7 +39,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     specialTraitDesc: 'Muito difícil penetrar no ciberespaço. Ações normais custam +50% de Fé, porém o fervor ganho em oposição é duplicado (+100%).',
     coordinates: { x: 82, y: 38 },
     missionariesSent: 0,
-    templeLevel: 0
+    templeLevel: 0,
+    cyclesPresent: 0,
+    lastConflictCycle: -99,
+    localReligionStrength: 30
   },
   {
     id: 'india',
@@ -52,7 +58,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     specialTraitDesc: 'Prontidão para fés harmônicas. Seitas Sincretistas convertem 50% mais rápido, enquanto caminhos Místicos enfrentam desconfiança sectária.',
     coordinates: { x: 73, y: 48 },
     missionariesSent: 0,
-    templeLevel: 0
+    templeLevel: 0,
+    cyclesPresent: 0,
+    lastConflictCycle: -99,
+    localReligionStrength: 70
   },
   {
     id: 'germany',
@@ -68,7 +77,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     specialTraitDesc: 'Dificuldade em engajar multidões com fé pura. Resistência cresce 15% mais rápido contra rituais exagerados.',
     coordinates: { x: 50, y: 25 },
     missionariesSent: 0,
-    templeLevel: 0
+    templeLevel: 0,
+    cyclesPresent: 0,
+    lastConflictCycle: -99,
+    localReligionStrength: 10
   },
   {
     id: 'brazil',
@@ -84,7 +96,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     specialTraitDesc: 'O povo é profundamente espiritual. Conversão flui 40% mais rápido de forma orgânica, mas a alta criminalidade exige pacificação constante.',
     coordinates: { x: 33, y: 72 },
     missionariesSent: 0,
-    templeLevel: 0
+    templeLevel: 0,
+    cyclesPresent: 0,
+    lastConflictCycle: -99,
+    localReligionStrength: 20
   },
   {
     id: 'russia',
@@ -100,7 +115,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     specialTraitDesc: 'Resistência severa a ideias de fora. No entanto, sua rígida hierarquia política torna as infiltrações de líderes surpreendentemente fortes (+25% efeito).',
     coordinates: { x: 68, y: 22 },
     missionariesSent: 0,
-    templeLevel: 0
+    templeLevel: 0,
+    cyclesPresent: 0,
+    lastConflictCycle: -99,
+    localReligionStrength: 60
   },
   {
     id: 'egypt',
@@ -116,7 +134,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     specialTraitDesc: 'Forte barreira militar e geopolítica. Reduz à metade a dispersão automática e a contaminação passiva por fronteiras terrestres.',
     coordinates: { x: 54, y: 50 },
     missionariesSent: 0,
-    templeLevel: 0
+    templeLevel: 0,
+    cyclesPresent: 0,
+    lastConflictCycle: -99,
+    localReligionStrength: 75
   },
   {
     id: 'south_africa',
@@ -132,7 +153,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     specialTraitDesc: 'Fome de mudança social. Ações humanitárias e dogmas de caridade geram o triplo de impacto de conversão.',
     coordinates: { x: 56, y: 80 },
     missionariesSent: 0,
-    templeLevel: 0
+    templeLevel: 0,
+    cyclesPresent: 0,
+    lastConflictCycle: -99,
+    localReligionStrength: 20
   },
   {
     id: 'japan',
@@ -148,7 +172,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     specialTraitDesc: 'Cultura pragmática com violência quase zero. Exige 40% mais pontos de Fé para conversões, mas infiltrações políticas são facilitadas por ser uma burocracia focada.',
     coordinates: { x: 92, y: 34 },
     missionariesSent: 0,
-    templeLevel: 0
+    templeLevel: 0,
+    cyclesPresent: 0,
+    lastConflictCycle: -99,
+    localReligionStrength: 50
   },
   {
     id: 'mexico',
@@ -164,7 +191,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     specialTraitDesc: 'Alta violência e medo. Pregadores que trouxerem paz ganham atenção imediata das comunidades locais.',
     coordinates: { x: 14, y: 50 },
     missionariesSent: 0,
-    templeLevel: 0
+    templeLevel: 0,
+    cyclesPresent: 0,
+    lastConflictCycle: -99,
+    localReligionStrength: 25
   },
   {
     id: 'saudi_arabia',
@@ -180,7 +210,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     specialTraitDesc: 'Leis teocráticas impenetráveis. Missionários estrangeiros são banidos, gerando +150% de Fervor quando descobertos, mas a conversão base é de extrema dificuldade.',
     coordinates: { x: 63, y: 48 },
     missionariesSent: 0,
-    templeLevel: 0
+    templeLevel: 0,
+    cyclesPresent: 0,
+    lastConflictCycle: -99,
+    localReligionStrength: 90
   },
   {
     id: 'australia',
@@ -196,7 +229,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     specialTraitDesc: 'Fronteiras insulares. Totalmente imune à conversão passiva internacional aérea/marítima. Deve ser ativamente ativada via missionário.',
     coordinates: { x: 88, y: 82 },
     missionariesSent: 0,
-    templeLevel: 0
+    templeLevel: 0,
+    cyclesPresent: 0,
+    lastConflictCycle: -99,
+    localReligionStrength: 5
   }
 ];
 

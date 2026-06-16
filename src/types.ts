@@ -22,6 +22,9 @@ export interface Country {
   coordinates: { x: number; y: number }; // for map visual rendering
   missionariesSent: number;
   templeLevel: number; // 0 = none, 1-4 = temple tier
+  cyclesPresent: number; // cycles with at least 1 convert (for linguistic barrier)
+  lastConflictCycle: number; // last cycle a group conflict fired in this country
+  localReligionStrength: number; // 0-100: strength of competing local religion/ideology
 }
 
 export interface Dogma {

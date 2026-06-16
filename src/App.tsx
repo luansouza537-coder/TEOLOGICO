@@ -27,6 +27,14 @@ const TEMPLE_COSTS = [
   { faith: 160, fervor: 55 },
 ];
 
+// Tradition compatibility: trait × regime growth modifier
+const TRADITION_MODIFIER: Record<string, Record<string, number>> = {
+  Mistical:   { teocracia: 0.6, opressor: 0.8, liberal: 1.1, vibrante: 1.2, estavel: 0.9, democracia: 1.0, autoritario: 0.9 },
+  Prophetic:  { teocracia: 0.8, opressor: 0.7, liberal: 0.9, vibrante: 1.1, estavel: 0.7, democracia: 0.95, autoritario: 0.85 },
+  Activist:   { teocracia: 0.4, opressor: 1.2, liberal: 0.8, vibrante: 1.3, estavel: 0.6, democracia: 0.85, autoritario: 1.1 },
+  Syncretist: { teocracia: 0.9, opressor: 0.9, liberal: 1.3, vibrante: 1.2, estavel: 1.1, democracia: 1.2, autoritario: 0.95 },
+};
+
 const TEMPLE_MILESTONE_MESSAGES: Record<number, string> = {
   3:  'Os alicerces do Sagrado se firmam no mundo.',
   6:  'Seis Pilares da Fé guardam os continentes.',
@@ -47,6 +55,9 @@ export default function App() {
             ...c,
             missionariesSent: c.missionariesSent ?? 0,
             templeLevel: c.templeLevel ?? 0,
+            cyclesPresent: c.cyclesPresent ?? 0,
+            lastConflictCycle: c.lastConflictCycle ?? -99,
+            localReligionStrength: c.localReligionStrength ?? 0,
           }));
         }
         return parsed;
@@ -240,15 +251,33 @@ export default function App() {
           let violence = c.violence;
           let leaderInfiltration = c.leaderInfiltration;
 
+          let cyclesPresent = c.cyclesPresent ?? 0;
+          let lastConflictCycle = c.lastConflictCycle ?? -99;
+
           if (converts > 0) {
+            cyclesPresent += 1;
+
             // Base growth compound rate per cycle
             let growthFactor = 0.007;
+
+            // OBSTÁCULO 1 — BARREIRAS LINGUÍSTICAS E CULTURAIS
+            // Nos primeiros 15 ciclos de presença a religião é "estrangeira"
+            if (cyclesPresent < 15) {
+              const barrierStrength = prev.religionTrait === 'Syncretist' ? 0.25 : 0.5;
+              const barrier = Math.max(0, (15 - cyclesPresent) / 15) * barrierStrength;
+              growthFactor *= (1 - barrier);
+            }
+
+            // OBSTÁCULO 2 — APEGO ÀS TRADIÇÕES LOCAIS
+            // Cada combinação traço × regime tem compatibilidade diferente
+            const traditionMod = TRADITION_MODIFIER[prev.religionTrait]?.[c.regimeType] ?? 1.0;
+            growthFactor *= traditionMod;
 
             // Apply religion core trait influence
             if (prev.religionTrait === 'Syncretist') {
               // Slower globally but accepted in open societies
               if (['liberal', 'estavel', 'democracia'].includes(c.regimeType)) {
-                growthFactor *= 0.78; // 0.65 * 1.2 ≈ slight boost in democracies vs oppressive
+                growthFactor *= 0.78;
               } else {
                 growthFactor *= 0.65;
               }
@@ -318,6 +347,30 @@ export default function App() {
             const apostasyLost = Math.floor(converts * apostasyRate);
             converts = Math.max(0, converts - apostasyLost);
 
+            // OBSTÁCULO 3 — NACIONALISMO RELIGIOSO
+            // Religião/ideologia local remove fiéis ativamente; agrava acima de 30% de conversão
+            if (!isLeaderConverted(c.id)) {
+              const localStrength = c.localReligionStrength ?? 0;
+              let nationalismRate = (localStrength / 100) * 0.003;
+              const convertPctNat = (converts / pop) * 100;
+              if (convertPctNat > 30) nationalismRate *= 1.6; // establishment reage à ameaça crescente
+              const nationalismLost = Math.floor(converts * nationalismRate);
+              converts = Math.max(0, converts - nationalismLost);
+            }
+
+            // OBSTÁCULO 4 — CONFLITOS ENTRE GRUPOS
+            // Alta violência + presença significativa gera conflito local esporádico
+            const convertPctConflict = (converts / pop) * 100;
+            if (violence > 50 && convertPctConflict > 15 && (prev.cycle - lastConflictCycle) > 10) {
+              const conflictChance = c.templeLevel >= 2 ? 0.04 : 0.08;
+              if (Math.random() < conflictChance) {
+                const conflictLoss = Math.floor(converts * 0.07);
+                converts = Math.max(0, converts - conflictLoss);
+                violence = Math.min(100, violence + 10);
+                lastConflictCycle = prev.cycle;
+              }
+            }
+
             // Natural passive leader conversion (very slow)
             if (leaderInfiltration < 100) {
               let leaderGrowth = 0.2; // 0.2% basic conversion speed per cycle
@@ -379,7 +432,7 @@ export default function App() {
           totalResistanceSum += resistance;
           totalViolenceSum += violence;
 
-          return { ...c, converts, resistance, violence, leaderInfiltration };
+          return { ...c, converts, resistance, violence, leaderInfiltration, cyclesPresent, lastConflictCycle };
         });
 
         // Post-map passive dogma effects
@@ -459,7 +512,7 @@ export default function App() {
         if (hasCronicasColapso) faithGained += 2;   // was +5
 
         // Maintenance cost: active missions and temples consume faith each cycle
-        const maintenanceCost = activeCountries + Math.floor(state.totalTemples * 0.5);
+        const maintenanceCost = activeCountries + Math.floor(prev.totalTemples * 0.5);
         faithGained = Math.max(0, faithGained - maintenanceCost);
         // Temple global faith/fervor bonuses (reduced to prevent runaway accumulation)
         updatedCountries.forEach((c) => {
@@ -747,9 +800,9 @@ export default function App() {
     // Fresh countries initialization (giving focus to USA first)
     const presetCountries = INITIAL_COUNTRIES.map((c) => {
       if (c.id === 'usa') {
-        return { ...c, converts: 120, leaderInfiltration: 5, resistance: 15, violence: 45, missionariesSent: 0, templeLevel: 0 };
+        return { ...c, converts: 120, leaderInfiltration: 5, resistance: 15, violence: 45, missionariesSent: 0, templeLevel: 0, cyclesPresent: 1, lastConflictCycle: -99 };
       }
-      return { ...c, converts: 0, leaderInfiltration: 0, missionariesSent: 0, templeLevel: 0 };
+      return { ...c, converts: 0, leaderInfiltration: 0, missionariesSent: 0, templeLevel: 0, cyclesPresent: 0, lastConflictCycle: -99 };
     });
 
     setState({
@@ -796,7 +849,7 @@ export default function App() {
       gameSpeed: 1,
       selectedCountryId: 'usa',
       dogmas: INITIAL_DOGMAS.map(d => ({ ...d, purchased: false })),
-      countries: INITIAL_COUNTRIES.map(c => ({ ...c, converts: c.id === 'usa' ? 120 : 0, leaderInfiltration: c.id === 'usa' ? 5 : 0, missionariesSent: 0, templeLevel: 0 })),
+      countries: INITIAL_COUNTRIES.map(c => ({ ...c, converts: c.id === 'usa' ? 120 : 0, leaderInfiltration: c.id === 'usa' ? 5 : 0, missionariesSent: 0, templeLevel: 0, cyclesPresent: c.id === 'usa' ? 1 : 0, lastConflictCycle: -99 })),
       logs: ['Espaço cósmico silencioso. Inicie seu Credo para ver o desenrolar da fé.'],
       eventActive: null,
       rivalProgress: 0,
