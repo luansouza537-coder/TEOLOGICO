@@ -1253,104 +1253,117 @@ export default function App() {
   };
 
   // Action callback 3: Infiltrate Country Leader
+  // Leader conversion is a 4-stage process requiring religion infrastructure + high costs.
+  const LEADER_STAGES = [
+    { label: 'Ciente',       min: 0,  max: 25,  faith: 150, fervor: 0,   convertPct: 0.15, globalTemples: 5,  cyclesPresent: 0,  templeLevel: 0 },
+    { label: 'Simpático',    min: 25, max: 50,  faith: 300, fervor: 300, convertPct: 0.30, globalTemples: 15, cyclesPresent: 10, templeLevel: 0 },
+    { label: 'Comprometido', min: 50, max: 75,  faith: 500, fervor: 500, convertPct: 0.45, globalTemples: 25, cyclesPresent: 0,  templeLevel: 1 },
+    { label: 'Convertido',   min: 75, max: 100, faith: 700, fervor: 700, convertPct: 0.60, globalTemples: 35, cyclesPresent: 0,  templeLevel: 2 },
+  ];
+  const SUPERPOWER_IDS = ['usa', 'china', 'india', 'germany'];
+  const LEADER_SUCCESS_RATES: Record<string, number[]> = {
+    opressor:    [0.45, 0.30, 0.20, 0.10],
+    autoritario: [0.65, 0.50, 0.35, 0.20],
+    teocracia:   [0.70, 0.60, 0.45, 0.30],
+    democracia:  [0.85, 0.70, 0.55, 0.40],
+    liberal:     [0.85, 0.70, 0.55, 0.40],
+    vibrante:    [0.85, 0.70, 0.55, 0.40],
+    estavel:     [0.85, 0.70, 0.55, 0.40],
+  };
+
   const infiltrateLeader = (countryId: string) => {
     const countryObj = state.countries.find((c) => c.id === countryId);
     if (!countryObj) return;
 
-    // Custo escalado por resistência e regime
-    const baseResistance = countryObj.resistance;
-    let baseFaith = Math.round(30 + Math.max(0, baseResistance - 30) * 0.8);
-    let baseFervor = Math.round(10 + Math.max(0, baseResistance - 30) * 0.3);
-    if (['opressor', 'teocracia'].includes(countryObj.regimeType)) {
-      baseFaith = Math.round(baseFaith * 1.5);
-      baseFervor = Math.round(baseFervor * 1.5);
-    }
-    // Mais barato quando já está quase convertido (> 50%)
-    if (countryObj.leaderInfiltration > 50) {
-      baseFaith = Math.round(baseFaith * 0.7);
-      baseFervor = Math.round(baseFervor * 0.7);
-    }
+    const inf = countryObj.leaderInfiltration;
+    if (inf >= 100) return;
 
-    // Rússia convertida: infiltrações globais 20% mais baratas
-    const russiaLeaderActive = state.countries.find(c => c.id === 'russia')?.leaderInfiltration >= 100;
-    if (russiaLeaderActive) { baseFaith = Math.round(baseFaith * 0.8); baseFervor = Math.round(baseFervor * 0.8); }
+    const stageIdx = LEADER_STAGES.findIndex(s => inf >= s.min && inf < s.max);
+    if (stageIdx === -1) return;
+    const stage = LEADER_STAGES[stageIdx];
 
-    // Grande Julgamento: -50% custo globalmente
+    const isSuperpower = SUPERPOWER_IDS.includes(countryId);
+    const requiredConvertPct = isSuperpower ? stage.convertPct * 2 : stage.convertPct;
+    const requiredTemples = isSuperpower ? stage.globalTemples + 8 : stage.globalTemples;
+
+    const actualConvertPct = countryObj.population > 0 ? countryObj.converts / countryObj.population : 0;
+    const meetsConverts  = actualConvertPct >= requiredConvertPct;
+    const meetsTemples   = state.totalTemples >= requiredTemples;
+    const meetsCycles    = countryObj.cyclesPresent >= stage.cyclesPresent;
+    const meetsTempleLocal = countryObj.templeLevel >= stage.templeLevel;
+
+    if (!meetsConverts || !meetsTemples || !meetsCycles || !meetsTempleLocal) return;
+
+    let baseFaith = stage.faith;
+    let baseFervor = stage.fervor;
+
+    // Dogma discounts applied after stage cost
     const hasGrandeJulgamento = state.dogmas.some(d => d.id === 'reforma_escatologica' && d.purchased);
     if (hasGrandeJulgamento) { baseFaith = Math.floor(baseFaith * 0.5); baseFervor = Math.floor(baseFervor * 0.5); }
 
-    // Vidente das Nações: -25% custo em opressores/autoritários
-    const hasVidenteNacoesActive = state.dogmas.some(d => d.id === 'vidente_nacoes' && d.purchased);
-    if (hasVidenteNacoesActive && ['opressor', 'autoritario'].includes(countryObj.regimeType)) {
+    const hasVidenteNacoes = state.dogmas.some(d => d.id === 'vidente_nacoes' && d.purchased);
+    if (hasVidenteNacoes && ['opressor', 'autoritario'].includes(countryObj.regimeType)) {
       baseFaith = Math.floor(baseFaith * 0.75);
     }
 
+    const russiaConverted = state.countries.find(c => c.id === 'russia')?.leaderInfiltration >= 100;
+    if (russiaConverted) { baseFaith = Math.round(baseFaith * 0.8); baseFervor = Math.round(baseFervor * 0.8); }
+
     if (state.faith < baseFaith || state.fervor < baseFervor) return;
 
-    // Contra-inteligência: chance de ser detectado baseada na resistência
-    const isHardRegime = ['opressor', 'teocracia'].includes(countryObj.regimeType);
-    let counterIntelChance = 0;
-    if (baseResistance > 60) counterIntelChance = 0.30;
-    else if (baseResistance > 40) counterIntelChance = 0.15;
+    // Success/failure roll
+    const successRates = LEADER_SUCCESS_RATES[countryObj.regimeType] ?? LEADER_SUCCESS_RATES['democracia'];
+    const successChance = successRates[stageIdx];
+    const roll = Math.random();
+    const isSuccess = roll < successChance;
+    const isHostile = ['opressor', 'autoritario'].includes(countryObj.regimeType);
 
-    if (Math.random() < counterIntelChance) {
-      const faithPenalty = Math.max(5, Math.floor(baseFaith * 0.3));
-      addFloatingText('DETECTADO!', countryObj.coordinates.x, countryObj.coordinates.y, 'text-red-500 font-bold font-mono', countryObj.id);
-      addFloatingText(`-${faithPenalty} Fé`, countryObj.coordinates.x, countryObj.coordinates.y + 5, 'text-red-400 font-bold font-mono', countryObj.id);
-      setState(prev => ({
-        ...prev,
-        faith: prev.faith - faithPenalty,
-        fervor: prev.fervor + (isHardRegime ? 20 : 0),
-        countries: prev.countries.map(c => c.id === countryId
-          ? { ...c, resistance: Math.min(100, c.resistance + 10) }
-          : c),
-        logs: [
-          `[CONTRA-INTELIGÊNCIA] Agentes em ${countryObj.name} detectaram a operação! Resistência sobe +10.${isHardRegime ? ' Perseguição gera +20 Fervor.' : ''}`,
-          ...prev.logs
-        ]
-      }));
-      return;
-    }
+    addFloatingText(`-${baseFaith} Fé`, countryObj.coordinates.x, countryObj.coordinates.y, 'text-red-500 font-bold font-mono', countryObj.id);
+    if (baseFervor > 0) addFloatingText(`-${baseFervor} Fervor`, countryObj.coordinates.x + 3, countryObj.coordinates.y + 3, 'text-red-400 font-bold font-mono', countryObj.id);
 
-    // Trigger visual floating text feedback on country coordinates
-    addFloatingText(`-${baseFaith} Fé`, countryObj.coordinates.x, countryObj.coordinates.y, "text-red-500 font-bold font-mono", countryObj.id);
-    addFloatingText(`-${baseFervor} Fervor`, countryObj.coordinates.x + 3, countryObj.coordinates.y + 3, "text-red-400 font-bold font-mono", countryObj.id);
-    addFloatingText("+Infiltração", countryObj.coordinates.x, countryObj.coordinates.y - 5, "text-sky-400 font-bold font-mono", countryObj.id);
-
-    setState((prev) => {
-      const country = prev.countries.find((c) => c.id === countryId);
-      if (!country) return prev;
-
-      const isLobbyActive = prev.dogmas.some((d) => d.id === 'lobby_politico' && d.purchased);
-      let infiltrationGain = 20;
-      if (isLobbyActive) infiltrationGain = 40; // Double speed due to Lobby
-
-      const updated = prev.countries.map((c) => {
-        if (c.id === countryId) {
-          const nextVal = Math.min(100, c.leaderInfiltration + infiltrationGain);
+    if (isSuccess) {
+      const isLobbyActive = state.dogmas.some((d) => d.id === 'lobby_politico' && d.purchased);
+      const gain = isLobbyActive ? 30 : 25;
+      addFloatingText('+Infiltração', countryObj.coordinates.x, countryObj.coordinates.y - 5, 'text-sky-400 font-bold font-mono', countryObj.id);
+      setState((prev) => {
+        const country = prev.countries.find((c) => c.id === countryId);
+        if (!country) return prev;
+        const updated = prev.countries.map((c) => {
+          if (c.id !== countryId) return c;
+          const nextVal = Math.min(100, c.leaderInfiltration + gain);
           return { ...c, leaderInfiltration: nextVal };
+        });
+        const leaderConverted = (updated.find(c => c.id === countryId)?.leaderInfiltration ?? 0) >= 100;
+        const messages = [...prev.logs];
+        messages.unshift(`[INFILTRAÇÃO] Estágio ${stage.label}: encontros secretos avançam no círculo interno de ${country.name}.`);
+        if (leaderConverted) {
+          playSound('success');
+          messages.unshift(`[LÍDER CONVERTIDO] ${country.leaderName} foi completamente ILUMINADO! Bônus passivo permanente ativado.`);
+        } else {
+          playSound('click');
         }
-        return c;
+        return { ...prev, faith: prev.faith - baseFaith, fervor: prev.fervor - baseFervor, countries: updated, logs: messages };
       });
-
-      const leaderConverted = (updated.find(c => c.id === countryId)?.leaderInfiltration || 0) >= 100;
-
-      playSound('click');
-      const messages = [...prev.logs];
-      messages.unshift(`[INFILTRAÇÃO] Encontros secretos convertem parte do círculo interno do governante de ${country.name}.`);
-      if (leaderConverted) {
-         playSound('success');
-         messages.unshift(`[LÍDER CONVERTIDO] ${country.leaderName} foi completamente ILUMINADO! Um bônus passivo permanente foi ativado.`);
-      }
-
-      return {
-        ...prev,
-        faith: prev.faith - baseFaith,
-        fervor: prev.fervor - baseFervor,
-        countries: updated,
-        logs: messages
-      };
-    });
+    } else {
+      // Failure: lose cost AND lose 20 infiltration progress
+      const setback = 20;
+      addFloatingText('FALHOU!', countryObj.coordinates.x, countryObj.coordinates.y - 5, 'text-orange-500 font-bold font-mono', countryObj.id);
+      setState((prev) => {
+        const country = prev.countries.find((c) => c.id === countryId);
+        if (!country) return prev;
+        const newInf = Math.max(0, country.leaderInfiltration - setback);
+        const violenceIncrease = isHostile && inf >= 50 ? 15 : 0;
+        const updated = prev.countries.map((c) => {
+          if (c.id !== countryId) return c;
+          return { ...c, leaderInfiltration: newInf, violence: Math.min(100, c.violence + violenceIncrease) };
+        });
+        const messages = [...prev.logs];
+        messages.unshift(
+          `[FALHA] Operação em ${country.name} recuou — infiltração cai de ${inf}% para ${newInf}%.${violenceIncrease > 0 ? ` Regime reage: violência +${violenceIncrease}.` : ''}`
+        );
+        return { ...prev, faith: prev.faith - baseFaith, fervor: prev.fervor - baseFervor, countries: updated, logs: messages };
+      });
+    }
   };
 
   // Action callback 4: Perform Ecstasy Ritual (Unique to Mística)

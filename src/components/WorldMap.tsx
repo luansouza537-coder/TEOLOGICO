@@ -129,16 +129,21 @@ export default function WorldMap({
     return base;
   };
 
-  const getLeaderInfiltrationCost = (c: Country) => {
-    let baseFaith = 40;
-    let baseFervor = 15;
-    if (c.id === 'japan') {
-      baseFaith -= 10; // easier as per technological ceticismo
-    }
-    if (c.id === 'russia') {
-      baseFaith -= 5;
-    }
-    return { faith: baseFaith, fervor: baseFervor };
+  const LEADER_STAGES_UI = [
+    { label: 'Ciente',       min: 0,  max: 25,  faith: 150, fervor: 0,   convertPct: 0.15, globalTemples: 5,  cyclesPresent: 0,  templeLevel: 0 },
+    { label: 'Simpático',    min: 25, max: 50,  faith: 300, fervor: 300, convertPct: 0.30, globalTemples: 15, cyclesPresent: 10, templeLevel: 0 },
+    { label: 'Comprometido', min: 50, max: 75,  faith: 500, fervor: 500, convertPct: 0.45, globalTemples: 25, cyclesPresent: 0,  templeLevel: 1 },
+    { label: 'Convertido',   min: 75, max: 100, faith: 700, fervor: 700, convertPct: 0.60, globalTemples: 35, cyclesPresent: 0,  templeLevel: 2 },
+  ];
+  const SUPERPOWER_IDS_UI = ['usa', 'china', 'india', 'germany'];
+  const SUCCESS_RATES_UI: Record<string, number[]> = {
+    opressor:    [0.45, 0.30, 0.20, 0.10],
+    autoritario: [0.65, 0.50, 0.35, 0.20],
+    teocracia:   [0.70, 0.60, 0.45, 0.30],
+    democracia:  [0.85, 0.70, 0.55, 0.40],
+    liberal:     [0.85, 0.70, 0.55, 0.40],
+    vibrante:    [0.85, 0.70, 0.55, 0.40],
+    estavel:     [0.85, 0.70, 0.55, 0.40],
   };
 
   const getEcstasyCost = () => {
@@ -404,28 +409,102 @@ export default function WorldMap({
                 );
               })()}
 
-              {/* ACTION 3: Infiltrate Leader */}
+              {/* ACTION 3: Infiltrate Leader — stage-based with prerequisites */}
               {(() => {
-                const costs = getLeaderInfiltrationCost(selectedCountry);
-                const hasResources = faith >= costs.faith && fervor >= costs.fervor;
+                const inf = selectedCountry.leaderInfiltration;
+                if (inf >= 100) {
+                  return (
+                    <div className="py-2 px-3 rounded text-xs font-bold flex items-center gap-2 bg-sky-950 border border-sky-600/40 text-sky-300">
+                      <Crown className="w-4 h-4 text-yellow-400" />
+                      <span>{selectedCountry.leaderName} — <span className="text-yellow-400">CONVERTIDO</span></span>
+                    </div>
+                  );
+                }
+
+                const stageIdx = LEADER_STAGES_UI.findIndex(s => inf >= s.min && inf < s.max);
+                const stage = LEADER_STAGES_UI[stageIdx] ?? LEADER_STAGES_UI[0];
+                const nextStage = LEADER_STAGES_UI[stageIdx + 1];
+                const isSuperpower = SUPERPOWER_IDS_UI.includes(selectedCountry.id);
+
+                const reqConvertPct = isSuperpower ? stage.convertPct * 2 : stage.convertPct;
+                const reqTemples    = isSuperpower ? stage.globalTemples + 8 : stage.globalTemples;
+                const reqCycles     = stage.cyclesPresent;
+                const reqTmplLocal  = stage.templeLevel;
+
+                const actualPct   = selectedCountry.population > 0 ? selectedCountry.converts / selectedCountry.population : 0;
+                const meetsConv   = actualPct >= reqConvertPct;
+                const meetsTmpl   = totalTemples >= reqTemples;
+                const meetsCyc    = selectedCountry.cyclesPresent >= reqCycles;
+                const meetsTmplLoc= selectedCountry.templeLevel >= reqTmplLocal;
+                const meetsAll    = meetsConv && meetsTmpl && meetsCyc && meetsTmplLoc;
+
+                const stageFaith  = stage.faith;
+                const stageFervor = stage.fervor;
+                const canAfford   = faith >= stageFaith && fervor >= stageFervor;
+                const canAct      = meetsAll && canAfford;
+
+                const rates   = SUCCESS_RATES_UI[selectedCountry.regimeType] ?? SUCCESS_RATES_UI['democracia'];
+                const successPct = Math.round((rates[stageIdx] ?? 0.5) * 100);
+                const rateColor  = successPct >= 70 ? 'text-green-400' : successPct >= 40 ? 'text-yellow-400' : 'text-red-400';
+                const isHostile  = ['opressor', 'autoritario'].includes(selectedCountry.regimeType);
+
                 return (
-                  <button
-                    onClick={() => onInfiltrateLeader(selectedCountry.id)}
-                    disabled={!hasResources || selectedCountry.converts === 0 || selectedCountry.leaderInfiltration >= 100}
-                    className={`py-2 px-3 rounded text-xs font-bold flex justify-between items-center transition-all ${
-                      hasResources && selectedCountry.converts > 0 && selectedCountry.leaderInfiltration < 100
-                        ? 'bg-sky-900 hover:bg-sky-800 text-sky-100 cursor-pointer border border-sky-500/40'
-                        : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
-                    }`}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <Crown className="w-4 h-4" /> Converter Governante
-                    </span>
-                    <span className="font-mono bg-[#171308]/20 px-1.5 py-0.5 rounded text-[9px] flex gap-1">
-                      <span>{costs.faith} Fé</span>
-                      <span>{costs.fervor} Fervor</span>
-                    </span>
-                  </button>
+                  <div className="flex flex-col gap-1.5">
+                    {/* Stage progress bar */}
+                    <div className="flex items-center justify-between text-[9px] font-mono text-[#dfcfa0]/50 mb-0.5">
+                      <span>Estágio: <span className="text-sky-400 font-bold">{stage.label}</span></span>
+                      <span>{inf.toFixed(0)}% / 100%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-sky-600 rounded-full transition-all" style={{ width: `${inf}%` }} />
+                    </div>
+
+                    {/* Requirements checklist */}
+                    <div className="bg-zinc-900/60 rounded p-2 flex flex-col gap-0.5 text-[9px] font-mono">
+                      <span className={meetsConv    ? 'text-green-400' : 'text-red-400'}>
+                        {meetsConv ? '✓' : '✗'} {Math.round(reqConvertPct * 100)}% fiéis no país ({Math.round(actualPct * 100)}% atual)
+                      </span>
+                      <span className={meetsTmpl    ? 'text-green-400' : 'text-red-400'}>
+                        {meetsTmpl ? '✓' : '✗'} {reqTemples} templos globais ({totalTemples} atual)
+                      </span>
+                      {reqCycles > 0 && (
+                        <span className={meetsCyc   ? 'text-green-400' : 'text-red-400'}>
+                          {meetsCyc ? '✓' : '✗'} {reqCycles} ciclos de presença ({selectedCountry.cyclesPresent} atual)
+                        </span>
+                      )}
+                      {reqTmplLocal > 0 && (
+                        <span className={meetsTmplLoc ? 'text-green-400' : 'text-red-400'}>
+                          {meetsTmplLoc ? '✓' : '✗'} Templo nível {reqTmplLocal} local (atual: {selectedCountry.templeLevel})
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Action button */}
+                    <button
+                      onClick={() => onInfiltrateLeader(selectedCountry.id)}
+                      disabled={!canAct}
+                      className={`py-2 px-3 rounded text-xs font-bold flex justify-between items-center transition-all ${
+                        canAct
+                          ? 'bg-sky-900 hover:bg-sky-800 text-sky-100 cursor-pointer border border-sky-500/40'
+                          : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Crown className="w-4 h-4" /> Infiltrar: {stage.label}
+                        {nextStage && <span className="text-[9px] font-normal opacity-60">→ {nextStage.label}</span>}
+                      </span>
+                      <span className="font-mono bg-[#171308]/20 px-1.5 py-0.5 rounded text-[9px] flex gap-1">
+                        <span className={faith >= stageFaith ? 'text-[#cfb53b]' : 'text-red-500'}>{stageFaith} Fé</span>
+                        {stageFervor > 0 && <span className={fervor >= stageFervor ? 'text-red-400' : 'text-red-500'}>{stageFervor} Fervor</span>}
+                      </span>
+                    </button>
+
+                    {/* Risk display */}
+                    <div className="flex justify-between text-[9px] font-mono px-0.5">
+                      <span className="text-[#dfcfa0]/40">Falha recua -20 infiltração{isHostile && inf >= 50 ? ' +15 violência' : ''}</span>
+                      <span className={`font-bold ${rateColor}`}>Sucesso: {successPct}%</span>
+                    </div>
+                  </div>
                 );
               })()}
 
