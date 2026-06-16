@@ -4,8 +4,8 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ReligionTrait, VictoryGoalType, Country, Dogma, GameEvent, GameState } from './types';
-import { INITIAL_COUNTRIES, INITIAL_DOGMAS, RANDOM_EVENTS_POOL } from './data/gameData';
+import { ReligionTrait, VictoryGoalType, Country, Dogma, GameEvent, GameState, DoctrineChoice } from './types';
+import { INITIAL_COUNTRIES, INITIAL_DOGMAS, RANDOM_EVENTS_POOL, INITIAL_DOCTRINES } from './data/gameData';
 import CreationScreen from './components/CreationScreen';
 import WorldMap from './components/WorldMap';
 import DogmasPanel from './components/DogmasPanel';
@@ -60,6 +60,7 @@ export default function App() {
             localReligionStrength: c.localReligionStrength ?? 0,
           }));
         }
+        if (!parsed.doctrines) parsed.doctrines = INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null }));
         return parsed;
       } catch (e) {
         console.error('Falha ao restaurar dados de localStorage:', e);
@@ -88,7 +89,8 @@ export default function App() {
       totalTemples: 0,
       lastEventCycle: -99,
       lastEventTimestamp: 0,
-      eventCooldowns: {}
+      eventCooldowns: {},
+      doctrines: INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null })),
     };
   });
 
@@ -225,6 +227,10 @@ export default function App() {
           return check ? check.leaderInfiltration >= 100 : false;
         };
 
+        // Doctrine choice helper
+        const getDoc = (id: string): 'A' | 'B' | null =>
+          prev.doctrines?.find(d => d.id === id)?.chosen ?? null;
+
         const usaLeaderConverted = isLeaderConverted('usa');
         const japanLeaderConverted = isLeaderConverted('japan');
         const brassilLeaderConverted = isLeaderConverted('brazil');
@@ -261,16 +267,17 @@ export default function App() {
             let growthFactor = 0.007;
 
             // OBSTÁCULO 1 — BARREIRAS LINGUÍSTICAS E CULTURAIS
-            // Nos primeiros 15 ciclos de presença a religião é "estrangeira"
-            if (cyclesPresent < 15) {
-              const barrierStrength = prev.religionTrait === 'Syncretist' ? 0.25 : 0.5;
-              const barrier = Math.max(0, (15 - cyclesPresent) / 15) * barrierStrength;
+            const linguisticLen = (getDoc('doc_tradition') === 'B' || getDoc('doc_education') === 'A') ? 10 : 15;
+            const barrierMod = getDoc('doc_culture') === 'A' ? 0.7 : getDoc('doc_culture') === 'B' ? 1.2 : getDoc('doc_cultures') === 'A' ? 0.5 : 1.0;
+            if (cyclesPresent < linguisticLen) {
+              const barrierStrength = (prev.religionTrait === 'Syncretist' ? 0.25 : 0.5) * barrierMod;
+              const barrier = Math.max(0, (linguisticLen - cyclesPresent) / linguisticLen) * barrierStrength;
               growthFactor *= (1 - barrier);
             }
 
             // OBSTÁCULO 2 — APEGO ÀS TRADIÇÕES LOCAIS
-            // Cada combinação traço × regime tem compatibilidade diferente
-            const traditionMod = TRADITION_MODIFIER[prev.religionTrait]?.[c.regimeType] ?? 1.0;
+            const traditionModRaw = TRADITION_MODIFIER[prev.religionTrait]?.[c.regimeType] ?? 1.0;
+            const traditionMod = getDoc('doc_cultures') === 'A' ? 1 + (traditionModRaw - 1) * 0.5 : traditionModRaw;
             growthFactor *= traditionMod;
 
             // FASE 2 — NUCLEAÇÃO: crescimento lento até atingir massa crítica mínima
@@ -340,6 +347,46 @@ export default function App() {
               }
             }
 
+            // DOUTRINAS — efeitos por ciclo (crescimento, resistência, liderança)
+            if (getDoc('doc_conversion') === 'A') growthFactor *= 1.08;
+            if (getDoc('doc_conversion') === 'B') growthFactor *= 0.7;
+            if (getDoc('doc_violence') === 'A') violence = Math.max(0, violence - 0.3);
+            if (getDoc('doc_violence') === 'B' && ['opressor', 'autoritario'].includes(c.regimeType)) growthFactor *= 1.15;
+            if (getDoc('doc_tradition') === 'A' && ['estavel', 'teocracia'].includes(c.regimeType)) growthFactor *= 1.05;
+            if (getDoc('doc_culture') === 'B') growthFactor *= 1.12;
+            if (getDoc('doc_destiny') === 'A' && ['liberal', 'democracia'].includes(c.regimeType)) growthFactor *= 1.10;
+            if (getDoc('doc_leadership') === 'A' && leaderInfiltration < 100) leaderInfiltration = Math.min(100, leaderInfiltration + 0.3);
+            if (getDoc('doc_gender') === 'A' && ['autoritario', 'teocracia'].includes(c.regimeType)) growthFactor *= 1.15;
+            if (getDoc('doc_gender') === 'B' && ['democracia', 'liberal', 'vibrante'].includes(c.regimeType)) growthFactor *= 1.10;
+            if (getDoc('doc_science') === 'A' && ['estavel', 'autoritario', 'teocracia'].includes(c.regimeType)) growthFactor *= 1.10;
+            if (getDoc('doc_science') === 'A' && ['liberal', 'democracia'].includes(c.regimeType)) resistance = Math.min(100, resistance + 0.1);
+            if (getDoc('doc_science') === 'B' && ['democracia', 'liberal'].includes(c.regimeType)) resistance = Math.max(0, resistance - 0.1);
+            if (getDoc('doc_afterlife') === 'B') resistance = Math.max(0, resistance - 0.1);
+            if (getDoc('doc_interfaith') === 'B') growthFactor *= 1.20;
+            if (getDoc('doc_morality') === 'A' && ['estavel', 'autoritario'].includes(c.regimeType)) growthFactor *= 1.10;
+            if (getDoc('doc_morality') === 'B' && ['vibrante', 'liberal'].includes(c.regimeType)) { growthFactor *= 1.10; resistance = Math.max(0, resistance - 0.1); }
+            if (getDoc('doc_ritual') === 'A') growthFactor *= 1.08;
+            if (getDoc('doc_ritual') === 'B') growthFactor *= 0.95;
+            if (getDoc('doc_expansion') === 'A') growthFactor *= 1.10;
+            if (getDoc('doc_expansion') === 'B') growthFactor *= c.id === 'usa' ? 1.25 : 0.80;
+            if (getDoc('doc_authority') === 'B' && leaderInfiltration < 100) leaderInfiltration = Math.min(100, leaderInfiltration + 0.5);
+            if (getDoc('doc_truth') === 'A') { growthFactor *= 1.10; resistance = Math.min(100, resistance + 0.05); }
+            if (getDoc('doc_truth') === 'B' && ['liberal', 'democracia', 'estavel'].includes(c.regimeType)) growthFactor *= 1.05;
+            if (getDoc('doc_organization') === 'A' && leaderInfiltration < 100) leaderInfiltration = Math.min(100, leaderInfiltration + 0.25);
+            if (getDoc('doc_moral_source') === 'B' && ['liberal', 'estavel', 'democracia'].includes(c.regimeType)) growthFactor *= 1.05;
+            if (getDoc('doc_gov_ideal') === 'A') {
+              if (c.regimeType === 'teocracia') growthFactor *= 1.30;
+              if (c.regimeType === 'autoritario') growthFactor *= 1.20;
+            }
+            if (getDoc('doc_gov_ideal') === 'B' && ['democracia', 'liberal', 'estavel'].includes(c.regimeType)) resistance = Math.max(0, resistance - 0.1);
+            if (getDoc('doc_family') === 'A' && ['autoritario', 'estavel'].includes(c.regimeType)) growthFactor *= 1.10;
+            if (getDoc('doc_family') === 'B' && ['vibrante', 'liberal', 'democracia'].includes(c.regimeType)) growthFactor *= 1.10;
+            if (getDoc('doc_obedience') === 'A' && leaderInfiltration < 100) leaderInfiltration = Math.min(100, leaderInfiltration + 0.4);
+            if (getDoc('doc_world') === 'B') violence = Math.max(0, violence - 0.4);
+            if (getDoc('doc_miracles') === 'A' && (prev.cycle - prev.lastEventCycle) === 1) growthFactor *= 1.20;
+            if (getDoc('doc_unity') === 'B') { resistance = Math.max(0, resistance - 0.1); growthFactor *= 1.05; }
+            if (getDoc('doc_human_nature') === 'B') violence = Math.max(0, violence - 0.2);
+
             // FASE 7 — INFLUÊNCIA GRADUAL DO LÍDER: bônus intermediários antes da conversão total
             if (leaderInfiltration >= 75) {
               // Líder simpatizante ativo: reduz resistência e violência, acelera crescimento
@@ -367,7 +414,12 @@ export default function App() {
             converts = Math.min(pop, converts + addedConverts);
 
             // APOSTASIA: fiéis abandonam a fé sob violência e resistência cultural alta
-            const apostasyRate = (violence / 100) * 0.004 + (resistance / 100) * 0.002;
+            let apostasyMult = 1.0;
+            if (getDoc('doc_salvation') === 'B') apostasyMult *= 0.5;
+            if (getDoc('doc_authority') === 'A') apostasyMult *= 0.7;
+            if (getDoc('doc_obedience') === 'B') apostasyMult *= 0.95;
+            if (getDoc('doc_unity') === 'A') apostasyMult *= 0.6;
+            const apostasyRate = ((violence / 100) * 0.004 + (resistance / 100) * 0.002) * apostasyMult;
             const apostasyLost = Math.floor(converts * apostasyRate);
             converts = Math.max(0, converts - apostasyLost);
 
@@ -480,7 +532,8 @@ export default function App() {
 
         // Neighbor passive dispersion (15% chance per cycle to seed neighbor)
         const connectedIds = updatedCountries.filter(c => c.converts >= c.population * 0.08).map(c => c.id);
-        if (connectedIds.length > 0 && Math.random() < 0.15) {
+        const dispersalChance = getDoc('doc_salvation') === 'A' ? 0.25 : 0.15;
+        if (connectedIds.length > 0 && Math.random() < dispersalChance) {
           const sourceId = connectedIds[Math.floor(Math.random() * connectedIds.length)];
           // Find candidates with 0 followers
           const candidates = updatedCountries.filter((c) => c.converts === 0);
@@ -560,6 +613,26 @@ export default function App() {
           }
         });
 
+        // DOUTRINAS — efeitos globais de Fé e Fervor
+        if (getDoc('doc_economy') === 'A') fervorGained += 5;
+        if (getDoc('doc_economy') === 'B') faithGained += 4;
+        if (getDoc('doc_charity') === 'B') faithGained += 2;
+        if (getDoc('doc_world') === 'A') fervorGained += 4;
+        if (getDoc('doc_miracles') === 'B') faithGained += 5;
+        if (getDoc('doc_conversion') === 'B') faithGained += 3;
+        if (getDoc('doc_state') === 'A') faithGained += 3;
+        if (getDoc('doc_afterlife') === 'A' && (totalResistanceSum / updatedCountries.length) > 40) fervorGained += 3;
+        if (getDoc('doc_human_nature') === 'A' && updatedCountries.some(c => c.violence > 50)) fervorGained += 3;
+
+        // Caridade Obrigatória: -0.5 violência nos 2 países mais violentos
+        if (getDoc('doc_charity') === 'A') {
+          const sorted = [...updatedCountries].sort((a, b) => b.violence - a.violence);
+          sorted.slice(0, 2).forEach(topV => {
+            const idx = updatedCountries.findIndex(x => x.id === topV.id);
+            if (idx !== -1) updatedCountries[idx] = { ...updatedCountries[idx], violence: Math.max(0, updatedCountries[idx].violence - 0.5) };
+          });
+        }
+
         if (usaLeaderConverted) faithGained = Math.floor(faithGained * 1.4);
         if (japanLeaderConverted) faithGained = Math.floor(faithGained * 1.2);
         if (russiaLeaderConverted) faithGained = Math.floor(faithGained * 1.1); // centralização aumenta Fé
@@ -605,6 +678,7 @@ export default function App() {
 
         // Syncretist coexists better with rival ideologies
         if (prev.religionTrait === 'Syncretist') rivalIncrement *= 0.7;
+        if (getDoc('doc_moral_source') === 'A') rivalIncrement *= 0.80;
         if (hasRelogioJuizo) rivalIncrement *= 0.7;
         // Prophetic L4 temple: rival slows globally per such temple
         const propheticL4Temples = updatedCountries.filter(c => prev.religionTrait === 'Prophetic' && c.templeLevel >= 4).length;
@@ -733,6 +807,7 @@ export default function App() {
           updatedLogs = updatedLogs.slice(0, 20);
         }
 
+        const fervorFloor = getDoc('doc_destiny') === 'B' ? 5 : 0;
         const nextCycle = prev.cycle + 1;
         const updatedEventCooldowns = newlyTriggeredEvent
           ? { ...prev.eventCooldowns, [newlyTriggeredEvent.id]: prev.cycle }
@@ -742,7 +817,7 @@ export default function App() {
           ...prev,
           cycle: nextCycle,
           faith: prev.faith + faithGained,
-          fervor: prev.fervor + fervorGained,
+          fervor: Math.max(fervorFloor, prev.fervor + fervorGained),
           countries: updatedCountries,
           rivalProgress: updatedRivalProgress,
           resistanceStreak: newStreak,
@@ -857,7 +932,8 @@ export default function App() {
       totalTemples: 0,
       lastEventCycle: -99,
       lastEventTimestamp: 0,
-      eventCooldowns: {}
+      eventCooldowns: {},
+      doctrines: INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null })),
     });
     playSound('success');
   };
@@ -889,7 +965,51 @@ export default function App() {
       totalTemples: 0,
       lastEventCycle: -99,
       lastEventTimestamp: 0,
-      eventCooldowns: {}
+      eventCooldowns: {},
+      doctrines: INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null })),
+    });
+  };
+
+  // Doctrine purchase callback
+  const purchaseDoctrine = (docId: string, choice: 'A' | 'B') => {
+    setState((prev) => {
+      const doc = prev.doctrines?.find(d => d.id === docId);
+      if (!doc || doc.chosen !== null) return prev;
+      const costs = { basic: { faith: 150, fervor: 30 }, intermediate: { faith: 250, fervor: 60 }, strategic: { faith: 400, fervor: 100 } };
+      const cost = costs[doc.tier];
+      if (prev.faith < cost.faith || prev.fervor < cost.fervor) return prev;
+
+      let updatedCountries = [...prev.countries];
+      if (docId === 'doc_interfaith') {
+        if (choice === 'A') updatedCountries = updatedCountries.map(c => ({ ...c, violence: Math.max(0, c.violence - 8) }));
+        if (choice === 'B') updatedCountries = updatedCountries.map(c => ({ ...c, violence: Math.min(100, c.violence + 15) }));
+      }
+      if (docId === 'doc_cultures' && choice === 'B') {
+        updatedCountries = updatedCountries.map(c => ({ ...c, resistance: Math.max(0, c.resistance - 10) }));
+      }
+      if (docId === 'doc_state' && choice === 'A') {
+        updatedCountries = updatedCountries.map(c =>
+          c.regimeType === 'democracia' ? { ...c, resistance: Math.min(100, c.resistance + 10) } : c
+        );
+      }
+      if (docId === 'doc_state' && choice === 'B') {
+        updatedCountries = updatedCountries.map(c => ({ ...c, resistance: Math.max(0, c.resistance - 5) }));
+      }
+      if (docId === 'doc_truth' && choice === 'B') {
+        updatedCountries = updatedCountries.map(c => ({ ...c, resistance: Math.max(0, c.resistance - 5) }));
+      }
+
+      const updatedDoctrines = prev.doctrines.map(d => d.id === docId ? { ...d, chosen: choice } : d);
+      const chosenLabel = choice === 'A' ? doc.optionA.label : doc.optionB.label;
+      playSound('success');
+      return {
+        ...prev,
+        faith: prev.faith - cost.faith,
+        fervor: prev.fervor - cost.fervor,
+        doctrines: updatedDoctrines,
+        countries: updatedCountries,
+        logs: [`[DOUTRINA] "${doc.topic}" definida: ${chosenLabel} — um pilar do credo firmado para sempre.`, ...prev.logs]
+      };
     });
   };
 
@@ -902,6 +1022,12 @@ export default function App() {
     if (countryObj.id === 'japan') cost += 15;
     if (countryObj.id === 'china') cost += 20;
     if (countryObj.id === 'saudi_arabia') cost += 25;
+    // Doctrine modifiers on missionary cost
+    if (state.doctrines?.find(d => d.id === 'doc_ritual')?.chosen === 'A') cost += 10;
+    if (state.doctrines?.find(d => d.id === 'doc_ritual')?.chosen === 'B') cost = Math.max(5, cost - 10);
+    if (state.doctrines?.find(d => d.id === 'doc_organization')?.chosen === 'B') cost = Math.round(cost * 0.9);
+    if (state.doctrines?.find(d => d.id === 'doc_leadership')?.chosen === 'B') cost = Math.round(cost * 0.85);
+    if (state.doctrines?.find(d => d.id === 'doc_education')?.chosen === 'B') cost = Math.max(5, cost - 10);
 
     if (state.faith < cost) return;
 
@@ -1700,6 +1826,72 @@ export default function App() {
                     </div>
                   </div>
                 )}
+
+                {/* Posições Doutrinárias */}
+                {(() => {
+                  const doctrines = state.doctrines ?? [];
+                  const costMap = { basic: { faith: 150, fervor: 30 }, intermediate: { faith: 250, fervor: 60 }, strategic: { faith: 400, fervor: 100 } };
+                  const tierLabel = { basic: 'Básica', intermediate: 'Intermediária', strategic: 'Estratégica' };
+                  const tierBg = { basic: 'border-amber-700/25 bg-amber-950/10', intermediate: 'border-orange-700/25 bg-orange-950/10', strategic: 'border-red-800/25 bg-red-950/10' };
+                  const tierTag = { basic: 'text-amber-400 border-amber-700/40', intermediate: 'text-orange-400 border-orange-700/40', strategic: 'text-red-400 border-red-700/40' };
+                  const universalDocs = doctrines.filter(d => d.section === 'universal');
+                  const socialDocs = doctrines.filter(d => d.section === 'social');
+
+                  const renderDoc = (doc: DoctrineChoice) => {
+                    const cost = costMap[doc.tier];
+                    const canAfford = state.faith >= cost.faith && state.fervor >= cost.fervor;
+                    const chosen = doc.chosen;
+                    return (
+                      <div key={doc.id} className={`rounded-lg border p-3 ${chosen ? 'border-[#cfb53b]/35 bg-[#1a1508]' : tierBg[doc.tier]}`}>
+                        <div className="flex justify-between items-start mb-2 gap-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-[#cfb53b] font-serif leading-tight">{doc.topic}</span>
+                          {chosen
+                            ? <span className="text-[8px] font-mono text-[#cfb53b]/50 uppercase shrink-0">Definida</span>
+                            : <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded border shrink-0 ${tierTag[doc.tier]}`}>{tierLabel[doc.tier]} · {cost.faith}Fé {cost.fervor}Ferv</span>
+                          }
+                        </div>
+                        {chosen ? (
+                          <div className="text-[9px] px-2 py-1.5 bg-[#cfb53b]/10 border border-[#cfb53b]/25 rounded">
+                            <span className="font-bold text-[#cfb53b]">✓ {chosen === 'A' ? doc.optionA.label : doc.optionB.label}</span>
+                            <span className="block text-[#dfcfa0]/50 mt-0.5">{chosen === 'A' ? doc.optionA.effectDesc : doc.optionB.effectDesc}</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-1">
+                            {(['A', 'B'] as const).map(opt => {
+                              const option = opt === 'A' ? doc.optionA : doc.optionB;
+                              return (
+                                <button key={opt} onClick={() => purchaseDoctrine(doc.id, opt)} disabled={!canAfford}
+                                  className={`text-left px-2 py-1.5 rounded border text-[9px] transition-all ${canAfford ? 'border-[#cfb53b]/25 hover:border-[#cfb53b]/60 hover:bg-[#cfb53b]/8 text-[#dfcfa0]/80 cursor-pointer' : 'border-zinc-700/25 text-zinc-500 cursor-not-allowed'}`}>
+                                  <span className="font-bold text-[10px] text-[#cfb53b]/80">{option.label}</span>
+                                  <span className="block text-[#dfcfa0]/45 mt-0.5 leading-relaxed">{option.effectDesc}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  };
+
+                  const chosen = doctrines.filter(d => d.chosen !== null).length;
+                  return (
+                    <div className="bg-[#171308] border border-[#cfb53b]/15 rounded-lg p-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-[#cfb53b] font-serif">⚖️ Posições Doutrinárias</h4>
+                        <span className="text-[9px] font-mono text-[#dfcfa0]/40">{chosen} / {doctrines.length} definidas</span>
+                      </div>
+                      <p className="text-[10px] text-[#dfcfa0]/45 mb-4 leading-relaxed">Cada decisão é <strong className="text-[#cfb53b]/70">permanente e irreversível</strong>. Define a identidade teológica do seu credo para sempre.</p>
+                      <p className="text-[9px] font-mono uppercase text-[#dfcfa0]/35 tracking-widest mb-2">Posições Universais (1–20)</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+                        {universalDocs.map(renderDoc)}
+                      </div>
+                      <p className="text-[9px] font-mono uppercase text-[#dfcfa0]/35 tracking-widest mb-2">Estrutura Social (21–30)</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {socialDocs.map(renderDoc)}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             );
           })()}

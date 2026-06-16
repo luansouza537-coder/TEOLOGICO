@@ -53,6 +53,16 @@ export interface GameEvent {
   };
 }
 
+export interface DoctrineChoice {
+  id: string;
+  topic: string;
+  section: 'universal' | 'social';
+  tier: 'basic' | 'intermediate' | 'strategic';
+  optionA: { label: string; effectDesc: string; };
+  optionB: { label: string; effectDesc: string; };
+  chosen: 'A' | 'B' | null;
+}
+
 export interface GameState {
   started: boolean;
   religionName: string;
@@ -77,4 +87,5 @@ export interface GameState {
   lastEventCycle: number; // cycle number when the last random event was triggered
   lastEventTimestamp: number; // ms timestamp of the last event (for 2-min global cooldown)
   eventCooldowns: { [eventId: string]: number }; // cycle number each event last fired (individual 25-cycle cooldown)
+  doctrines: DoctrineChoice[];
 }

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Country, Dogma, GameEvent } from '../types';
+import { Country, Dogma, GameEvent, DoctrineChoice } from '../types';
 
 export const INITIAL_COUNTRIES: Country[] = [
   {
@@ -1222,4 +1222,128 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     }
   }
 
+];
+
+export const INITIAL_DOCTRINES: DoctrineChoice[] = [
+  // ── UNIVERSAIS 1–20 ──
+  { id: 'doc_truth', topic: 'Verdade Religiosa', section: 'universal', tier: 'intermediate', chosen: null,
+    optionA: { label: 'Exclusivismo', effectDesc: '+10% crescimento global, leve aumento de resistência em países abertos' },
+    optionB: { label: 'Pluralismo', effectDesc: '−5 resistência em todos os países (imediato), +5% crescimento em regimes liberais' } },
+
+  { id: 'doc_conversion', topic: 'Conversão', section: 'universal', tier: 'strategic', chosen: null,
+    optionA: { label: 'Proselitismo Ativo', effectDesc: '+8% crescimento global permanente' },
+    optionB: { label: 'Não-Proselitismo', effectDesc: '−30% crescimento, mas +3 Fé/ciclo passivo' } },
+
+  { id: 'doc_violence', topic: 'Uso da Violência', section: 'universal', tier: 'intermediate', chosen: null,
+    optionA: { label: 'Pacifismo', effectDesc: '−0.3 violência/ciclo em todos os países' },
+    optionB: { label: 'Guerra Justa', effectDesc: '+15% crescimento em regimes opressores e autoritários' } },
+
+  { id: 'doc_organization', topic: 'Organização Religiosa', section: 'universal', tier: 'strategic', chosen: null,
+    optionA: { label: 'Hierarquia Forte', effectDesc: '+0.25 infiltração de líder/ciclo extra em todos os países' },
+    optionB: { label: 'Autonomia Local', effectDesc: '−10% custo de missionários' } },
+
+  { id: 'doc_state', topic: 'Relação com o Estado', section: 'universal', tier: 'strategic', chosen: null,
+    optionA: { label: 'Religião Estatal', effectDesc: '+3 Fé/ciclo; +10 resistência em democracias (imediato)' },
+    optionB: { label: 'Separação Estado-Religião', effectDesc: '−5 resistência global (imediato)' } },
+
+  { id: 'doc_tradition', topic: 'Tradição', section: 'universal', tier: 'intermediate', chosen: null,
+    optionA: { label: 'Tradicionalismo', effectDesc: '+5% crescimento em regimes estáveis e teocráticos' },
+    optionB: { label: 'Reformismo', effectDesc: 'Barreira linguística encurta para 10 ciclos (era 15)' } },
+
+  { id: 'doc_culture', topic: 'Cultura Local', section: 'universal', tier: 'intermediate', chosen: null,
+    optionA: { label: 'Adaptação Cultural', effectDesc: 'Barreira linguística 30% mais fraca' },
+    optionB: { label: 'Pureza Doutrinária', effectDesc: '+12% crescimento, mas barreira linguística 20% mais forte' } },
+
+  { id: 'doc_economy', topic: 'Economia e Riqueza', section: 'universal', tier: 'intermediate', chosen: null,
+    optionA: { label: 'Ascetismo', effectDesc: '+5 Fervor/ciclo' },
+    optionB: { label: 'Teologia da Prosperidade', effectDesc: '+4 Fé/ciclo' } },
+
+  { id: 'doc_salvation', topic: 'Salvação', section: 'universal', tier: 'intermediate', chosen: null,
+    optionA: { label: 'Universalismo', effectDesc: 'Dispersão geográfica: chance sobe de 15% para 25%/ciclo' },
+    optionB: { label: 'Particularismo', effectDesc: 'Apostasia −50%' } },
+
+  { id: 'doc_destiny', topic: 'Destino Humano', section: 'universal', tier: 'basic', chosen: null,
+    optionA: { label: 'Livre-Arbítrio', effectDesc: '+10% crescimento em regimes liberais e democracias' },
+    optionB: { label: 'Predestinação', effectDesc: 'Fervor nunca cai abaixo de 5' } },
+
+  { id: 'doc_leadership', topic: 'Liderança Espiritual', section: 'universal', tier: 'strategic', chosen: null,
+    optionA: { label: 'Clero Profissional', effectDesc: '+0.3 infiltração de líder/ciclo extra' },
+    optionB: { label: 'Sacerdócio Universal', effectDesc: '−15% custo de missionários' } },
+
+  { id: 'doc_gender', topic: 'Papel da Mulher', section: 'universal', tier: 'intermediate', chosen: null,
+    optionA: { label: 'Liderança Masculina', effectDesc: '+15% crescimento em regimes autoritários e teocracias' },
+    optionB: { label: 'Igualdade Espiritual', effectDesc: '+10% crescimento em democracias, liberal e vibrante' } },
+
+  { id: 'doc_science', topic: 'Relação com a Ciência', section: 'universal', tier: 'intermediate', chosen: null,
+    optionA: { label: 'Literalismo', effectDesc: '+10% crescimento em regimes conservadores; +0.1 resistência/ciclo em liberais' },
+    optionB: { label: 'Interpretação Simbólica', effectDesc: '−0.1 resistência/ciclo em democracias e liberais' } },
+
+  { id: 'doc_afterlife', topic: 'Vida Após a Morte', section: 'universal', tier: 'basic', chosen: null,
+    optionA: { label: 'Juízo Final', effectDesc: '+3 Fervor/ciclo quando resistência média global > 40%' },
+    optionB: { label: 'Reencarnação/Ciclos', effectDesc: '−0.1 resistência/ciclo extra em todos os países' } },
+
+  { id: 'doc_interfaith', topic: 'Relação com Outras Religiões', section: 'universal', tier: 'intermediate', chosen: null,
+    optionA: { label: 'Tolerância Inter-religiosa', effectDesc: '−8 violência em todos os países (imediato)' },
+    optionB: { label: 'Hostilidade Doutrinária', effectDesc: '+20% crescimento; +15 violência em todos os países (imediato)' } },
+
+  { id: 'doc_morality', topic: 'Moral Social', section: 'universal', tier: 'intermediate', chosen: null,
+    optionA: { label: 'Conservadorismo Moral', effectDesc: '+10% crescimento em regimes estáveis e autoritários' },
+    optionB: { label: 'Progressismo Moral', effectDesc: '+10% crescimento em vibrante e liberal; −0.1 resistência nesses países/ciclo' } },
+
+  { id: 'doc_charity', topic: 'Caridade', section: 'universal', tier: 'basic', chosen: null,
+    optionA: { label: 'Caridade Obrigatória', effectDesc: '−0.5 violência/ciclo nos 2 países mais violentos' },
+    optionB: { label: 'Caridade Voluntária', effectDesc: '+2 Fé/ciclo' } },
+
+  { id: 'doc_ritual', topic: 'Ritual Religioso', section: 'universal', tier: 'basic', chosen: null,
+    optionA: { label: 'Ritualismo Forte', effectDesc: '+8% crescimento; missionários custam +10 Fé' },
+    optionB: { label: 'Espiritualidade Simples', effectDesc: 'Missionários −10 Fé; −5% crescimento' } },
+
+  { id: 'doc_expansion', topic: 'Expansão Territorial', section: 'universal', tier: 'strategic', chosen: null,
+    optionA: { label: 'Universalismo Missionário', effectDesc: '+10% crescimento global' },
+    optionB: { label: 'Religião Étnica/Nacional', effectDesc: '+25% crescimento nos EUA; −20% nos demais países' } },
+
+  { id: 'doc_authority', topic: 'Autoridade da Revelação', section: 'universal', tier: 'strategic', chosen: null,
+    optionA: { label: 'Escritura Suprema', effectDesc: 'Apostasia −30%' },
+    optionB: { label: 'Tradição Viva', effectDesc: '+0.5 infiltração de líder/ciclo em todos os países' } },
+
+  // ── ESTRUTURA SOCIAL 21–30 ──
+  { id: 'doc_family', topic: 'Estrutura Familiar', section: 'social', tier: 'basic', chosen: null,
+    optionA: { label: 'Família Tradicional', effectDesc: '+10% crescimento em regimes autoritários e estáveis' },
+    optionB: { label: 'Modelos Familiares Diversos', effectDesc: '+10% crescimento em vibrante, liberal e democracia' } },
+
+  { id: 'doc_obedience', topic: 'Obediência à Autoridade', section: 'social', tier: 'intermediate', chosen: null,
+    optionA: { label: 'Obediência Religiosa', effectDesc: '+0.4 infiltração de líder/ciclo' },
+    optionB: { label: 'Consciência Individual', effectDesc: 'Apostasia −5% global' } },
+
+  { id: 'doc_world', topic: 'Relação com o Mundo Material', section: 'social', tier: 'basic', chosen: null,
+    optionA: { label: 'Mundo Transitório', effectDesc: '+4 Fervor/ciclo' },
+    optionB: { label: 'Transformação do Mundo', effectDesc: '−0.4 violência/ciclo global' } },
+
+  { id: 'doc_miracles', topic: 'Milagres', section: 'social', tier: 'basic', chosen: null,
+    optionA: { label: 'Milagres Frequentes', effectDesc: '+20% crescimento no ciclo seguinte a qualquer evento narrativo' },
+    optionB: { label: 'Milagres Raros', effectDesc: '+5 Fé/ciclo passivo' } },
+
+  { id: 'doc_education', topic: 'Educação Religiosa', section: 'social', tier: 'basic', chosen: null,
+    optionA: { label: 'Educação Obrigatória', effectDesc: 'Barreira linguística encurta para 10 ciclos' },
+    optionB: { label: 'Educação Opcional', effectDesc: 'Missionários −10 Fé' } },
+
+  { id: 'doc_unity', topic: 'Unidade da Fé', section: 'social', tier: 'intermediate', chosen: null,
+    optionA: { label: 'Unidade Doutrinária', effectDesc: 'Apostasia −40%' },
+    optionB: { label: 'Diversidade Interna', effectDesc: '−0.1 resistência/ciclo; +5% crescimento' } },
+
+  { id: 'doc_human_nature', topic: 'Natureza Humana', section: 'social', tier: 'basic', chosen: null,
+    optionA: { label: 'Natureza Corrompida', effectDesc: '+3 Fervor/ciclo quando algum país tem violência > 50%' },
+    optionB: { label: 'Natureza Virtuosa', effectDesc: '−0.2 violência/ciclo em todos os países' } },
+
+  { id: 'doc_cultures', topic: 'Relação com Outras Culturas', section: 'social', tier: 'intermediate', chosen: null,
+    optionA: { label: 'Assimilação Cultural', effectDesc: 'Obstáculos de barreira e tradição 50% mais fracos' },
+    optionB: { label: 'Multiculturalismo Religioso', effectDesc: '−10 resistência em todos os países (imediato)' } },
+
+  { id: 'doc_gov_ideal', topic: 'Governo Ideal', section: 'social', tier: 'strategic', chosen: null,
+    optionA: { label: 'Teocracia', effectDesc: '+30% crescimento em teocracias; +20% em autoritários' },
+    optionB: { label: 'Governo Secular', effectDesc: '−0.1 resistência/ciclo em democracias, liberal e estável' } },
+
+  { id: 'doc_moral_source', topic: 'Fonte da Moral', section: 'social', tier: 'strategic', chosen: null,
+    optionA: { label: 'Mandamento Divino', effectDesc: 'Rival progride 20% mais lento' },
+    optionB: { label: 'Ética Racional', effectDesc: '+5% crescimento em regimes liberais, estáveis e democracias' } },
 ];
