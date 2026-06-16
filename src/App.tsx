@@ -441,31 +441,40 @@ export default function App() {
         }
 
         // 3. Currency accumulations
-        // Base Faith gain: 4 + converters bonus
+        // Base Faith gain: scales with active presence, not flat over time
         const convertedRate = totalPopCount > 0 ? (totalConvertsCount / totalPopCount) : 0;
-        let faithGained = 4;
-        faithGained += Math.floor(totalConvertsCount / 10000000); // 1 point of faith for every 10M converts
-        if (hasTemploAbrigo) faithGained += 5;
-        if (hasDigitalPreaching) faithGained += 2;
-        if (hasCirculosEstudo) faithGained += 5;
-        if (hasSelosSolidariedade) faithGained += 5;
-        if (hasMercadosPartilha) faithGained += 3;
-        if (hasLigaBenfeitores) faithGained += 10;
-        if (hasCronicasColapso) faithGained += 5;
-        // Temple global faith/fervor bonuses
+        const activeCountries = updatedCountries.filter(c => c.converts > 0).length;
+
+        // Base: 1 Fé + 1 per active country (max ~13). Replaces flat +4.
+        let faithGained = 1 + activeCountries;
+        faithGained += Math.floor(totalConvertsCount / 50000000); // 1 per 50M converts (was 10M)
+
+        // Dogma bonuses reduced to avoid runaway stacking
+        if (hasTemploAbrigo) faithGained += 2;     // was +5
+        if (hasDigitalPreaching) faithGained += 1;  // was +2
+        if (hasCirculosEstudo) faithGained += 2;    // was +5
+        if (hasSelosSolidariedade) faithGained += 2; // was +5
+        if (hasMercadosPartilha) faithGained += 2;  // was +3
+        if (hasLigaBenfeitores) faithGained += 4;   // was +10
+        if (hasCronicasColapso) faithGained += 2;   // was +5
+
+        // Maintenance cost: active missions and temples consume faith each cycle
+        const maintenanceCost = activeCountries + Math.floor(state.totalTemples * 0.5);
+        faithGained = Math.max(0, faithGained - maintenanceCost);
+        // Temple global faith/fervor bonuses (reduced to prevent runaway accumulation)
         updatedCountries.forEach((c) => {
           if (c.templeLevel === 0) return;
           if (prev.religionTrait === 'Mistical') {
-            if (c.templeLevel >= 3) faithGained += c.templeLevel >= 4 ? 15 : 5;
+            if (c.templeLevel >= 3) faithGained += c.templeLevel >= 4 ? 4 : 2;
           }
           if (prev.religionTrait === 'Prophetic') {
-            if (c.templeLevel >= 3) { faithGained += 8; fervorGained += 3; }
+            if (c.templeLevel >= 3) { faithGained += 3; fervorGained += 1; }
           }
           if (prev.religionTrait === 'Activist') {
-            if (c.templeLevel >= 4) faithGained += 10;
+            if (c.templeLevel >= 4) faithGained += 3;
           }
           if (prev.religionTrait === 'Syncretist') {
-            if (c.templeLevel >= 4) faithGained += 20;
+            if (c.templeLevel >= 4) faithGained += 5;
           }
         });
 
@@ -473,11 +482,11 @@ export default function App() {
         if (japanLeaderConverted) faithGained = Math.floor(faithGained * 1.2);
         if (russiaLeaderConverted) faithGained = Math.floor(faithGained * 1.1); // centralização aumenta Fé
 
-        // Fervor gained: generated based on average global resistance (persecution turns values into power!)
+        // Fervor gained: only under real persecution pressure (was too easy to accumulate)
         const avgResistance = totalResistanceSum / updatedCountries.length;
         let fervorGained = 0;
-        if (avgResistance > 35) {
-          fervorGained += Math.floor(avgResistance / 25);
+        if (avgResistance > 50) {
+          fervorGained += Math.floor((avgResistance - 50) / 20); // requires >50% avg resistance now
         }
         // Syncretist generates less fervor — coexistence avoids confrontation but weakens defensive power
         if (prev.religionTrait === 'Syncretist') {
@@ -493,7 +502,7 @@ export default function App() {
         if (brassilLeaderConverted) {
           fervorGained += 3;
         }
-        if (hasRelogioJuizo) fervorGained += 15;
+        if (hasRelogioJuizo) fervorGained += 5;
 
         // 4. Adversary Rival Artificial Intelligence Progression (reactive model)
         const activeCountriesCount = updatedCountries.filter(c => c.converts > 0).length;
