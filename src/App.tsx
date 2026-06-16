@@ -483,18 +483,19 @@ export default function App() {
             else if (convertPct > 25) resistance = Math.min(100, resistance + 0.2);
           }
 
-          // Temple passive effects on resistance/violence (valid even when converts === 0)
+          // Temple passive effects — universal resistance reduction (temples are the main conversion engine)
           if (c.templeLevel > 0) {
-            if (prev.religionTrait === 'Mistical') {
-              if (c.templeLevel >= 2) resistance = Math.max(0, resistance - 0.5);
-              if (c.templeLevel >= 4) resistance = Math.max(0, resistance - 0.5);
-            }
+            const templeResistDrop = c.templeLevel === 1 ? 0.2 : c.templeLevel === 2 ? 0.4 : c.templeLevel === 3 ? 0.7 : 1.2;
+            resistance = Math.max(0, resistance - templeResistDrop);
+            // Trait-specific bonuses on top
             if (prev.religionTrait === 'Activist') {
               violence = Math.max(0, violence - (0.5 * c.templeLevel));
-              if (c.templeLevel >= 2) resistance = Math.max(0, resistance - 0.3);
             }
-            if (prev.religionTrait === 'Syncretist') {
-              if (c.templeLevel >= 2) resistance = Math.max(0, resistance - (0.5 * (c.templeLevel - 1)));
+            if (prev.religionTrait === 'Mistical' && c.templeLevel >= 3) {
+              resistance = Math.max(0, resistance - 0.3);
+            }
+            if (prev.religionTrait === 'Syncretist' && c.templeLevel >= 2) {
+              resistance = Math.max(0, resistance - 0.2);
             }
           }
 
@@ -1036,7 +1037,7 @@ export default function App() {
 
     // Trigger visual floating text feedback on country coordinates
     addFloatingText(`-${cost} Fé`, countryObj.coordinates.x, countryObj.coordinates.y, "text-red-500 font-bold font-mono", countryObj.id);
-    addFloatingText("+Semeado!", countryObj.coordinates.x, countryObj.coordinates.y - 5, "text-[#cfb53b] font-bold font-mono", countryObj.id);
+    addFloatingText("+Presença!", countryObj.coordinates.x, countryObj.coordinates.y - 5, "text-[#cfb53b] font-bold font-mono", countryObj.id);
 
     setState((prev) => {
       const country = prev.countries.find((c) => c.id === countryId);
@@ -1045,13 +1046,15 @@ export default function App() {
       const updated = prev.countries.map((c) => {
         if (c.id === countryId) {
           const sent = c.missionariesSent;
-          let newConverts: number;
-          // Phase 1: graduated missionary impact
-          if (sent === 0) newConverts = 2000;
-          else if (sent === 1) newConverts = Math.min(c.population, c.converts + 8000);
-          else newConverts = Math.min(c.population, c.converts + 200000);
-          const resistanceDrop = sent === 0 ? 5 : 2;
-          return { ...c, converts: newConverts, resistance: Math.max(0, c.resistance - resistanceDrop), missionariesSent: c.missionariesSent + 1 };
+          // Missionaries establish presence, not mass conversion — temples do the converting
+          let seedConverts: number;
+          if (sent === 0) seedConverts = 50;        // 1st: initial contact
+          else if (sent === 1) seedConverts = 200;  // 2nd: small cell formed
+          else if (sent === 2) seedConverts = 500;  // 3rd: organized group
+          else seedConverts = 1000;                 // 4th+: network between cities
+          const newConverts = Math.min(c.population, c.converts + seedConverts);
+          // No resistance drop from missionaries — temples reduce resistance
+          return { ...c, converts: newConverts, missionariesSent: c.missionariesSent + 1 };
         }
         return c;
       });
