@@ -135,6 +135,15 @@ export default function App() {
     if (soundtrackRef.current) soundtrackRef.current.muted = isMuted;
   }, [isMuted]);
 
+  // #9: Dynamic browser tab title
+  useEffect(() => {
+    if (state.started && state.religionName) {
+      document.title = `${state.religionName} — Ciclo #${state.cycle} | TEOLOGICO`;
+    } else {
+      document.title = 'TEOLOGICO — Simulador de Religiões';
+    }
+  }, [state.started, state.religionName, state.cycle]);
+
   const addFloatingText = (text: string, x: number, y: number, colorClass = "text-[#cfb53b]", countryId?: string) => {
     const id = Date.now() + Math.random();
     setFloatingTexts((prev) => [...prev, { id, text, x, y, colorClass, countryId }]);
@@ -586,6 +595,8 @@ export default function App() {
 
         // Logs array — initialized here so it can be appended throughout the tick
         let updatedLogs = [...prev.logs];
+        // #7: helper to prepend cycle number to log entries
+        const cycleLog = (msg: string) => `#${prev.cycle + 1} ${msg}`;
 
         // Post-map passive dogma effects
         if (hasAssistenciaMedica) {
@@ -623,7 +634,7 @@ export default function App() {
               if (targetIdx !== -1) {
                 updatedCountries[targetIdx] = { ...updatedCountries[targetIdx], converts: 10 };
               }
-              updatedLogs.unshift(`Dispersão: Missionários que cruzaram de ${sourceId.toUpperCase()} semearam os primeiros cultos em ${target.name}!`);
+              updatedLogs.unshift(cycleLog(`Dispersão: Missionários que cruzaram de ${sourceId.toUpperCase()} semearam os primeiros cultos em ${target.name}!`));
             }
           }
         }
@@ -635,7 +646,7 @@ export default function App() {
             return c.converts > 50000 && rate > 0.003;
           });
           if (apostasyCountry) {
-            updatedLogs.unshift(`[APOSTASIA] Fiéis em ${apostasyCountry.name} questionam a doutrina — violência e resistência cultural geram deserções.`);
+            updatedLogs.unshift(cycleLog(`[APOSTASIA] Fiéis em ${apostasyCountry.name} questionam a doutrina — violência e resistência cultural geram deserções.`));
           }
         }
         if (Math.random() < 0.05) {
@@ -643,7 +654,7 @@ export default function App() {
             c.leaderInfiltration < 100 && (c.converts / c.population) > 0.5
           );
           if (saturatedCountry) {
-            updatedLogs.unshift(`[REAÇÃO ESTATAL] O governo de ${saturatedCountry.name} intensifica restrições — a ascensão do credo gera alarme político.`);
+            updatedLogs.unshift(cycleLog(`[REAÇÃO ESTATAL] O governo de ${saturatedCountry.name} intensifica restrições — a ascensão do credo gera alarme político.`));
           }
         }
 
@@ -925,7 +936,7 @@ export default function App() {
             }
 
             // Push to logs
-            updatedLogs.unshift(`[EVENTO NARRATIVO] ${picked.title}: ${picked.description}`);
+            updatedLogs.unshift(cycleLog(`[EVENTO NARRATIVO] ${picked.title}: ${picked.description}`));
             faithGained += eventFaithBonus;
             fervorGained += eventFervorBonus;
           }
@@ -958,7 +969,7 @@ export default function App() {
         const phaseNames = ['', 'Centelha Sagrada', 'Credo Estabelecido', 'Era da Transcendência'];
         const phaseDescs = ['', '', 'Dogmas e doutrinas intermediárias desbloqueadas. O mundo começa a notar sua presença.', 'Dogmas estratégicos desbloqueados. A metade do mundo foi alcançada pela fé!'];
         if (phaseAdvanced) {
-          updatedLogs.unshift(`[MARCO HISTÓRICO] ✨ Sua fé ascendeu ao estágio de "${phaseNames[newFaithPhase]}"! ${phaseDescs[newFaithPhase]}`);
+          updatedLogs.unshift(cycleLog(`[MARCO HISTÓRICO] ✨ Sua fé ascendeu ao estágio de "${phaseNames[newFaithPhase]}"! ${phaseDescs[newFaithPhase]}`));
           playSound('success');
         }
 
@@ -1599,8 +1610,12 @@ export default function App() {
                   {traitNames[state.religionTrait]}
                 </span>
               </div>
-              <p className="text-xs text-[#dfcfa0]/60 mt-0.5 flex items-center gap-1">
+              <p className="text-xs text-[#dfcfa0]/60 mt-0.5 flex items-center gap-2">
                 <Info className="w-3 h-3 text-[#cfb53b]" /> Objetivo: <strong className="text-amber-100">{goalNames[state.victoryGoal]}</strong>
+                {/* #6: Phase badge */}
+                <span className={`text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded border ${state.faithPhase === 3 ? 'border-red-700/50 bg-red-950/30 text-red-300' : state.faithPhase === 2 ? 'border-orange-700/50 bg-orange-950/30 text-orange-300' : 'border-amber-700/50 bg-amber-950/30 text-amber-400'}`}>
+                  {state.faithPhase === 1 ? '✦ Centelha' : state.faithPhase === 2 ? '✦ Credo' : '✦ Transcendência'}
+                </span>
               </p>
             </div>
           </div>
@@ -1617,31 +1632,43 @@ export default function App() {
               </div>
             </div>
 
-            {/* Tithe Indicator */}
-            <div className={`rounded-lg py-1 px-3 flex items-center gap-2.5 border ${state.tithe <= 0 ? 'bg-red-950/30 border-red-900/60' : 'bg-[#0d1a12] border-emerald-900/50'}`}>
+            {/* Tithe Indicator — #2 tooltip */}
+            <div title="Dízimo: gerado pelos fiéis a cada ciclo. Usado para construir templos. Se zerar, templos param de funcionar." className={`rounded-lg py-1 px-3 flex items-center gap-2.5 border cursor-help ${state.tithe <= 0 ? 'bg-red-950/30 border-red-900/60' : 'bg-[#0d1a12] border-emerald-900/50'}`}>
               <span className={`w-3 h-3 rounded-full ${state.tithe <= 0 ? 'bg-red-500 shadow-[0_0_8px_#ef4444]' : 'bg-emerald-500 shadow-[0_0_8px_#10b981]'}`} />
               <div>
                 <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Dízimo</span>
-                <span className={`text-base font-bold font-mono ${state.tithe <= 0 ? 'text-red-400' : 'text-emerald-400'}`}>{state.tithe}</span>
+                <span className={`text-base font-bold font-mono ${state.tithe <= 0 ? 'text-red-400' : 'text-emerald-400'}`}>{state.tithe.toLocaleString()}</span>
               </div>
             </div>
 
-            {/* Faith Indicator */}
-            <div className="bg-[#241e0d] border border-[#cfb53b]/40 rounded-lg py-1 px-3 flex items-center gap-2.5">
+            {/* Faith Indicator — #2 tooltip, #5 toLocaleString */}
+            <div title="Fé: recurso principal. Ganho a cada ciclo com base em países ativos. Gasto em dogmas, missionários e ações." className="bg-[#241e0d] border border-[#cfb53b]/40 rounded-lg py-1 px-3 flex items-center gap-2.5 cursor-help">
               <span className="w-3 h-3 rounded-full bg-[#cfb53b] shadow-[0_0_8px_#cfb53b]" />
               <div>
                 <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Poder de Fé</span>
-                <span className="text-base font-bold font-mono text-[#cfb53b]">{state.faith}</span>
+                <span className="text-base font-bold font-mono text-[#cfb53b]">{state.faith.toLocaleString()}</span>
               </div>
             </div>
 
-            {/* Fervor Indicator */}
-            <div className="bg-[#241a1a] border border-red-900/40 rounded-lg py-1 px-3 flex items-center gap-2.5">
+            {/* Fervor Indicator — #2 tooltip, #5 toLocaleString */}
+            <div title="Fervor: gerado pela resistência global. Quanto mais o mundo resiste, mais fervor você acumula. Usado em dogmas avançados e conversão de líderes." className="bg-[#241a1a] border border-red-900/40 rounded-lg py-1 px-3 flex items-center gap-2.5 cursor-help">
               <span className="w-3 h-3 rounded-full bg-red-600 shadow-[0_0_8px_#8b0000]" />
               <div>
                 <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Poder de Fervor</span>
-                <span className="text-base font-bold font-mono text-red-400">{state.fervor}</span>
+                <span className="text-base font-bold font-mono text-red-400">{state.fervor.toLocaleString()}</span>
               </div>
+            </div>
+
+            {/* #1: Rival mini progress bar */}
+            <div title={`${state.rivalName}: ${state.rivalProgress.toFixed(0)}% do caminho para a vitória rival`} className="hidden md:flex flex-col gap-1 cursor-help">
+              <span className="text-[9px] font-mono uppercase text-red-400/70 tracking-wider">Rival</span>
+              <div className="w-20 h-2 bg-zinc-800 rounded-full overflow-hidden border border-red-900/40">
+                <div
+                  className={`h-full rounded-full transition-all ${state.rivalProgress > 75 ? 'bg-red-500' : state.rivalProgress > 40 ? 'bg-orange-600' : 'bg-red-900'}`}
+                  style={{ width: `${state.rivalProgress}%` }}
+                />
+              </div>
+              <span className={`text-[9px] font-mono text-right ${state.rivalProgress > 75 ? 'text-red-400 font-bold' : 'text-zinc-500'}`}>{state.rivalProgress.toFixed(0)}%</span>
             </div>
 
             {/* Time cycle controls & play buttons */}
@@ -2165,9 +2192,16 @@ export default function App() {
         <div className="max-w-7xl mx-auto flex flex-col gap-2">
           <div className="flex justify-between items-center text-[10px] uppercase tracking-wider text-[#cfb53b]/60 font-mono">
             <span>Pergaminho de Eventos Globais e Despachos</span>
-            <span>Estabilidade Estrita da Sé</span>
+            {/* #10: Copy log button */}
+            <button
+              onClick={() => navigator.clipboard?.writeText(state.logs.join('\n'))}
+              className="text-[#cfb53b]/40 hover:text-[#cfb53b] transition-colors cursor-pointer"
+              title="Copiar log completo"
+            >
+              [Copiar log]
+            </button>
           </div>
-          
+
           {/* Scrollable event listings items */}
           <div className="bg-black/40 rounded border border-[#cfb53b]/10 p-3 h-24 overflow-y-auto flex flex-col gap-1 text-xs font-mono">
             {state.logs.map((log, index) => {
@@ -2176,10 +2210,14 @@ export default function App() {
               else if (log.startsWith('[AÇÃO]')) cl = 'text-green-400';
               else if (log.startsWith('[LÍDER CONVERTIDO]')) cl = 'text-sky-300 font-bold';
               else if (log.startsWith('Dispersão:')) cl = 'text-amber-500 italic';
-              
+              // #7: cycle tag prepended when log has a cycle marker
+              const cycleTag = log.match(/^#(\d+)/);
               return (
                 <div key={index} className={`border-b border-[#cfb53b]/5 pb-1 leading-relaxed ${cl}`}>
-                  • {log}
+                  {cycleTag
+                    ? <><span className="text-zinc-600 mr-1">{cycleTag[0]}</span>• {log.replace(/^#\d+\s*/, '')}</>
+                    : <>• {log}</>
+                  }
                 </div>
               );
             })}
