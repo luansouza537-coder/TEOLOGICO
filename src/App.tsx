@@ -206,8 +206,8 @@ export default function App() {
   useEffect(() => {
     if (!state.started || state.paused || state.isGameOver) return;
 
-    // Speeds: 1x = 2500ms, 2x = 1500ms, 3x = 800ms
-    const intervalTime = state.gameSpeed === 1 ? 2500 : state.gameSpeed === 2 ? 1500 : 800;
+    // Speeds: 1x = 5000ms, 2x = 2500ms, 3x = 1200ms
+    const intervalTime = state.gameSpeed === 1 ? 5000 : state.gameSpeed === 2 ? 2500 : 1200;
 
     const timer = setInterval(() => {
       setState((prev) => {
