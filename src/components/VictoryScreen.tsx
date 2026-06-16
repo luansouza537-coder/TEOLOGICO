@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { GameState, VictoryGoalType, ReligionTrait } from '../types';
 
 interface VictoryScreenProps {
@@ -43,14 +43,27 @@ const STAT_LABELS: { key: keyof GameState | 'totalConverts' | 'leadersConverted'
 ];
 
 export default function VictoryScreen({ state, onNewGame, onViewWorld }: VictoryScreenProps) {
+  const [phase, setPhase] = useState<'video' | 'content'>('video');
+  const [videoFading, setVideoFading] = useState(false);
   const [visible, setVisible] = useState(false);
   const [particlesReady, setParticlesReady] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const transitionToContent = () => {
+    setVideoFading(true);
+    setTimeout(() => {
+      setPhase('content');
+      setTimeout(() => setVisible(true), 50);
+      setTimeout(() => setParticlesReady(true), 450);
+    }, 800);
+  };
 
   useEffect(() => {
-    const t1 = setTimeout(() => setVisible(true), 50);
-    const t2 = setTimeout(() => setParticlesReady(true), 400);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    const video = videoRef.current;
+    if (!video) return;
+    video.play().catch(() => transitionToContent()); // fallback if autoplay blocked
   }, []);
+
 
   const totalConverts = state.countries.reduce((s, c) => s + c.converts, 0);
   const leadersConverted = state.countries.filter(c => c.leaderInfiltration >= 100).length;
@@ -76,6 +89,29 @@ export default function VictoryScreen({ state, onNewGame, onViewWorld }: Victory
     delay: (i * 0.18) % 3,
     duration: 2.5 + (i % 3) * 0.8,
   }));
+
+  if (phase === 'video') {
+    return (
+      <div
+        className={`fixed inset-0 z-50 bg-black flex items-center justify-center transition-opacity duration-700 ${videoFading ? 'opacity-0' : 'opacity-100'}`}
+      >
+        <video
+          ref={videoRef}
+          src="/victory.mp4"
+          className="w-full h-full object-cover"
+          onEnded={transitionToContent}
+          playsInline
+          muted
+        />
+        <button
+          onClick={transitionToContent}
+          className="absolute bottom-8 right-8 text-xs font-mono text-white/40 hover:text-white/80 transition-colors uppercase tracking-widest border border-white/20 hover:border-white/50 px-4 py-2 rounded"
+        >
+          Pular →
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div
