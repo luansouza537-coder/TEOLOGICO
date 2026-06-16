@@ -21,10 +21,10 @@ const TEMPLE_NAMES: Record<string, string[]> = {
 };
 
 const TEMPLE_COSTS = [
-  { faith: 40, fervor: 10 },
-  { faith: 70, fervor: 20 },
-  { faith: 110, fervor: 35 },
-  { faith: 160, fervor: 55 },
+  { faith: 40, fervor: 10, tithe: 20 },
+  { faith: 70, fervor: 20, tithe: 50 },
+  { faith: 110, fervor: 35, tithe: 120 },
+  { faith: 160, fervor: 55, tithe: 250 },
 ];
 
 // Tradition compatibility: trait × regime growth modifier
@@ -61,6 +61,7 @@ export default function App() {
           }));
         }
         if (!parsed.doctrines) parsed.doctrines = INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null }));
+        if (parsed.tithe === undefined) parsed.tithe = 50;
         return parsed;
       } catch (e) {
         console.error('Falha ao restaurar dados de localStorage:', e);
@@ -91,6 +92,7 @@ export default function App() {
       lastEventTimestamp: 0,
       eventCooldowns: {},
       doctrines: INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null })),
+      tithe: 50,
     };
   });
 
@@ -230,6 +232,9 @@ export default function App() {
         // Doctrine choice helper
         const getDoc = (id: string): 'A' | 'B' | null =>
           prev.doctrines?.find(d => d.id === id)?.chosen ?? null;
+
+        // Economy: temples only function when Dízimo is sufficient
+        const hasTithe = prev.tithe > 0;
 
         const usaLeaderConverted = isLeaderConverted('usa');
         const japanLeaderConverted = isLeaderConverted('japan');
@@ -467,8 +472,8 @@ export default function App() {
               }
               leaderInfiltration = Math.min(100, leaderInfiltration + leaderGrowth);
             }
-            // Temple growth bonus (inside converts > 0 block so growthFactor exists)
-            if (c.templeLevel > 0) {
+            // Temple growth bonus (only when tithe is sufficient)
+            if (c.templeLevel > 0 && hasTithe) {
               growthFactor *= (1 + 0.03 * c.templeLevel);
             }
 
@@ -485,8 +490,8 @@ export default function App() {
             else if (convertPct > 25) resistance = Math.min(100, resistance + 0.2);
           }
 
-          // Temple passive effects — universal resistance reduction (temples are the main conversion engine)
-          if (c.templeLevel > 0) {
+          // Temple passive effects — only when Dízimo is sufficient (abandoned temples do nothing)
+          if (c.templeLevel > 0 && hasTithe) {
             const templeResistDrop = c.templeLevel === 1 ? 0.2 : c.templeLevel === 2 ? 0.4 : c.templeLevel === 3 ? 0.7 : 1.2;
             resistance = Math.max(0, resistance - templeResistDrop);
             // Trait-specific bonuses on top
@@ -581,7 +586,24 @@ export default function App() {
           }
         }
 
-        // 3. Currency accumulations
+        // 3. ECONOMY — Dízimo generation and maintenance
+        let titheGained = 0;
+        updatedCountries.forEach(c => {
+          if (c.converts > 0) {
+            const localBase = c.converts / 500000;
+            const templeBonus = c.templeLevel === 1 ? 1.2 : c.templeLevel === 2 ? 1.5 : c.templeLevel === 3 ? 2.0 : c.templeLevel >= 4 ? 3.0 : 1.0;
+            titheGained += localBase * templeBonus;
+          }
+        });
+        titheGained = Math.floor(titheGained);
+        const missionaryMaintenance = updatedCountries.reduce((s, c) => s + (c.missionariesSent ?? 0), 0);
+        const templeMaintenance = updatedCountries.reduce((s, c) => {
+          const t = c.templeLevel ?? 0;
+          return s + (t === 1 ? 2 : t === 2 ? 4 : t === 3 ? 7 : t === 4 ? 12 : 0);
+        }, 0);
+        const netTithe = titheGained - missionaryMaintenance - templeMaintenance;
+
+        // 4. Currency accumulations
         // Base Faith gain: scales with active presence, not flat over time
         const convertedRate = totalPopCount > 0 ? (totalConvertsCount / totalPopCount) : 0;
         const activeCountries = updatedCountries.filter(c => c.converts > 0).length;
@@ -824,6 +846,7 @@ export default function App() {
           cycle: nextCycle,
           faith: prev.faith + faithGained,
           fervor: Math.max(fervorFloor, prev.fervor + fervorGained),
+          tithe: Math.max(0, prev.tithe + netTithe),
           countries: updatedCountries,
           rivalProgress: updatedRivalProgress,
           resistanceStreak: newStreak,
@@ -940,6 +963,7 @@ export default function App() {
       lastEventTimestamp: 0,
       eventCooldowns: {},
       doctrines: INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null })),
+      tithe: 50,
     });
     playSound('success');
   };
@@ -973,6 +997,7 @@ export default function App() {
       lastEventTimestamp: 0,
       eventCooldowns: {},
       doctrines: INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null })),
+      tithe: 50,
     });
   };
 
@@ -1266,12 +1291,13 @@ export default function App() {
     if (nextLevel > 4) return;
 
     const cost = TEMPLE_COSTS[nextLevel - 1];
-    if (state.faith < cost.faith || state.fervor < cost.fervor) return;
+    if (state.faith < cost.faith || state.fervor < cost.fervor || state.tithe < cost.tithe) return;
 
     const templeName = TEMPLE_NAMES[state.religionTrait]?.[nextLevel - 1] ?? 'Templo';
 
     addFloatingText(`🏛️ ${templeName}!`, countryObj.coordinates.x, countryObj.coordinates.y - 8, 'text-[#cfb53b] font-bold font-serif', countryObj.id);
     addFloatingText(`-${cost.faith} Fé`, countryObj.coordinates.x, countryObj.coordinates.y, 'text-red-500 font-bold font-mono', countryObj.id);
+    addFloatingText(`-${cost.tithe} Díz`, countryObj.coordinates.x, countryObj.coordinates.y + 5, 'text-emerald-400 font-bold font-mono', countryObj.id);
 
     setState((prev) => {
       const newTotalTemples = prev.totalTemples + 1;
@@ -1294,6 +1320,7 @@ export default function App() {
         ...prev,
         faith: prev.faith - cost.faith,
         fervor: prev.fervor - cost.fervor,
+        tithe: prev.tithe - cost.tithe,
         totalTemples: newTotalTemples,
         countries: updatedCountries,
         logs: logs.slice(0, 20),
@@ -1411,6 +1438,15 @@ export default function App() {
               <div>
                 <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Fiéis no Mundo</span>
                 <span className="text-md font-bold font-mono text-green-400">{totalConvertedWorld.toLocaleString()}</span>
+              </div>
+            </div>
+
+            {/* Tithe Indicator */}
+            <div className={`rounded-lg py-1 px-3 flex items-center gap-2.5 border ${state.tithe <= 0 ? 'bg-red-950/30 border-red-900/60' : 'bg-[#0d1a12] border-emerald-900/50'}`}>
+              <span className={`w-3 h-3 rounded-full ${state.tithe <= 0 ? 'bg-red-500 shadow-[0_0_8px_#ef4444]' : 'bg-emerald-500 shadow-[0_0_8px_#10b981]'}`} />
+              <div>
+                <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Dízimo</span>
+                <span className={`text-md font-bold font-mono ${state.tithe <= 0 ? 'text-red-400' : 'text-emerald-400'}`}>{state.tithe}</span>
               </div>
             </div>
 
@@ -1697,6 +1733,7 @@ export default function App() {
               templeCosts={TEMPLE_COSTS}
               templeNames={TEMPLE_NAMES}
               floatingTexts={floatingTexts}
+              tithe={state.tithe}
             />
           )}
 

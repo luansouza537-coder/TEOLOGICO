@@ -83,6 +83,7 @@ interface WorldMapProps {
   onSelectCountry: (id: string) => void;
   faith: number;
   fervor: number;
+  tithe: number;
   trait: ReligionTrait;
   onSendMissionary: (countryId: string) => void;
   onPacifyCountry: (countryId: string, tier: 1 | 2 | 3) => void;
@@ -90,7 +91,7 @@ interface WorldMapProps {
   onPerformEcstasyRitual: (countryId: string) => void;
   onOpenTemple: (countryId: string) => void;
   totalTemples: number;
-  templeCosts: { faith: number; fervor: number }[];
+  templeCosts: { faith: number; fervor: number; tithe: number }[];
   templeNames: Record<string, string[]>;
   floatingTexts?: { id: number; text: string; x: number; y: number; colorClass: string; countryId?: string }[];
 }
@@ -101,6 +102,7 @@ export default function WorldMap({
   onSelectCountry,
   faith,
   fervor,
+  tithe,
   trait,
   onSendMissionary,
   onPacifyCountry,
@@ -432,7 +434,7 @@ export default function WorldMap({
                 const nextLevel = selectedCountry.templeLevel + 1;
                 const canBuildNext = availableLevel >= nextLevel && nextLevel <= 4;
                 const cost = nextLevel <= 4 ? templeCosts[nextLevel - 1] : null;
-                const canAfford = cost ? faith >= cost.faith && fervor >= cost.fervor : false;
+                const canAfford = cost ? faith >= cost.faith && fervor >= cost.fervor && tithe >= cost.tithe : false;
                 const traitNames = templeNames[trait] ?? [];
                 const currentTempleName = selectedCountry.templeLevel > 0 ? traitNames[selectedCountry.templeLevel - 1] : null;
                 const nextTempleName = nextLevel <= 4 ? traitNames[nextLevel - 1] : null;
@@ -466,7 +468,8 @@ export default function WorldMap({
                         </span>
                         <span className="font-mono text-[9px] bg-black/30 px-1.5 py-0.5 rounded flex gap-1">
                           <span>{cost.faith} Fé</span>
-                          <span>{cost.fervor} Fervor</span>
+                          <span>{cost.fervor} Ferv</span>
+                          <span className="text-emerald-400">{cost.tithe} Díz</span>
                         </span>
                       </button>
                     ) : (
