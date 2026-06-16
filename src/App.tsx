@@ -12,6 +12,7 @@ import DogmasPanel from './components/DogmasPanel';
 import LeadersPanel from './components/LeadersPanel';
 import RivalPanel from './components/RivalPanel';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Gamepad2, Info, BookOpen, AlertTriangle } from 'lucide-react';
+import { calcPeaceEffectiveness } from './utils/peaceEffectiveness';
 
 const TEMPLE_NAMES: Record<string, string[]> = {
   Mistical:   ['Gruta do Véu', 'Santuário dos Arcanos', 'Torre dos Mistérios', 'Abismo Sagrado'],
@@ -1202,15 +1203,24 @@ export default function App() {
     if (!countryObj || countryObj.converts === 0) return;
 
     const costs = { 1: { faith: 15, fervor: 0 }, 2: { faith: 25, fervor: 5 }, 3: { faith: 40, fervor: 15 } };
-    const effects = { 1: { violence: -8, resistance: 0 }, 2: { violence: -20, resistance: -5 }, 3: { violence: -35, resistance: 5 } };
+    const baseEffects = { 1: { violence: -8, resistance: 0 }, 2: { violence: -20, resistance: -5 }, 3: { violence: -35, resistance: 5 } };
     const labels = { 1: 'Pregação de Paz', 2: 'Mobilização Comunitária', 3: 'Intervenção de Emergência' };
 
     const cost = costs[tier];
-    const effect = effects[tier];
+    const baseEffect = baseEffects[tier];
     if (state.faith < cost.faith || state.fervor < cost.fervor) return;
 
+    const eff = calcPeaceEffectiveness(
+      countryObj.converts, countryObj.population,
+      countryObj.templeLevel, countryObj.leaderInfiltration,
+      state.tithe
+    );
+    const scaledViolence = Math.round(baseEffect.violence * eff);
+    const scaledResistance = baseEffect.resistance !== 0 ? Math.round(baseEffect.resistance * eff) : 0;
+    const effPct = Math.round(eff * 100);
+
     addFloatingText(`-${cost.faith} Fé`, countryObj.coordinates.x, countryObj.coordinates.y, 'text-red-500 font-bold font-mono', countryObj.id);
-    addFloatingText('Pacificado!', countryObj.coordinates.x, countryObj.coordinates.y - 5, 'text-green-500 font-bold font-mono', countryObj.id);
+    addFloatingText(`Paz (${effPct}%)`, countryObj.coordinates.x, countryObj.coordinates.y - 5, 'text-green-500 font-bold font-mono', countryObj.id);
 
     setState((prev) => {
       const country = prev.countries.find((c) => c.id === countryId);
@@ -1220,16 +1230,16 @@ export default function App() {
         if (c.id === countryId) {
           return {
             ...c,
-            violence: Math.max(0, c.violence + effect.violence),
-            resistance: Math.min(100, Math.max(0, c.resistance + effect.resistance)),
+            violence: Math.max(0, c.violence + scaledViolence),
+            resistance: Math.min(100, Math.max(0, c.resistance + scaledResistance)),
           };
         }
         return c;
       });
 
       const logMsg = tier === 3
-        ? `[INTERVENÇÃO] ${labels[tier]} em ${country.name} — violência cede, mas o governo observa com desconfiança.`
-        : `[AÇÃO] ${labels[tier]} em ${country.name} — comunidades respondem ao chamado de paz.`;
+        ? `[INTERVENÇÃO] ${labels[tier]} em ${country.name} (eficácia ${effPct}%) — violência cede, mas o governo observa com desconfiança.`
+        : `[AÇÃO] ${labels[tier]} em ${country.name} (eficácia ${effPct}%) — comunidades respondem ao chamado de paz.`;
 
       playSound('click');
       return {

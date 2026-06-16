@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { Country, ReligionTrait } from '../types';
 import { Crosshair, ShieldAlert, HeartHandshake, Skull, Crown, Star, Network, Building2 } from 'lucide-react';
+import { calcPeaceEffectiveness } from '../utils/peaceEffectiveness';
 
 const COUNTRY_LORE: Record<string, string> = {
   usa: 'A maior potência ocidental vive uma guerra cultural interna. Evangelicalismo, ateísmo progressista e ceticismo tecnológico disputam corações num país de 335 milhões de almas fragmentadas. A liberdade religiosa abre portas — mas a mídia corporativa amplifica qualquer escândalo ao extremo.',
@@ -352,14 +353,26 @@ export default function WorldMap({
               {(() => {
                 const v = selectedCountry.violence;
                 const hasConverts = selectedCountry.converts > 0;
-                const tiers: { tier: 1|2|3; label: string; faith: number; fervor: number; violenceReq: number; desc: string }[] = [
-                  { tier: 1, label: 'Pregação de Paz', faith: 15, fervor: 0, violenceReq: 0, desc: '-8 violência' },
-                  { tier: 2, label: 'Mobilização Comunitária', faith: 25, fervor: 5, violenceReq: 40, desc: '-20 violência, -5 resistência' },
-                  { tier: 3, label: 'Intervenção de Emergência', faith: 40, fervor: 15, violenceReq: 65, desc: '-35 violência, +5 resistência' },
+                const tiers: { tier: 1|2|3; label: string; faith: number; fervor: number; violenceReq: number; baseViolence: number; baseResistance: number }[] = [
+                  { tier: 1, label: 'Pregação de Paz',          faith: 15, fervor: 0,  violenceReq: 0,  baseViolence: -8,  baseResistance: 0  },
+                  { tier: 2, label: 'Mobilização Comunitária',  faith: 25, fervor: 5,  violenceReq: 40, baseViolence: -20, baseResistance: -5 },
+                  { tier: 3, label: 'Intervenção de Emergência',faith: 40, fervor: 15, violenceReq: 65, baseViolence: -35, baseResistance: 5  },
                 ];
                 const available = tiers.filter(t => v >= t.violenceReq);
                 const best = available[available.length - 1] ?? tiers[0];
                 const canAfford = faith >= best.faith && fervor >= best.fervor && hasConverts;
+
+                const eff = calcPeaceEffectiveness(
+                  selectedCountry.converts, selectedCountry.population,
+                  selectedCountry.templeLevel, selectedCountry.leaderInfiltration,
+                  tithe
+                );
+                const effPct = Math.round(eff * 100);
+                const scaledV = Math.round(best.baseViolence * eff);
+                const scaledR = best.baseResistance !== 0 ? Math.round(best.baseResistance * eff) : 0;
+                const effColor = effPct >= 70 ? 'text-green-400' : effPct >= 50 ? 'text-yellow-400' : effPct >= 35 ? 'text-orange-400' : 'text-red-400';
+                const effLabel = effPct >= 90 ? 'Dominante' : effPct >= 70 ? 'Forte' : effPct >= 50 ? 'Moderada' : effPct >= 35 ? 'Fraca' : 'Mínima';
+
                 return (
                   <div className="flex flex-col gap-1">
                     <button
@@ -379,7 +392,14 @@ export default function WorldMap({
                         {best.fervor > 0 && <span>{best.fervor} Fervor</span>}
                       </span>
                     </button>
-                    <span className="text-[9px] text-[#dfcfa0]/40 font-mono text-right">{best.desc} · Violência atual: {v.toFixed(0)}%</span>
+                    <div className="flex justify-between items-center text-[9px] font-mono px-0.5">
+                      <span className="text-[#dfcfa0]/40">
+                        {scaledV} violência{scaledR !== 0 ? `, ${scaledR > 0 ? '+' : ''}${scaledR} resistência` : ''}
+                      </span>
+                      <span className={`font-bold ${effColor}`}>
+                        Influência: {effLabel} ({effPct}%)
+                      </span>
+                    </div>
                   </div>
                 );
               })()}
