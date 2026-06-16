@@ -21,6 +21,9 @@ export const INITIAL_COUNTRIES: Country[] = [
     coordinates: { x: 18, y: 35 },
     missionariesSent: 0,
     templeLevel: 0,
+    templePending: 0,
+    templeBuildCyclesLeft: 0,
+    templeSpec: null,
     cyclesPresent: 1,
     lastConflictCycle: -99,
     localReligionStrength: 15
@@ -40,6 +43,9 @@ export const INITIAL_COUNTRIES: Country[] = [
     coordinates: { x: 82, y: 38 },
     missionariesSent: 0,
     templeLevel: 0,
+    templePending: 0,
+    templeBuildCyclesLeft: 0,
+    templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
     localReligionStrength: 30
@@ -59,6 +65,9 @@ export const INITIAL_COUNTRIES: Country[] = [
     coordinates: { x: 73, y: 48 },
     missionariesSent: 0,
     templeLevel: 0,
+    templePending: 0,
+    templeBuildCyclesLeft: 0,
+    templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
     localReligionStrength: 70
@@ -78,6 +87,9 @@ export const INITIAL_COUNTRIES: Country[] = [
     coordinates: { x: 50, y: 25 },
     missionariesSent: 0,
     templeLevel: 0,
+    templePending: 0,
+    templeBuildCyclesLeft: 0,
+    templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
     localReligionStrength: 10
@@ -97,6 +109,9 @@ export const INITIAL_COUNTRIES: Country[] = [
     coordinates: { x: 33, y: 72 },
     missionariesSent: 0,
     templeLevel: 0,
+    templePending: 0,
+    templeBuildCyclesLeft: 0,
+    templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
     localReligionStrength: 20
@@ -116,6 +131,9 @@ export const INITIAL_COUNTRIES: Country[] = [
     coordinates: { x: 68, y: 22 },
     missionariesSent: 0,
     templeLevel: 0,
+    templePending: 0,
+    templeBuildCyclesLeft: 0,
+    templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
     localReligionStrength: 60
@@ -135,6 +153,9 @@ export const INITIAL_COUNTRIES: Country[] = [
     coordinates: { x: 54, y: 50 },
     missionariesSent: 0,
     templeLevel: 0,
+    templePending: 0,
+    templeBuildCyclesLeft: 0,
+    templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
     localReligionStrength: 75
@@ -154,6 +175,9 @@ export const INITIAL_COUNTRIES: Country[] = [
     coordinates: { x: 56, y: 80 },
     missionariesSent: 0,
     templeLevel: 0,
+    templePending: 0,
+    templeBuildCyclesLeft: 0,
+    templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
     localReligionStrength: 20
@@ -173,6 +197,9 @@ export const INITIAL_COUNTRIES: Country[] = [
     coordinates: { x: 92, y: 34 },
     missionariesSent: 0,
     templeLevel: 0,
+    templePending: 0,
+    templeBuildCyclesLeft: 0,
+    templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
     localReligionStrength: 50
@@ -192,6 +219,9 @@ export const INITIAL_COUNTRIES: Country[] = [
     coordinates: { x: 14, y: 50 },
     missionariesSent: 0,
     templeLevel: 0,
+    templePending: 0,
+    templeBuildCyclesLeft: 0,
+    templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
     localReligionStrength: 25
@@ -211,6 +241,9 @@ export const INITIAL_COUNTRIES: Country[] = [
     coordinates: { x: 63, y: 48 },
     missionariesSent: 0,
     templeLevel: 0,
+    templePending: 0,
+    templeBuildCyclesLeft: 0,
+    templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
     localReligionStrength: 90
@@ -230,6 +263,9 @@ export const INITIAL_COUNTRIES: Country[] = [
     coordinates: { x: 88, y: 82 },
     missionariesSent: 0,
     templeLevel: 0,
+    templePending: 0,
+    templeBuildCyclesLeft: 0,
+    templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
     localReligionStrength: 5

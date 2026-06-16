@@ -55,6 +55,9 @@ export default function App() {
             ...c,
             missionariesSent: c.missionariesSent ?? 0,
             templeLevel: c.templeLevel ?? 0,
+            templePending: c.templePending ?? 0,
+            templeBuildCyclesLeft: c.templeBuildCyclesLeft ?? 0,
+            templeSpec: c.templeSpec ?? null,
             cyclesPresent: c.cyclesPresent ?? 0,
             lastConflictCycle: c.lastConflictCycle ?? -99,
             localReligionStrength: c.localReligionStrength ?? 0,
@@ -98,6 +101,7 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState<'map' | 'dogmas' | 'leaders' | 'rival' | 'faith'>('map');
   const [showTutorial, setShowTutorial] = useState(false);
+  const [specChoiceCountryId, setSpecChoiceCountryId] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState<boolean>(() => localStorage.getItem('audio_muted_v2') === 'true');
   const [newsText, setNewsText] = useState('CONEXÃO COLETIVA ESTÁVEL: Monitorando a disseminação teológica pelo globo...');
   const [floatingTexts, setFloatingTexts] = useState<{ id: number; text: string; x: number; y: number; colorClass: string; countryId?: string }[]>([]);
@@ -494,6 +498,9 @@ export default function App() {
           if (c.templeLevel > 0 && hasTithe) {
             const templeResistDrop = c.templeLevel === 1 ? 0.2 : c.templeLevel === 2 ? 0.4 : c.templeLevel === 3 ? 0.7 : 1.2;
             resistance = Math.max(0, resistance - templeResistDrop);
+            // Specialization bonus (C): chosen at level 2+
+            if (c.templeSpec === 'conversion') growthFactor *= 1.20;
+            if (c.templeSpec === 'resistance') resistance = Math.max(0, resistance - 0.5);
             // Trait-specific bonuses on top
             if (prev.religionTrait === 'Activist') {
               violence = Math.max(0, violence - (0.5 * c.templeLevel));
@@ -523,7 +530,33 @@ export default function App() {
           totalResistanceSum += resistance;
           totalViolenceSum += violence;
 
-          return { ...c, converts, resistance, violence, leaderInfiltration, cyclesPresent, lastConflictCycle };
+          // TEMPLE CONSTRUCTION PHASE (A): decrement build timer, complete when 0
+          let templeLevel = c.templeLevel;
+          let templePending = c.templePending;
+          let templeBuildCyclesLeft = c.templeBuildCyclesLeft;
+          let templeSpec = c.templeSpec;
+          if (templePending > 0 && templeBuildCyclesLeft > 0) {
+            templeBuildCyclesLeft -= 1;
+            if (templeBuildCyclesLeft === 0) {
+              templeLevel = templePending;
+              templePending = 0;
+              // Trigger spec choice for level 2+
+              if (templeLevel >= 2) {
+                setSpecChoiceCountryId(c.id);
+              }
+            }
+          }
+
+          // TEMPLE VULNERABILITY (E): high violence can destroy temple level
+          if (templeLevel > 0 && templePending === 0) {
+            const destructionChance = violence > 90 ? 0.05 : violence > 70 ? 0.02 : 0;
+            if (destructionChance > 0 && Math.random() < destructionChance) {
+              templeLevel = Math.max(0, templeLevel - 1);
+              templeSpec = templeLevel < 2 ? null : templeSpec;
+            }
+          }
+
+          return { ...c, converts, resistance, violence, leaderInfiltration, cyclesPresent, lastConflictCycle, templeLevel, templePending, templeBuildCyclesLeft, templeSpec };
         });
 
         // Post-map passive dogma effects
@@ -845,6 +878,12 @@ export default function App() {
           ? { ...prev.eventCooldowns, [newlyTriggeredEvent.id]: prev.cycle }
           : prev.eventCooldowns;
 
+        // Count temples completed this cycle (templePending > 0 → now 0 means it just finished)
+        const newlyCompletedTemples = updatedCountries.filter((c, i) => {
+          const prev_c = prev.countries[i];
+          return prev_c.templePending > 0 && c.templePending === 0 && c.templeLevel > prev_c.templeLevel;
+        }).length;
+
         return {
           ...prev,
           cycle: nextCycle,
@@ -856,6 +895,7 @@ export default function App() {
           resistanceStreak: newStreak,
           isGameOver,
           gameOverReason,
+          totalTemples: prev.totalTemples + newlyCompletedTemples,
           eventActive: isGameOver ? null : (newlyTriggeredEvent || prev.eventActive),
           paused: isGameOver ? false : (newlyTriggeredEvent ? true : prev.paused),
           lastEventCycle: newlyTriggeredEvent ? prev.cycle : prev.lastEventCycle,
@@ -1286,46 +1326,51 @@ export default function App() {
     });
   };
 
-  // Action callback 5: Open Temple in a country
+  // Build cycles per temple level
+  const TEMPLE_BUILD_CYCLES = [3, 6, 10, 15];
+  // Minimum conversion % required to build each level
+  const TEMPLE_PRESENCE_REQ = [0, 0.10, 0.25, 0.50];
+
+  // Action callback 5: Begin temple construction in a country
   const openTemple = (countryId: string) => {
     const countryObj = state.countries.find((c) => c.id === countryId);
     if (!countryObj) return;
 
+    // Block if already building
+    if (countryObj.templePending > 0) return;
+
     const nextLevel = countryObj.templeLevel + 1;
     if (nextLevel > 4) return;
+
+    // B) Presence requirement check
+    const presenceReq = TEMPLE_PRESENCE_REQ[nextLevel - 1];
+    const convertPct = countryObj.converts / countryObj.population;
+    if (convertPct < presenceReq) return;
 
     const cost = TEMPLE_COSTS[nextLevel - 1];
     if (state.faith < cost.faith || state.fervor < cost.fervor || state.tithe < cost.tithe) return;
 
     const templeName = TEMPLE_NAMES[state.religionTrait]?.[nextLevel - 1] ?? 'Templo';
+    const buildCycles = TEMPLE_BUILD_CYCLES[nextLevel - 1];
 
-    addFloatingText(`🏛️ ${templeName}!`, countryObj.coordinates.x, countryObj.coordinates.y - 8, 'text-[#cfb53b] font-bold font-serif', countryObj.id);
+    addFloatingText(`🏗️ Construindo ${templeName}...`, countryObj.coordinates.x, countryObj.coordinates.y - 8, 'text-yellow-400 font-bold font-serif', countryObj.id);
     addFloatingText(`-${cost.faith} Fé`, countryObj.coordinates.x, countryObj.coordinates.y, 'text-red-500 font-bold font-mono', countryObj.id);
     addFloatingText(`-${cost.tithe} Díz`, countryObj.coordinates.x, countryObj.coordinates.y + 5, 'text-emerald-400 font-bold font-mono', countryObj.id);
 
     setState((prev) => {
-      const newTotalTemples = prev.totalTemples + 1;
       const updatedCountries = prev.countries.map((c) =>
-        c.id === countryId ? { ...c, templeLevel: nextLevel } : c
+        c.id === countryId ? { ...c, templePending: nextLevel, templeBuildCyclesLeft: buildCycles } : c
       );
 
       const logs = [...prev.logs];
-      logs.unshift(`[TEMPLO] Uma ${templeName} foi erguida em ${countryObj.name}! A fé se materializa em pedra e doutrina.`);
-
-      const milestoneMsg = TEMPLE_MILESTONE_MESSAGES[newTotalTemples];
-      if (milestoneMsg) {
-        logs.unshift(`[MARCO SAGRADO] ${milestoneMsg}`);
-        playSound('success');
-      } else {
-        playSound('click');
-      }
+      logs.unshift(`[TEMPLO] Construção de ${templeName} iniciada em ${countryObj.name}! Estará pronta em ${buildCycles} ciclos.`);
+      playSound('click');
 
       return {
         ...prev,
         faith: prev.faith - cost.faith,
         fervor: prev.fervor - cost.fervor,
         tithe: prev.tithe - cost.tithe,
-        totalTemples: newTotalTemples,
         countries: updatedCountries,
         logs: logs.slice(0, 20),
       };
@@ -2065,6 +2110,44 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* TEMPLE SPECIALIZATION CHOICE MODAL (C) */}
+      {specChoiceCountryId && (() => {
+        const specCountry = state.countries.find(c => c.id === specChoiceCountryId);
+        if (!specCountry) return null;
+        const templeName = TEMPLE_NAMES[state.religionTrait]?.[specCountry.templeLevel - 1] ?? 'Templo';
+        return (
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-40 animate-fade-in">
+            <div className="w-full max-w-md bg-[#1a1208] border-2 border-[#cfb53b] p-6 rounded-xl text-center shadow-[0_0_40px_rgba(207,181,59,0.2)] flex flex-col gap-4">
+              <div className="text-[10px] uppercase font-bold tracking-widest text-[#cfb53b] font-mono">Especialização de Templo</div>
+              <div className="text-sm font-bold text-[#dfcfa0]">{templeName} concluído em {specCountry.name}!</div>
+              <div className="text-xs text-[#dfcfa0]/70">Escolha o foco desta estrutura sagrada:</div>
+              <div className="flex flex-col gap-3 mt-1">
+                <button
+                  onClick={() => {
+                    setState(prev => ({ ...prev, countries: prev.countries.map(c => c.id === specChoiceCountryId ? { ...c, templeSpec: 'conversion' } : c) }));
+                    setSpecChoiceCountryId(null);
+                  }}
+                  className="py-3 px-4 rounded-lg bg-[#1a2a1a] border border-green-700/50 text-green-300 text-xs font-bold hover:bg-[#213021] transition-all text-left flex flex-col gap-1"
+                >
+                  <span>⚡ Expansão da Fé</span>
+                  <span className="text-[10px] text-green-400/70 font-normal">+20% velocidade de conversão neste país permanentemente</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setState(prev => ({ ...prev, countries: prev.countries.map(c => c.id === specChoiceCountryId ? { ...c, templeSpec: 'resistance' } : c) }));
+                    setSpecChoiceCountryId(null);
+                  }}
+                  className="py-3 px-4 rounded-lg bg-[#1a1a2a] border border-blue-700/50 text-blue-300 text-xs font-bold hover:bg-[#21213a] transition-all text-left flex flex-col gap-1"
+                >
+                  <span>🛡️ Bastião da Doutrina</span>
+                  <span className="text-[10px] text-blue-400/70 font-normal">-0.5 resistência adicional por ciclo neste país permanentemente</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 4. GAME OVER SCREEN (Victory/Defeat Dialog overlay popup) */}
       {state.isGameOver && (
