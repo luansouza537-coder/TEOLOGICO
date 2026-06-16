@@ -263,8 +263,8 @@ export default function App() {
           if (converts > 0) {
             cyclesPresent += 1;
 
-            // Base growth compound rate per cycle
-            let growthFactor = 0.002;
+            // Base growth rate — logistic model: scales with existing convert base, not raw population
+            let growthFactor = 0.05;
 
             // OBSTÁCULO 1 — BARREIRAS LINGUÍSTICAS E CULTURAIS
             const linguisticLen = (getDoc('doc_tradition') === 'B' || getDoc('doc_education') === 'A') ? 10 : 15;
@@ -407,13 +407,15 @@ export default function App() {
             if (convertPctLocal > 0.25 && !isLeaderConverted(c.id)) growthFactor *= 1.20;
 
             // Cap growthFactor to prevent runaway stacking from dogma + doctrine combinations
-            growthFactor = Math.min(growthFactor, 0.20);
+            growthFactor = Math.min(growthFactor, 0.15);
 
             // Core expansion factor hindered by local hostility (resistance slows down conversion)
             const hostilityMultiplier = 1 - (resistance / 100);
 
-            // Calculate converts to add (Phase 2: removed artificial +120 floor)
-            const addedConverts = Math.floor((pop - converts) * growthFactor * Math.max(0.01, hostilityMultiplier));
+            // Logistic growth: scales with existing converts × remaining space, not raw population
+            // Small base → slow growth; large base → fast growth; near saturation → slows again
+            const remainingFraction = (pop - converts) / pop;
+            const addedConverts = Math.floor(converts * growthFactor * remainingFraction * Math.max(0.01, hostilityMultiplier));
             converts = Math.min(pop, converts + addedConverts);
 
             // APOSTASIA: fiéis abandonam a fé sob violência e resistência cultural alta
