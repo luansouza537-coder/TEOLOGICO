@@ -112,10 +112,27 @@ export default function App() {
   const [isMuted, setIsMuted] = useState<boolean>(() => localStorage.getItem('audio_muted_v2') === 'true');
   const [newsText, setNewsText] = useState('CONEXÃO COLETIVA ESTÁVEL: Monitorando a disseminação teológica pelo globo...');
   const [floatingTexts, setFloatingTexts] = useState<{ id: number; text: string; x: number; y: number; colorClass: string; countryId?: string }[]>([]);
+  const soundtrackRef = useRef<HTMLAudioElement | null>(null);
 
   // Sound preference state persistence
   useEffect(() => {
     localStorage.setItem('audio_muted_v2', String(isMuted));
+  }, [isMuted]);
+
+  // Soundtrack: starts when game begins, respects mute toggle
+  useEffect(() => {
+    if (!soundtrackRef.current) return;
+    if (state.started && !state.isGameOver) {
+      soundtrackRef.current.volume = 0.35;
+      soundtrackRef.current.muted = isMuted;
+      soundtrackRef.current.play().catch(() => {});
+    } else {
+      soundtrackRef.current.pause();
+    }
+  }, [state.started, state.isGameOver]);
+
+  useEffect(() => {
+    if (soundtrackRef.current) soundtrackRef.current.muted = isMuted;
   }, [isMuted]);
 
   const addFloatingText = (text: string, x: number, y: number, colorClass = "text-[#cfb53b]", countryId?: string) => {
@@ -2388,6 +2405,9 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Soundtrack — loop infinito, controlado pelo toggle de mute */}
+      <audio ref={soundtrackRef} src="/soundtrack.mp3" loop preload="auto" />
 
     </div>
   );
