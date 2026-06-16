@@ -16,8 +16,8 @@ import { Play, Pause, RotateCcw, Volume2, VolumeX, Gamepad2, Info, BookOpen, Ale
 const TEMPLE_NAMES: Record<string, string[]> = {
   Mistical:   ['Gruta do Véu', 'Santuário dos Arcanos', 'Torre dos Mistérios', 'Abismo Sagrado'],
   Prophetic:  ['Posto da Palavra', 'Casa da Revelação', 'Tabernáculo do Oráculo', 'Trono da Profecia'],
-  Activist:   ['Centro Comunitário', 'Hospital da Fé', 'Academia Popular', 'Sede da Revolução Pacífica'],
-  Syncretist: ['Espaço Intercultural', 'Mesclário dos Povos', 'Biblioteca Universal', 'Templo da Harmonia Eterna'],
+  Activist:   ['Célula da Causa', 'Bastião do Povo', 'Fortaleza da Mudança', 'Cidadela da Nova Era'],
+  Syncretist: ['Elo dos Caminhos', 'Confluência dos Ritos', 'Nexo das Tradições', 'Templo da Grande Fusão'],
 };
 
 const TEMPLE_COSTS = [
