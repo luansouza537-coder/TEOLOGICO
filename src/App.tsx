@@ -855,15 +855,23 @@ export default function App() {
                 c.violence = Math.max(0, Math.min(100, c.violence + (picked.actionEffects.countryViolenceMod[c.id] || 0)));
               }
               if (picked.actionEffects.countryConvertsMod?.[c.id]) {
-                // If value is positive, only apply if player already has presence
                 const mod = picked.actionEffects.countryConvertsMod[c.id];
                 if (mod > 0) {
-                  if (c.converts === 0) return; // no presence = event has no effect here
+                  if (c.converts === 0) return;
                   c.converts = Math.min(c.population, Math.floor(c.converts + mod));
                 } else if (mod < 0) {
-                  // loss (persecution removes the exact mod amount from followers)
                   c.converts = Math.max(0, Math.floor(c.converts + mod));
                 }
+              }
+              // Percentage-based convert loss per country
+              if (picked.actionEffects.countryConvertsModPct?.[c.id] && c.converts > 0) {
+                const pct = picked.actionEffects.countryConvertsModPct[c.id];
+                c.converts = Math.max(0, Math.floor(c.converts * (1 + pct / 100)));
+              }
+              // Global percentage loss
+              if (picked.actionEffects.globalConvertsModPct !== undefined && c.converts > 0) {
+                const pct = picked.actionEffects.globalConvertsModPct;
+                c.converts = Math.max(0, Math.floor(c.converts * (1 + pct / 100)));
               }
             });
 
@@ -881,6 +889,11 @@ export default function App() {
             if (hasSinaisCeus) eventFervorBonus += 20;
             if (hasPergaminhoTerremotos && ['penalty', 'neutral'].includes(picked.impactType)) {
               eventFervorBonus += 40;
+            }
+
+            // One-time faith drain from debuff events
+            if (picked.actionEffects.globalFaithCostMod) {
+              faithGained += picked.actionEffects.globalFaithCostMod; // negative value = drain
             }
 
             // Push to logs
@@ -2149,15 +2162,34 @@ export default function App() {
                   </li>
                 )}
                 {/* Specific countries affected */}
+                {state.eventActive.actionEffects.globalConvertsModPct !== undefined && (
+                  <li className="text-red-400/90 font-mono">
+                    • Devotos global: {state.eventActive.actionEffects.globalConvertsModPct}% (apostasia em massa)
+                  </li>
+                )}
                 {Object.entries(state.eventActive.actionEffects.countryConvertsMod || {}).map(([cid, val]) => {
                   const cname = state.countries.find(c => c.id === cid)?.name || cid;
                   const numVal = val as number;
                   return (
                     <li key={cid} className={numVal > 0 ? "text-green-400/90 font-mono" : "text-red-400/90 font-mono"}>
-                      • Devotos em {cname}: {numVal > 0 ? `+${numVal.toLocaleString()}` : 'Rebeldes dispersaram 50% dos seguidores'}
+                      • Devotos em {cname}: {numVal > 0 ? `+${numVal.toLocaleString()}` : `${numVal.toLocaleString()}`}
                     </li>
                   );
                 })}
+                {Object.entries(state.eventActive.actionEffects.countryConvertsModPct || {}).map(([cid, val]) => {
+                  const cname = state.countries.find(c => c.id === cid)?.name || cid;
+                  const numVal = val as number;
+                  return (
+                    <li key={cid} className={numVal > 0 ? "text-green-400/90 font-mono" : "text-red-400/90 font-mono"}>
+                      • Devotos em {cname}: {numVal > 0 ? `+${numVal}%` : `${numVal}%`}
+                    </li>
+                  );
+                })}
+                {state.eventActive.actionEffects.globalFaithCostMod !== undefined && (
+                  <li className="text-red-400/90 font-mono">
+                    • Fé perdida: {state.eventActive.actionEffects.globalFaithCostMod}
+                  </li>
+                )}
                 {Object.entries(state.eventActive.actionEffects.countryResistanceMod || {}).map(([cid, val]) => {
                   const cname = state.countries.find(c => c.id === cid)?.name || cid;
                   const numVal = val as number;

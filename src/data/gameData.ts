@@ -751,7 +751,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     description: 'Um vírus altamente contagioso se espalha pelo globo. Governos impõem quarentenas. O medo coletivo abre corações para a fé.',
     impactType: 'neutral',
     actionEffects: {
-      countryConvertsMod: { usa: 500000, china: 2000000, india: 2000000, brazil: 300000, germany: 100000, russia: 200000 },
+      countryConvertsMod: { usa: 80000, china: 300000, india: 300000, brazil: 40000, germany: 20000, russia: 30000 },
       countryResistanceMod: { china: 15, russia: 10, saudi_arabia: 10 }
     }
   },
@@ -762,7 +762,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     impactType: 'neutral',
     actionEffects: {
       globalFervorMod: 30,
-      countryConvertsMod: { japan: 500000, mexico: 800000, usa: 300000 },
+      countryConvertsMod: { japan: 80000, mexico: 120000, usa: 40000 },
       countryViolenceMod: { japan: 15, mexico: 10 }
     }
   },
@@ -782,7 +782,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     description: 'Escavações na Mesopotâmia encontram tabletes de 5.000 anos que contradizem narrativas religiosas estabelecidas. O vácuo espiritual é imediato.',
     impactType: 'neutral',
     actionEffects: {
-      countryConvertsMod: { usa: 400000, germany: 150000, egypt: 300000, india: 500000 },
+      countryConvertsMod: { usa: 60000, germany: 20000, egypt: 40000, india: 80000 },
       countryResistanceMod: { saudi_arabia: 10, russia: 8, china: 8 }
     }
   },
@@ -803,7 +803,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     description: 'Uma transmissão internacional reúne pensadores para discutir fé e ciência. A audiência mundial questiona suas certezas.',
     impactType: 'neutral',
     actionEffects: {
-      countryConvertsMod: { germany: 80000, usa: 300000, brazil: 200000 },
+      countryConvertsMod: { germany: 10000, usa: 40000, brazil: 30000 },
       countryResistanceMod: { egypt: 10, saudi_arabia: 10, india: 8 }
     }
   },
@@ -814,7 +814,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     impactType: 'persecution',
     actionEffects: {
       globalFervorMod: 60,
-      countryConvertsMod: { germany: 60000, russia: 100000 },
+      countryConvertsMod: { germany: 10000, russia: 20000 },
       countryResistanceMod: { germany: -12 }
     }
   },
@@ -824,7 +824,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     description: 'Uma ilha no Mediterrâneo abriga dezenas de milhares de refugiados à espera de acolhida. A comoção global abre fronteiras e corações.',
     impactType: 'bonus',
     actionEffects: {
-      countryConvertsMod: { germany: 100000, egypt: 200000, south_africa: 150000 },
+      countryConvertsMod: { germany: 20000, egypt: 30000, south_africa: 20000 },
       countryResistanceMod: { germany: -15, egypt: -10, south_africa: -12 }
     }
   },
@@ -835,7 +835,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     impactType: 'persecution',
     actionEffects: {
       globalFervorMod: 40,
-      countryConvertsMod: { india: 800000, china: 500000 },
+      countryConvertsMod: { india: 120000, china: 80000 },
       countryViolenceMod: { brazil: 5, mexico: 5, south_africa: 5 }
     }
   },
@@ -851,7 +851,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     actionEffects: {
       globalFaithMod: 40,
       globalFervorMod: 20,
-      countryConvertsMod: { germany: 200000, usa: 400000, brazil: 800000 }
+      countryConvertsMod: { germany: 30000, usa: 60000, brazil: 120000 }
     }
   },
   {
@@ -862,7 +862,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Mistical',
     actionEffects: {
       globalFervorMod: 50,
-      countryConvertsMod: { mexico: 2000000, brazil: 2500000, usa: 300000 },
+      countryConvertsMod: { mexico: 300000, brazil: 380000, usa: 40000 },
       countryResistanceMod: { mexico: -10, brazil: -5, usa: -5, germany: -5, india: -5 }
     }
   },
@@ -874,7 +874,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Mistical',
     actionEffects: {
       globalFervorMod: 20,
-      countryConvertsMod: { egypt: 500000, south_africa: 200000 },
+      countryConvertsMod: { egypt: 80000, south_africa: 30000 },
       countryResistanceMod: { egypt: -12 }
     }
   },
@@ -907,7 +907,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Mistical',
     actionEffects: {
       globalFaithMod: 15,
-      countryConvertsMod: { japan: 400000, australia: 150000, usa: 300000, brazil: 500000 }
+      countryConvertsMod: { japan: 60000, australia: 20000, usa: 40000, brazil: 80000 }
     }
   },
   {
@@ -929,7 +929,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Mistical',
     actionEffects: {
       globalFervorMod: 25,
-      countryConvertsMod: { russia: 500000, egypt: 300000, germany: 100000 }
+      countryConvertsMod: { russia: 80000, egypt: 40000, germany: 20000 }
     }
   },
   {
@@ -940,7 +940,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Mistical',
     actionEffects: {
       globalFervorMod: 30,
-      countryConvertsMod: { usa: 300000, germany: 150000, brazil: 400000, south_africa: 100000 }
+      countryConvertsMod: { usa: 40000, germany: 20000, brazil: 60000, south_africa: 20000 }
     }
   },
   {
@@ -951,7 +951,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Mistical',
     actionEffects: {
       globalFaithMod: 40,
-      countryConvertsMod: { russia: 600000, egypt: 250000 },
+      countryConvertsMod: { russia: 90000, egypt: 40000 },
       countryResistanceMod: { russia: -10 }
     }
   },
@@ -966,7 +966,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Prophetic',
     actionEffects: {
       globalFaithMod: 50,
-      countryConvertsMod: { mexico: 3000000, brazil: 4000000, india: 5000000, egypt: 1000000 },
+      countryConvertsMod: { mexico: 450000, brazil: 600000, india: 750000, egypt: 150000 },
       countryResistanceMod: { egypt: -20, saudi_arabia: -20, india: -15 }
     }
   },
@@ -978,7 +978,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Prophetic',
     actionEffects: {
       globalFaithMod: 35,
-      countryConvertsMod: { russia: 2000000, egypt: 500000, india: 1000000 },
+      countryConvertsMod: { russia: 300000, egypt: 80000, india: 150000 },
       countryResistanceMod: { russia: -15, egypt: -10 }
     }
   },
@@ -990,7 +990,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Prophetic',
     actionEffects: {
       globalFervorMod: 30,
-      countryConvertsMod: { brazil: 4000000, india: 5000000, usa: 600000, germany: 200000 },
+      countryConvertsMod: { brazil: 600000, india: 750000, usa: 90000, germany: 30000 },
       countryResistanceMod: { egypt: 10, saudi_arabia: 10 }
     }
   },
@@ -1013,7 +1013,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Prophetic',
     actionEffects: {
       globalFervorMod: 30,
-      countryConvertsMod: { usa: 1000000, germany: 300000, china: 2000000 }
+      countryConvertsMod: { usa: 150000, germany: 40000, china: 300000 }
     }
   },
   {
@@ -1023,7 +1023,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     impactType: 'prophecy',
     traitRequirement: 'Prophetic',
     actionEffects: {
-      countryConvertsMod: { egypt: 1500000, saudi_arabia: 200000 },
+      countryConvertsMod: { egypt: 220000, saudi_arabia: 30000 },
       countryResistanceMod: { egypt: -10, saudi_arabia: -5 }
     }
   },
@@ -1035,7 +1035,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Prophetic',
     actionEffects: {
       globalFaithMod: 20,
-      countryConvertsMod: { usa: 500000, russia: 600000, germany: 200000, china: 1000000 }
+      countryConvertsMod: { usa: 80000, russia: 90000, germany: 30000, china: 150000 }
     }
   },
   {
@@ -1046,7 +1046,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Prophetic',
     actionEffects: {
       globalFervorMod: 20,
-      countryConvertsMod: { brazil: 1500000, mexico: 800000, india: 1000000 }
+      countryConvertsMod: { brazil: 220000, mexico: 120000, india: 150000 }
     }
   },
   {
@@ -1057,7 +1057,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Prophetic',
     actionEffects: {
       globalFervorMod: 20,
-      countryConvertsMod: { egypt: 800000, south_africa: 400000, saudi_arabia: 150000 }
+      countryConvertsMod: { egypt: 120000, south_africa: 60000, saudi_arabia: 20000 }
     }
   },
   {
@@ -1067,7 +1067,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     impactType: 'prophecy',
     traitRequirement: 'Prophetic',
     actionEffects: {
-      countryConvertsMod: { russia: 1500000, brazil: 2000000, india: 2500000, mexico: 600000 },
+      countryConvertsMod: { russia: 220000, brazil: 300000, india: 380000, mexico: 90000 },
       countryResistanceMod: { egypt: 10, china: 10, russia: 8 }
     }
   },
@@ -1093,7 +1093,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Activist',
     actionEffects: {
       globalFervorMod: 80,
-      countryConvertsMod: { china: 1000000, russia: 500000, egypt: 300000 }
+      countryConvertsMod: { china: 150000, russia: 80000, egypt: 40000 }
     }
   },
   {
@@ -1104,7 +1104,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Activist',
     actionEffects: {
       globalFaithMod: 25,
-      countryConvertsMod: { south_africa: 500000, brazil: 600000, india: 800000 },
+      countryConvertsMod: { south_africa: 80000, brazil: 90000, india: 120000 },
       countryViolenceMod: { south_africa: -20, brazil: -15, mexico: -15 }
     }
   },
@@ -1115,7 +1115,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     impactType: 'bonus',
     traitRequirement: 'Activist',
     actionEffects: {
-      countryConvertsMod: { usa: 600000, germany: 200000, australia: 150000 },
+      countryConvertsMod: { usa: 90000, germany: 30000, australia: 20000 },
       countryResistanceMod: { germany: -10, usa: -8, australia: -8 }
     }
   },
@@ -1127,7 +1127,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Activist',
     actionEffects: {
       globalFervorMod: 60,
-      countryConvertsMod: { south_africa: 400000, brazil: 500000, mexico: 400000 },
+      countryConvertsMod: { south_africa: 60000, brazil: 80000, mexico: 60000 },
       countryViolenceMod: { brazil: 10, mexico: 10, south_africa: 10 }
     }
   },
@@ -1138,7 +1138,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     impactType: 'bonus',
     traitRequirement: 'Activist',
     actionEffects: {
-      countryConvertsMod: { usa: 300000, germany: 100000, brazil: 200000, south_africa: 100000 },
+      countryConvertsMod: { usa: 40000, germany: 20000, brazil: 30000, south_africa: 20000 },
       countryResistanceMod: { usa: -15, germany: -12, australia: -10 }
     }
   },
@@ -1160,7 +1160,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     impactType: 'bonus',
     traitRequirement: 'Activist',
     actionEffects: {
-      countryConvertsMod: { brazil: 1500000 },
+      countryConvertsMod: { brazil: 220000 },
       countryViolenceMod: { brazil: -5 }
     }
   },
@@ -1172,7 +1172,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Activist',
     actionEffects: {
       globalFervorMod: 45,
-      countryConvertsMod: { japan: 400000, china: 600000 }
+      countryConvertsMod: { japan: 60000, china: 90000 }
     }
   },
   {
@@ -1183,7 +1183,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Activist',
     actionEffects: {
       globalFaithMod: 15,
-      countryConvertsMod: { brazil: 500000, south_africa: 200000, india: 400000, mexico: 300000 }
+      countryConvertsMod: { brazil: 80000, south_africa: 30000, india: 60000, mexico: 40000 }
     }
   },
 
@@ -1196,7 +1196,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     impactType: 'bonus',
     traitRequirement: 'Syncretist',
     actionEffects: {
-      countryConvertsMod: { usa: 1000000, germany: 300000, brazil: 1000000, india: 1500000 },
+      countryConvertsMod: { usa: 150000, germany: 40000, brazil: 150000, india: 220000 },
       countryResistanceMod: { usa: -5, germany: -8, brazil: -5, india: -5, australia: -5 }
     }
   },
@@ -1218,7 +1218,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     impactType: 'bonus',
     traitRequirement: 'Syncretist',
     actionEffects: {
-      countryConvertsMod: { germany: 300000, russia: 300000, usa: 200000 },
+      countryConvertsMod: { germany: 40000, russia: 40000, usa: 30000 },
       countryResistanceMod: { germany: -10, usa: -5, australia: -5 }
     }
   },
@@ -1229,7 +1229,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     impactType: 'neutral',
     traitRequirement: 'Syncretist',
     actionEffects: {
-      countryConvertsMod: { usa: 400000, germany: 150000, japan: 200000, brazil: 500000 },
+      countryConvertsMod: { usa: 60000, germany: 20000, japan: 30000, brazil: 80000 },
       countryResistanceMod: { saudi_arabia: 8, egypt: 8, russia: 8 }
     }
   },
@@ -1241,7 +1241,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Syncretist',
     actionEffects: {
       globalFaithMod: 20,
-      countryConvertsMod: { egypt: 300000, south_africa: 200000, australia: 100000, mexico: 300000 }
+      countryConvertsMod: { egypt: 40000, south_africa: 30000, australia: 20000, mexico: 40000 }
     }
   },
   {
@@ -1263,7 +1263,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     traitRequirement: 'Syncretist',
     actionEffects: {
       globalFervorMod: 10,
-      countryConvertsMod: { usa: 800000, brazil: 1000000, india: 1500000, germany: 200000 }
+      countryConvertsMod: { usa: 120000, brazil: 150000, india: 220000, germany: 30000 }
     }
   },
   {
@@ -1284,7 +1284,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     impactType: 'neutral',
     traitRequirement: 'Syncretist',
     actionEffects: {
-      countryConvertsMod: { usa: 300000, germany: 100000, australia: 100000, india: 400000 },
+      countryConvertsMod: { usa: 40000, germany: 20000, australia: 20000, india: 60000 },
       countryViolenceMod: { saudi_arabia: 5, russia: 5, egypt: 5 }
     }
   },
@@ -1297,6 +1297,137 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     actionEffects: {
       globalFaithMod: 20,
       countryResistanceMod: { germany: -12, usa: -10, australia: -10, japan: -10 }
+    }
+  },
+
+  // ── EVENTOS DE DEBUFF — PERDA DE DEVOTOS ─────────────────────────────────────
+
+  {
+    id: 'debuff_escandalo_conduta',
+    title: 'Escândalo de Conduta',
+    description: 'Líderes influentes da sua fé são expostos em casos de corrupção e abuso de poder. A confiança pública desaba nos países com maior presença.',
+    impactType: 'penalty',
+    actionEffects: {
+      globalFervorMod: 25,
+      countryConvertsModPct: { usa: -8, brazil: -8 },
+      countryResistanceMod: { usa: 6, brazil: 6 }
+    }
+  },
+  {
+    id: 'debuff_campanha_desinformacao',
+    title: 'Campanha de Desinformação',
+    description: 'Uma rede coordenada de fake news espalha mentiras sobre sua doutrina em plataformas globais. A opinião pública se volta contra sua fé.',
+    impactType: 'penalty',
+    actionEffects: {
+      globalFervorMod: 30,
+      globalConvertsModPct: -8,
+      countryResistanceMod: { usa: 8, germany: 8, australia: 6, japan: 6 }
+    }
+  },
+  {
+    id: 'debuff_decreto_fronteiras',
+    title: 'Decreto de Fronteiras Fechadas',
+    description: 'Governos de países opressores emitem decretos que expulsam pregadores estrangeiros e monitoram reuniões religiosas.',
+    impactType: 'persecution',
+    actionEffects: {
+      globalFervorMod: 20,
+      countryConvertsModPct: { china: -15, russia: -15, saudi_arabia: -15, egypt: -10 },
+      countryResistanceMod: { china: 12, russia: 12, saudi_arabia: 10 }
+    }
+  },
+  {
+    id: 'debuff_reliquia_contestada',
+    title: 'Relíquia Contestada',
+    description: 'Uma relíquia amplamente venerada é exposta por historiadores como de origem duvidosa. Fiéis em todo o mundo se sentem traídos.',
+    impactType: 'penalty',
+    traitRequirement: 'Mistical',
+    actionEffects: {
+      globalFaithCostMod: -40,
+      countryConvertsModPct: { brazil: -18, mexico: -18, russia: -15 },
+      countryResistanceMod: { brazil: 10, mexico: 10, russia: 8 }
+    }
+  },
+  {
+    id: 'debuff_falha_extase',
+    title: 'Falha no Êxtase',
+    description: 'Um fenômeno místico esperado por milhares — luzes, curas, visões — não ocorre na data prevista. Fiéis se sentem enganados e abandonam a fé.',
+    impactType: 'penalty',
+    traitRequirement: 'Mistical',
+    actionEffects: {
+      globalFervorMod: 20,
+      countryConvertsModPct: { usa: -12, germany: -12, australia: -10 },
+      countryResistanceMod: { usa: 15, germany: 12, australia: 12 }
+    }
+  },
+  {
+    id: 'debuff_profecia_frustrada',
+    title: 'Profecia Frustrada',
+    description: 'Uma profecia de evento cósmico eminente falha em se concretizar. A zombaria internacional humilha o movimento profético.',
+    impactType: 'penalty',
+    traitRequirement: 'Prophetic',
+    actionEffects: {
+      globalFervorMod: 10,
+      countryConvertsModPct: { brazil: -20, india: -20, mexico: -15, egypt: -15 },
+      countryResistanceMod: { usa: 8, germany: 8, japan: 6, australia: 6 }
+    }
+  },
+  {
+    id: 'debuff_manuscrito_contraditor',
+    title: 'Manuscrito Contraditório',
+    description: 'Um texto antigo descoberto por acadêmicos contradiz ensinamentos centrais da doutrina. Teólogos entram em crise e a imprensa explora o debate.',
+    impactType: 'penalty',
+    traitRequirement: 'Prophetic',
+    actionEffects: {
+      globalFaithCostMod: -30,
+      countryConvertsModPct: { germany: -12, japan: -12, usa: -10, australia: -10 }
+    }
+  },
+  {
+    id: 'debuff_repressao_sistemica',
+    title: 'Repressão Sistêmica',
+    description: 'Um governo opressor lança uma campanha nacional contra "seitas estrangeiras". Líderes locais são presos. O movimento é forçado à clandestinidade.',
+    impactType: 'persecution',
+    traitRequirement: 'Activist',
+    actionEffects: {
+      globalFervorMod: 90,
+      countryConvertsModPct: { china: -20, russia: -15 },
+      countryResistanceMod: { china: 20, russia: 18 }
+    }
+  },
+  {
+    id: 'debuff_ruptura_ideologica',
+    title: 'Ruptura Ideológica',
+    description: 'Facções internas divergem radicalmente sobre as táticas do movimento. A disputa pública afasta simpatizantes e enfraquece a base.',
+    impactType: 'penalty',
+    traitRequirement: 'Activist',
+    actionEffects: {
+      globalFaithCostMod: -20,
+      globalConvertsModPct: -10,
+      countryResistanceMod: { usa: -5, germany: -5, australia: -5 }
+    }
+  },
+  {
+    id: 'debuff_conflito_simbolos',
+    title: 'Conflito de Símbolos',
+    description: 'Comunidades tradicionais acusam publicamente sua fé de deturpar e apropriar seus rituais sagrados. O ressentimento se espalha rapidamente.',
+    impactType: 'penalty',
+    traitRequirement: 'Syncretist',
+    actionEffects: {
+      globalFervorMod: 12,
+      countryConvertsModPct: { india: -20, egypt: -18, mexico: -15 },
+      countryResistanceMod: { india: 18, egypt: 15, mexico: 12 }
+    }
+  },
+  {
+    id: 'debuff_cisma_doutrinario',
+    title: 'Cisma Doutrinário',
+    description: 'Um grupo de puristas rompe com a liderança central, acusando-a de trair a essência da fé. Formam uma seita rival que divide os fiéis.',
+    impactType: 'penalty',
+    traitRequirement: 'Syncretist',
+    actionEffects: {
+      globalFaithCostMod: -50,
+      globalConvertsModPct: -12,
+      countryResistanceMod: { usa: -10, germany: -8, australia: -8, japan: -8 }
     }
   }
 

@@ -51,9 +51,12 @@ export interface GameEvent {
   actionEffects: {
     globalFaithMod?: number;
     globalFervorMod?: number;
-    countryConvertsMod?: { [countryId: string]: number }; // percentage or absolute
+    countryConvertsMod?: { [countryId: string]: number }; // absolute value change
+    countryConvertsModPct?: { [countryId: string]: number }; // percentage loss (negative = loss)
+    globalConvertsModPct?: number; // percentage loss applied to all countries with converts
     countryResistanceMod?: { [countryId: string]: number };
     countryViolenceMod?: { [countryId: string]: number };
+    globalFaithCostMod?: number; // one-time faith drain
   };
 }
 
