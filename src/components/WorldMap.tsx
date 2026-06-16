@@ -6,6 +6,22 @@
 import React, { useState } from 'react';
 import { Country, ReligionTrait } from '../types';
 import { Crosshair, ShieldAlert, HeartHandshake, Skull, Crown, Star, Network, Building2 } from 'lucide-react';
+
+const COUNTRY_LORE: Record<string, string> = {
+  usa: 'A maior potência ocidental vive uma guerra cultural interna. Evangelicalismo, ateísmo progressista e ceticismo tecnológico disputam corações num país de 335 milhões de almas fragmentadas. A liberdade religiosa abre portas — mas a mídia corporativa amplifica qualquer escândalo ao extremo.',
+  china: 'O Partido controla cada palavra impressa e cada culto autorizado. Sob a superfície do ateísmo estatal, milhões buscam em segredo algo além do materialismo oficial. A Grande Muralha Digital filtra tudo — mas o sussurro da fé viaja por canais que nenhum algoritmo enxerga.',
+  india: 'Terra dos mil deuses, onde espiritualidade é o ar que se respira. O sincretismo ancestral absorve novas doutrinas como rio absorve afluentes — mas as tensões entre castas, o nacionalismo hindu e a violência sectária transformam cada pregação num ato político.',
+  germany: 'Sociedade laicizada pela razão iluminista e dois séculos de ceticismo filosófico. As igrejas esvaziam; os jovens buscam propósito em algoritmos e ideologias pós-modernas. Quem conseguir oferecer sentido sem dogmatismo excessivo encontrará solo fértil.',
+  brazil: 'A nação mais espiritualmente intensa do planeta. Candomblé, catolicismo barroco e pentecostalismo explosivo convivem nas mesmas favelas. A criminalidade é cicatriz profunda — mas em cada beco existe uma comunidade de fé esperando por uma voz que faça sentido do caos.',
+  russia: 'Alma eslava moldada por séculos de Ortodoxia e décadas de ateísmo soviético. O Kremlin usa a religião como instrumento de coesão nacional — qualquer doutrina estrangeira é vista como espionagem ideológica. Mas o povo russo, no fundo, anseia pelo transcendente.',
+  egypt: 'Encruzilhada de civilizações onde cada pedra guarda memória de deus. O Islã estrutura a vida pública, mas a modernidade corrói antigas certezas. As fronteiras militares e ideológicas são muralhas — porém as tradições sufi e as crises econômicas criam fissuras invisíveis.',
+  south_africa: 'País marcado pela ferida aberta do apartheid e pela desigualdade que persiste em cada favela e mansão. A espiritualidade é coluna vertebral das comunidades — quem chegar com cura e justiça social encontrará multidões dispostas a ouvir e a seguir.',
+  japan: 'Civilização de precisão e silêncio interior. O Shintoísmo e o Budismo zen permeiam a cultura sem proclamações barulhentas. A fé aqui é privada, estética, quase silenciosa. Converter o Japão exige paciência monástica — mas sua influência cultural irradia pelo mundo inteiro.',
+  mexico: 'Terra da Virgem de Guadalupe e dos cartéis. O catolicismo popular é identidade, não apenas crença — mas a violência sistemática do crime organizado corrói a esperança. Uma religião que ofereça proteção espiritual concreta e paz comunitária pode varrer o país em meses.',
+  saudi_arabia: 'Coração do Islã sunita e guardião das cidades sagradas. As leis teocráticas são muralhas de aço. Qualquer sinal de apostasia pode custar a vida. E ainda assim, sob a superfície de ouro negro e austeridade wahabita, uma juventude silenciosa questiona tudo que lhe foi ensinado.',
+  australia: 'Continente-ilha de pragmatismo anglo-saxão e multiculturalismo vibrante. A distância geográfica criou uma cultura autossuficiente e refratária a entusiasmos religiosos importados. Mas a solidão do interior imenso e a busca por identidade abrem janelas que o racional não fecha.',
+};
+
 import WorldMapFlat from './WorldMapFlat';
 
 const CONTINENTS = [
@@ -216,6 +232,11 @@ export default function WorldMap({
               <div className="text-xs text-[#dfcfa0]/65 font-mono">
                 População: {selectedCountry.population.toLocaleString()}
               </div>
+              {COUNTRY_LORE[selectedCountry.id] && (
+                <p className="text-[10px] text-[#dfcfa0]/70 mt-2 leading-relaxed italic">
+                  {COUNTRY_LORE[selectedCountry.id]}
+                </p>
+              )}
             </div>
 
             <hr className="border-[#cfb53b]/20" />
