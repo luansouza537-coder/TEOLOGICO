@@ -691,18 +691,22 @@ export default function App() {
         const activeCountriesCount = updatedCountries.filter(c => c.converts > 0).length;
         const convertedRate2 = totalPopCount > 0 ? (totalConvertsCount / totalPopCount) : 0;
 
-        let rivalIncrement = 0.4; // base reduced from 0.6
+        let rivalIncrement = 0.2; // base
 
         // Rival thrives when faith is weak or resistance is high
-        if (avgResistance > 60) rivalIncrement += 0.8;
-        else if (avgResistance > 40) rivalIncrement += 0.4;
+        if (avgResistance > 60) rivalIncrement += 0.4;
+        else if (avgResistance > 40) rivalIncrement += 0.2;
 
         // Rival fills the void when player has little presence
-        if (activeCountriesCount < 3) rivalIncrement += 0.4;
+        if (activeCountriesCount < 3) rivalIncrement += 0.2;
 
         // Rival retreats before established faith
-        if (convertedRate2 > 0.5) rivalIncrement *= 0.5;
-        else if (convertedRate2 > 0.25) rivalIncrement *= 0.75;
+        if (convertedRate2 > 0.5) rivalIncrement *= 0.3;
+        else if (convertedRate2 > 0.25) rivalIncrement *= 0.5;
+
+        // Each temple level ≥2 slows rival globally
+        const establishedTemples = updatedCountries.filter(c => c.templeLevel >= 2).length;
+        if (establishedTemples > 0) rivalIncrement *= Math.pow(0.92, establishedTemples);
 
         // Syncretist coexists better with rival ideologies
         if (prev.religionTrait === 'Syncretist') rivalIncrement *= 0.7;
