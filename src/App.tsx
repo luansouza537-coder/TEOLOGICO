@@ -313,6 +313,11 @@ export default function App() {
             const addedConverts = Math.floor((pop - converts) * growthFactor * Math.max(0.01, hostilityMultiplier)) + 120;
             converts = Math.min(pop, converts + addedConverts);
 
+            // APOSTASIA: fiéis abandonam a fé sob violência e resistência cultural alta
+            const apostasyRate = (violence / 100) * 0.004 + (resistance / 100) * 0.002;
+            const apostasyLost = Math.floor(converts * apostasyRate);
+            converts = Math.max(0, converts - apostasyLost);
+
             // Natural passive leader conversion (very slow)
             if (leaderInfiltration < 100) {
               let leaderGrowth = 0.2; // 0.2% basic conversion speed per cycle
@@ -332,6 +337,14 @@ export default function App() {
             // Leader converted — growth bonuses (inside converts > 0 so growthFactor exists)
             if (chinaLeaderConverted && ['china', 'india', 'japan'].includes(c.id)) growthFactor *= 1.5;
             if (indiaLeaderConverted && ['india', 'south_africa', 'egypt'].includes(c.id)) growthFactor *= 1.3;
+          }
+
+          // SATURAÇÃO: governos reagem quando conversão cresce sem o líder convertido
+          if (converts > 0 && leaderInfiltration < 100) {
+            const convertPct = (converts / pop) * 100;
+            if (convertPct > 75) resistance = Math.min(100, resistance + 0.8);
+            else if (convertPct > 50) resistance = Math.min(100, resistance + 0.4);
+            else if (convertPct > 25) resistance = Math.min(100, resistance + 0.2);
           }
 
           // Temple passive effects on resistance/violence (valid even when converts === 0)
@@ -405,6 +418,25 @@ export default function App() {
               }
               prev.logs.unshift(`Dispersão: Missionários que cruzaram de ${sourceId.toUpperCase()} semearam os primeiros cultos em ${target.name}!`);
             }
+          }
+        }
+
+        // Logs ocasionais de apostasia e saturação (5% de chance por ciclo para não poluir)
+        if (Math.random() < 0.05) {
+          const apostasyCountry = updatedCountries.find(c => {
+            const rate = (c.violence / 100) * 0.004 + (c.resistance / 100) * 0.002;
+            return c.converts > 50000 && rate > 0.003;
+          });
+          if (apostasyCountry) {
+            prev.logs.unshift(`[APOSTASIA] Fiéis em ${apostasyCountry.name} questionam a doutrina — violência e resistência cultural geram deserções.`);
+          }
+        }
+        if (Math.random() < 0.05) {
+          const saturatedCountry = updatedCountries.find(c =>
+            c.leaderInfiltration < 100 && (c.converts / c.population) > 0.5
+          );
+          if (saturatedCountry) {
+            prev.logs.unshift(`[REAÇÃO ESTATAL] O governo de ${saturatedCountry.name} intensifica restrições — a ascensão do credo gera alarme político.`);
           }
         }
 
