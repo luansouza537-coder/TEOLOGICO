@@ -355,7 +355,7 @@ export default function App() {
             if (getDoc('doc_tradition') === 'A' && ['estavel', 'teocracia'].includes(c.regimeType)) growthFactor *= 1.05;
             if (getDoc('doc_culture') === 'B') growthFactor *= 1.12;
             if (getDoc('doc_destiny') === 'A' && ['liberal', 'democracia'].includes(c.regimeType)) growthFactor *= 1.10;
-            if (getDoc('doc_leadership') === 'A' && leaderInfiltration < 100) leaderInfiltration = Math.min(100, leaderInfiltration + 0.3);
+            if (getDoc('doc_leadership') === 'A' && leaderInfiltration < 100 && (converts / pop) > 0.05) leaderInfiltration = Math.min(100, leaderInfiltration + 0.15);
             if (getDoc('doc_gender') === 'A' && ['autoritario', 'teocracia'].includes(c.regimeType)) growthFactor *= 1.15;
             if (getDoc('doc_gender') === 'B' && ['democracia', 'liberal', 'vibrante'].includes(c.regimeType)) growthFactor *= 1.10;
             if (getDoc('doc_science') === 'A' && ['estavel', 'autoritario', 'teocracia'].includes(c.regimeType)) growthFactor *= 1.10;
@@ -369,10 +369,10 @@ export default function App() {
             if (getDoc('doc_ritual') === 'B') growthFactor *= 0.95;
             if (getDoc('doc_expansion') === 'A') growthFactor *= 1.10;
             if (getDoc('doc_expansion') === 'B') growthFactor *= c.id === 'usa' ? 1.25 : 0.80;
-            if (getDoc('doc_authority') === 'B' && leaderInfiltration < 100) leaderInfiltration = Math.min(100, leaderInfiltration + 0.5);
+            if (getDoc('doc_authority') === 'B' && leaderInfiltration < 100 && (converts / pop) > 0.05) leaderInfiltration = Math.min(100, leaderInfiltration + 0.25);
             if (getDoc('doc_truth') === 'A') { growthFactor *= 1.10; resistance = Math.min(100, resistance + 0.05); }
             if (getDoc('doc_truth') === 'B' && ['liberal', 'democracia', 'estavel'].includes(c.regimeType)) growthFactor *= 1.05;
-            if (getDoc('doc_organization') === 'A' && leaderInfiltration < 100) leaderInfiltration = Math.min(100, leaderInfiltration + 0.25);
+            if (getDoc('doc_organization') === 'A' && leaderInfiltration < 100 && (converts / pop) > 0.05) leaderInfiltration = Math.min(100, leaderInfiltration + 0.12);
             if (getDoc('doc_moral_source') === 'B' && ['liberal', 'estavel', 'democracia'].includes(c.regimeType)) growthFactor *= 1.05;
             if (getDoc('doc_gov_ideal') === 'A') {
               if (c.regimeType === 'teocracia') growthFactor *= 1.30;
@@ -381,7 +381,7 @@ export default function App() {
             if (getDoc('doc_gov_ideal') === 'B' && ['democracia', 'liberal', 'estavel'].includes(c.regimeType)) resistance = Math.max(0, resistance - 0.1);
             if (getDoc('doc_family') === 'A' && ['autoritario', 'estavel'].includes(c.regimeType)) growthFactor *= 1.10;
             if (getDoc('doc_family') === 'B' && ['vibrante', 'liberal', 'democracia'].includes(c.regimeType)) growthFactor *= 1.10;
-            if (getDoc('doc_obedience') === 'A' && leaderInfiltration < 100) leaderInfiltration = Math.min(100, leaderInfiltration + 0.4);
+            if (getDoc('doc_obedience') === 'A' && leaderInfiltration < 100 && (converts / pop) > 0.05) leaderInfiltration = Math.min(100, leaderInfiltration + 0.20);
             if (getDoc('doc_world') === 'B') violence = Math.max(0, violence - 0.4);
             if (getDoc('doc_miracles') === 'A' && (prev.cycle - prev.lastEventCycle) === 1) growthFactor *= 1.20;
             if (getDoc('doc_unity') === 'B') { resistance = Math.max(0, resistance - 0.1); growthFactor *= 1.05; }
@@ -455,14 +455,13 @@ export default function App() {
               }
             }
 
-            // Natural passive leader conversion (very slow)
+            // Natural passive leader conversion (requires real presence)
             if (leaderInfiltration < 100) {
-              let leaderGrowth = 0.2; // 0.2% basic conversion speed per cycle
+              let leaderGrowth = 0.03; // very slow base — player must actively infiltrate
               if (hasLobbyPolitico) leaderGrowth *= 2.0;
               if (hasEcumenicalAlliance) leaderGrowth *= 1.3;
-              // Prophetic temple: +0.15 leader infiltration per level
               if (prev.religionTrait === 'Prophetic' && c.templeLevel > 0) {
-                leaderGrowth += 0.15 * c.templeLevel;
+                leaderGrowth += 0.08 * c.templeLevel;
               }
               leaderInfiltration = Math.min(100, leaderInfiltration + leaderGrowth);
             }
