@@ -273,6 +273,11 @@ export default function App() {
             const traditionMod = TRADITION_MODIFIER[prev.religionTrait]?.[c.regimeType] ?? 1.0;
             growthFactor *= traditionMod;
 
+            // FASE 2 — NUCLEAÇÃO: crescimento lento até atingir massa crítica mínima
+            const convertPctNucl = (converts / pop) * 100;
+            if (convertPctNucl < 1) growthFactor *= 0.3;
+            else if (convertPctNucl < 5) growthFactor *= 0.7;
+
             // Apply religion core trait influence
             if (prev.religionTrait === 'Syncretist') {
               // Slower globally but accepted in open societies
@@ -335,11 +340,18 @@ export default function App() {
               }
             }
 
+            // FASE 5 — LÍDERES COMUNITÁRIOS: rede de líderes locais acelera a difusão
+            const convertPctLocal = (converts / pop);
+            if (convertPctLocal > 0.10) growthFactor *= 1.10;
+
+            // FASE 6 — MASSA CRÍTICA: efeito de rede social quando credo é dominante
+            if (convertPctLocal > 0.25 && !isLeaderConverted(c.id)) growthFactor *= 1.20;
+
             // Core expansion factor hindered by local hostility (resistance slows down conversion)
             const hostilityMultiplier = 1 - (resistance / 100);
-            
-            // Calculate converts to add
-            const addedConverts = Math.floor((pop - converts) * growthFactor * Math.max(0.01, hostilityMultiplier)) + 120;
+
+            // Calculate converts to add (Phase 2: removed artificial +120 floor)
+            const addedConverts = Math.floor((pop - converts) * growthFactor * Math.max(0.01, hostilityMultiplier));
             converts = Math.min(pop, converts + addedConverts);
 
             // APOSTASIA: fiéis abandonam a fé sob violência e resistência cultural alta
@@ -356,6 +368,11 @@ export default function App() {
               if (convertPctNat > 30) nationalismRate *= 1.6; // establishment reage à ameaça crescente
               const nationalismLost = Math.floor(converts * nationalismRate);
               converts = Math.max(0, converts - nationalismLost);
+            }
+
+            // FASE 3 — ADAPTAÇÃO CULTURAL: após 20 ciclos de presença, resistência cai gradualmente
+            if (cyclesPresent > 20) {
+              resistance = Math.max(0, resistance - 0.1);
             }
 
             // OBSTÁCULO 4 — CONFLITOS ENTRE GRUPOS
@@ -886,9 +903,14 @@ export default function App() {
 
       const updated = prev.countries.map((c) => {
         if (c.id === countryId) {
-          const currentConverts = c.converts;
-          const newConverts = currentConverts === 0 ? 8000 : Math.min(c.population, currentConverts + 200000);
-          return { ...c, converts: newConverts, resistance: Math.max(0, c.resistance - 2), missionariesSent: c.missionariesSent + 1 };
+          const sent = c.missionariesSent;
+          let newConverts: number;
+          // Phase 1: graduated missionary impact
+          if (sent === 0) newConverts = 2000;
+          else if (sent === 1) newConverts = Math.min(c.population, c.converts + 8000);
+          else newConverts = Math.min(c.population, c.converts + 200000);
+          const resistanceDrop = sent === 0 ? 5 : 2;
+          return { ...c, converts: newConverts, resistance: Math.max(0, c.resistance - resistanceDrop), missionariesSent: c.missionariesSent + 1 };
         }
         return c;
       });

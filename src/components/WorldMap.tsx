@@ -143,9 +143,11 @@ export default function WorldMap({
   const getTempleUnlockLevel = (c: Country): number => {
     const sent = c.missionariesSent ?? 0;
     const level = c.templeLevel ?? 0;
+    const cycles = c.cyclesPresent ?? 0;
     const convertPct = c.population > 0 ? (c.converts / c.population) * 100 : 0;
-    if (sent >= 10 && convertPct >= 50 && level >= 3) return 4;
-    if (sent >= 6 && convertPct >= 25 && level >= 2) return 3;
+    // Phase 4: higher tiers require time (cultural consolidation)
+    if (sent >= 10 && convertPct >= 50 && level >= 3 && cycles >= 50) return 4;
+    if (sent >= 6 && convertPct >= 25 && level >= 2 && cycles >= 25) return 3;
     if (sent >= 3 && convertPct >= 10 && level >= 1) return 2;
     if (sent >= 1 && convertPct >= 2) return 1;
     return 0;
@@ -471,7 +473,11 @@ export default function WorldMap({
                       <div className="py-1.5 px-3 rounded bg-zinc-900/50 border border-zinc-700/30 text-[10px] text-zinc-500 text-center">
                         {selectedCountry.missionariesSent === 0
                           ? 'Envie missionários para desbloquear templos'
-                          : `Próximo templo: ${nextTempleName} — requer mais conversões`}
+                          : nextLevel === 3 && (selectedCountry.cyclesPresent ?? 0) < 25
+                            ? `${nextTempleName} requer 25 ciclos de presença (atual: ${selectedCountry.cyclesPresent ?? 0})`
+                            : nextLevel === 4 && (selectedCountry.cyclesPresent ?? 0) < 50
+                              ? `${nextTempleName} requer 50 ciclos de presença (atual: ${selectedCountry.cyclesPresent ?? 0})`
+                              : `Próximo templo: ${nextTempleName} — requer mais conversões`}
                       </div>
                     )}
                   </div>
