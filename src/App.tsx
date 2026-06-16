@@ -1613,7 +1613,7 @@ export default function App() {
               <span className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" />
               <div>
                 <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Fiéis no Mundo</span>
-                <span className="text-md font-bold font-mono text-green-400">{totalConvertedWorld.toLocaleString()}</span>
+                <span className="text-base font-bold font-mono text-green-400">{totalConvertedWorld.toLocaleString()}</span>
               </div>
             </div>
 
@@ -1622,7 +1622,7 @@ export default function App() {
               <span className={`w-3 h-3 rounded-full ${state.tithe <= 0 ? 'bg-red-500 shadow-[0_0_8px_#ef4444]' : 'bg-emerald-500 shadow-[0_0_8px_#10b981]'}`} />
               <div>
                 <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Dízimo</span>
-                <span className={`text-md font-bold font-mono ${state.tithe <= 0 ? 'text-red-400' : 'text-emerald-400'}`}>{state.tithe}</span>
+                <span className={`text-base font-bold font-mono ${state.tithe <= 0 ? 'text-red-400' : 'text-emerald-400'}`}>{state.tithe}</span>
               </div>
             </div>
 
@@ -1631,7 +1631,7 @@ export default function App() {
               <span className="w-3 h-3 rounded-full bg-[#cfb53b] shadow-[0_0_8px_#cfb53b]" />
               <div>
                 <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Poder de Fé</span>
-                <span className="text-md font-bold font-mono text-[#cfb53b]">{state.faith}</span>
+                <span className="text-base font-bold font-mono text-[#cfb53b]">{state.faith}</span>
               </div>
             </div>
 
@@ -1639,8 +1639,8 @@ export default function App() {
             <div className="bg-[#241a1a] border border-red-900/40 rounded-lg py-1 px-3 flex items-center gap-2.5">
               <span className="w-3 h-3 rounded-full bg-red-600 shadow-[0_0_8px_#8b0000]" />
               <div>
-                <span className="text-[9px] uppercase font-mono text-xs text-red-400 block pb-0">Poder de Fervor</span>
-                <span className="text-md font-bold font-mono text-red-400">{state.fervor}</span>
+                <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Poder de Fervor</span>
+                <span className="text-base font-bold font-mono text-red-400">{state.fervor}</span>
               </div>
             </div>
 
@@ -1762,7 +1762,7 @@ export default function App() {
                 : 'bg-[#141108]/60 border-t-transparent border-x-transparent text-[#dfcfa0]/60 hover:text-white'
             }`}
           >
-            🗺️ Mapa-Múndi
+            🗺 Mapa-Múndi
           </button>
           
           <button
@@ -1840,9 +1840,10 @@ export default function App() {
           <div className="bg-[#1c1809] border-2 border-[#cfb53b]/40 rounded-lg p-5 relative overflow-hidden text-xs leading-relaxed">
             <button
               onClick={() => setShowTutorial(false)}
-              className="absolute top-3 right-3 text-sm text-[#cfb53b] hover:text-white cursor-pointer font-bold"
+              className="absolute top-3 right-3 text-[#cfb53b] hover:text-white cursor-pointer transition-colors p-1 rounded"
+              title="Fechar"
             >
-              x
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
             <h3 className="text-base font-bold font-serif text-[#cfb53b] uppercase tracking-wider mb-2">
               Manual Prático Teológico de Credo Inc.

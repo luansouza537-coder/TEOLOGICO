@@ -105,7 +105,7 @@ export default function VictoryScreen({ state, onNewGame, onViewWorld }: Victory
         />
         <button
           onClick={transitionToContent}
-          className="absolute bottom-8 right-8 text-xs font-mono text-white/40 hover:text-white/80 transition-colors uppercase tracking-widest border border-white/20 hover:border-white/50 px-4 py-2 rounded"
+          className="absolute bottom-8 right-8 text-xs font-mono text-white/40 hover:text-white/80 transition-colors uppercase tracking-widest border border-white/20 hover:border-white/50 px-4 py-2 rounded cursor-pointer active:scale-95"
         >
           Pular →
         </button>
@@ -199,12 +199,6 @@ export default function VictoryScreen({ state, onNewGame, onViewWorld }: Victory
         </div>
       </div>
 
-      <style>{`
-        @keyframes victoryPulse {
-          0%, 100% { opacity: 0; transform: scale(1); }
-          50% { opacity: 0.6; transform: scale(1.5); }
-        }
-      `}</style>
     </div>
   );
 }

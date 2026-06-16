@@ -64,10 +64,10 @@ export default function DogmasPanel({ dogmas, faith, fervor, trait, faithPhase, 
         key={d.id}
         className={`rounded-lg p-4 border flex flex-col justify-between transition-all duration-300 relative ${
           d.purchased
-            ? 'bg-[#1a2215] border-[#406834] text-amber-100 shadow-inner'
+            ? 'bg-[#1a2215] border-green-800/50 text-amber-100 shadow-inner'
             : isAffordable
             ? 'bg-[#292211] border-[#cfb53b]/50 hover:border-[#cfb53b] hover:bg-[#1e1a0c]/80 cursor-pointer'
-            : 'bg-[#1b170d] border-zinc-900 text-zinc-500 opacity-75'
+            : 'bg-[#1b170d] border-zinc-900 text-zinc-500 opacity-75 cursor-not-allowed'
         }`}
         onClick={() => !d.purchased && isAffordable && onPurchaseDogma(d.id)}
         id={`dogma-card-${d.id}`}
@@ -80,7 +80,7 @@ export default function DogmasPanel({ dogmas, faith, fervor, trait, faithPhase, 
 
         <div>
           <div className="flex justify-between items-start gap-2 mb-1.5">
-            <span className={`text-base font-bold font-serif ${d.purchased ? 'text-[#a6e22e]' : 'text-[#cfb53b]'}`}>
+            <span className={`text-base font-bold font-serif ${d.purchased ? 'text-green-400' : 'text-[#cfb53b]'}`}>
               {d.name}
             </span>
           </div>
@@ -112,7 +112,7 @@ export default function DogmasPanel({ dogmas, faith, fervor, trait, faithPhase, 
         )}
 
         {d.purchased && (
-          <div className="text-[10px] uppercase font-mono tracking-widest text-[#a6e22e] text-right font-bold border-t border-[#445b37] pt-2">
+          <div className="text-[10px] uppercase font-mono tracking-widest text-green-400 text-right font-bold border-t border-green-800/50 pt-2">
             Dogma Adotado
           </div>
         )}

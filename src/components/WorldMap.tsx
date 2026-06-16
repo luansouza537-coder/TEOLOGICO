@@ -194,7 +194,7 @@ export default function WorldMap({
         {/* Global summary stats bar */}
         <div className="bg-[#241e0c] rounded border border-[#cfb53b]/15 p-2.5 flex justify-between text-xs text-[#dfcfa0]/80">
           <div>
-            Poplação Mundial: <span className="text-white font-mono">4.18B</span>
+            População Mundial: <span className="text-white font-mono">{countries.reduce((a, c) => a + c.population, 0).toLocaleString()}</span>
           </div>
           <div>
             Seguidores Totais:{' '}
@@ -217,7 +217,7 @@ export default function WorldMap({
       </div>
 
       {/* RIGHT PORTION: Detailed Info and Core Active Actions */}
-      <div className="w-full lg:w-96 bg-[#211a0a] border-2 border-[#cfb53b] rounded-lg p-5 flex flex-col justify-between shadow-xl min-h-[480px]">
+      <div className="w-full lg:w-96 bg-[#211a0a] border-2 border-[#cfb53b]/60 rounded-lg p-5 flex flex-col justify-between shadow-xl min-h-[480px] overflow-y-auto max-h-[85vh]">
         {selectedCountry ? (
           <div className="flex-1 flex flex-col h-full gap-4">
             
@@ -238,7 +238,7 @@ export default function WorldMap({
                 População: {selectedCountry.population.toLocaleString()}
               </div>
               {COUNTRY_LORE[selectedCountry.id] && (
-                <p className="text-[10px] text-[#dfcfa0]/70 mt-2 leading-relaxed italic">
+                <p className="text-xs text-[#dfcfa0]/80 mt-2 leading-relaxed italic">
                   {COUNTRY_LORE[selectedCountry.id]}
                 </p>
               )}
@@ -254,7 +254,7 @@ export default function WorldMap({
                 <div className="flex justify-between text-xs font-mono mb-1">
                   <span>Conversão:</span>
                   <span className="text-[#cfb53b] font-bold">
-                    {((selectedCountry.converts / selectedCountry.population) * 100).toFixed(4)}%
+                    {((selectedCountry.converts / selectedCountry.population) * 100).toFixed(2)}%
                   </span>
                 </div>
                 <div className="w-full h-2 bg-[#120f05] rounded overflow-hidden border border-[#cfb53b]/20">
