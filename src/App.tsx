@@ -9,6 +9,7 @@ import { INITIAL_COUNTRIES, INITIAL_DOGMAS, RANDOM_EVENTS_POOL, INITIAL_DOCTRINE
 import CreationScreen from './components/CreationScreen';
 import WorldMap from './components/WorldMap';
 import DogmasPanel from './components/DogmasPanel';
+import VictoryScreen from './components/VictoryScreen';
 import LeadersPanel from './components/LeadersPanel';
 import RivalPanel from './components/RivalPanel';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Gamepad2, Info, BookOpen, AlertTriangle } from 'lucide-react';
@@ -99,6 +100,8 @@ export default function App() {
       doctrines: INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null })),
       tithe: 50,
       faithPhase: 1,
+      firstCountryConverted: null,
+      peakFervor: 5,
     };
   });
 
@@ -933,11 +936,20 @@ export default function App() {
           playSound('success');
         }
 
+        // Track run statistics for victory screen
+        const newFervor = Math.max(fervorFloor, prev.fervor + fervorGained);
+        const newPeakFervor = Math.max(prev.peakFervor ?? 0, newFervor);
+        let newFirstCountry = prev.firstCountryConverted;
+        if (!newFirstCountry) {
+          const firstConverted = updatedCountries.find(c => c.converts / c.population >= 0.01);
+          if (firstConverted) newFirstCountry = firstConverted.name;
+        }
+
         return {
           ...prev,
           cycle: nextCycle,
           faith: prev.faith + faithGained,
-          fervor: Math.max(fervorFloor, prev.fervor + fervorGained),
+          fervor: newFervor,
           tithe: Math.max(0, prev.tithe + netTithe),
           countries: updatedCountries,
           rivalProgress: updatedRivalProgress,
@@ -951,7 +963,9 @@ export default function App() {
           lastEventCycle: newlyTriggeredEvent ? prev.cycle : prev.lastEventCycle,
           lastEventTimestamp: newlyTriggeredEvent ? now : prev.lastEventTimestamp,
           eventCooldowns: updatedEventCooldowns,
-          logs: updatedLogs
+          logs: updatedLogs,
+          peakFervor: newPeakFervor,
+          firstCountryConverted: newFirstCountry,
         };
       });
     }, intervalTime);
@@ -1066,6 +1080,8 @@ export default function App() {
       doctrines: INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null })),
       tithe: 50,
       faithPhase: 1,
+      firstCountryConverted: null,
+      peakFervor: 5,
     });
     playSound('success');
   };
@@ -1101,6 +1117,8 @@ export default function App() {
       doctrines: INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null })),
       tithe: 50,
       faithPhase: 1,
+      firstCountryConverted: null,
+      peakFervor: 5,
     });
   };
 
@@ -2317,49 +2335,40 @@ export default function App() {
         );
       })()}
 
-      {/* 4. GAME OVER SCREEN (Victory/Defeat Dialog overlay popup) */}
-      {state.isGameOver && (
+      {/* 4a. VICTORY SCREEN — full immersive overlay */}
+      {state.isGameOver && state.gameOverReason === 'victory' && (
+        <VictoryScreen
+          state={state}
+          onNewGame={handleResetGame}
+          onViewWorld={() => setState(prev => ({ ...prev, isGameOver: false, paused: true }))}
+        />
+      )}
+
+      {/* 4b. DEFEAT SCREEN */}
+      {state.isGameOver && state.gameOverReason !== 'victory' && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in" id="gameover-overlay">
           <div className="w-full max-w-lg bg-[#211a0c] border-4 border-[#cfb53b] p-6 rounded-xl text-center shadow-[0_0_50px_rgba(207,181,59,0.3)] flex flex-col gap-5">
-            
-            {state.gameOverReason === 'victory' ? (
-              <>
-                <span className="text-[#cfb53b] text-6xl block justify-center font-serif">🏆</span>
-                <h2 className="text-3xl font-extrabold font-serif text-[#cfb53b] tracking-wider uppercase">
-                  O Alinhamento Transcendental!
-                </h2>
-                <div className="text-sm leading-relaxed text-[#dfcfa0]/90">
-                  Parabéns! Sua fé original <strong>"{state.religionName}"</strong> superou todas as barreiras físicas, consolidou as doutrinas corretas e completou com sucesso o sagrado objetivo de <strong>{goalNames[state.victoryGoal]}</strong>.
-                  <p className="mt-3 text-xs italic text-amber-100/70">
-                    A humanidade agora caminha unida sob os preceitos de {state.religionName}. A escuridão espiritual foi debelada para sempre.
-                  </p>
-                </div>
-              </>
-            ) : (
-              <>
-                <span className="text-red-500 text-6xl block justify-center font-serif">💀</span>
-                <h2 className="text-3xl font-extrabold font-serif text-red-500 tracking-wider uppercase">
-                  Ruína do Credo
-                </h2>
-                <div className="text-sm leading-relaxed text-[#dfcfa0]/90">
-                  {state.gameOverReason === 'resistance' && (
-                    <p>
-                      Seu proselitismo agressivo e a alta hostilidade desregulada forçaram a comunidade internacional a promulgar uma inquisição mundial totalitária. Todos os seus templos e relíquias foram banidos e destruídos devido à resistência persistente superior a 85%!
-                    </p>
-                  )}
-                  {state.gameOverReason === 'rival' && (
-                    <p>
-                      <strong>{state.rivalName}</strong> provou suas teorias pragmáticas e ergueu uma utopia tecnológica. A humanidade perdeu a capacidade de professar o invisível, condenando sua divindade ao esquecimento definitivo.
-                    </p>
-                  )}
-                  {state.gameOverReason === 'bankrupt' && (
-                    <p>
-                      Tanto a Fé quanto o Fervor zeraram inteiramente de forma irreversível e você não possui mais seguidores orgânicos ativos para gerar dízimos comunitários. O credo ruiu por letargia estrutural.
-                    </p>
-                  )}
-                </div>
-              </>
-            )}
+            <span className="text-red-500 text-6xl block justify-center font-serif">💀</span>
+            <h2 className="text-3xl font-extrabold font-serif text-red-500 tracking-wider uppercase">
+              Ruína do Credo
+            </h2>
+            <div className="text-sm leading-relaxed text-[#dfcfa0]/90">
+              {state.gameOverReason === 'resistance' && (
+                <p>
+                  Seu proselitismo agressivo e a alta hostilidade desregulada forçaram a comunidade internacional a promulgar uma inquisição mundial totalitária. Todos os seus templos e relíquias foram banidos e destruídos devido à resistência persistente superior a 85%!
+                </p>
+              )}
+              {state.gameOverReason === 'rival' && (
+                <p>
+                  <strong>{state.rivalName}</strong> provou suas teorias pragmáticas e ergueu uma utopia tecnológica. A humanidade perdeu a capacidade de professar o invisível, condenando sua divindade ao esquecimento definitivo.
+                </p>
+              )}
+              {state.gameOverReason === 'bankrupt' && (
+                <p>
+                  Tanto a Fé quanto o Fervor zeraram inteiramente de forma irreversível e você não possui mais seguidores orgânicos ativos para gerar dízimos comunitários. O credo ruiu por letargia estrutural.
+                </p>
+              )}
+            </div>
 
             <button
               onClick={handleResetGame}
