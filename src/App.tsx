@@ -627,9 +627,13 @@ export default function App() {
         let titheGained = 0;
         updatedCountries.forEach(c => {
           if (c.converts > 0) {
-            // Harder early game: needs 2M converts for 1 tithe base (was 500k)
-            const localBase = c.converts / 2000000;
-            // Temple bonus reduced: requires established presence to be profitable
+            // Opção A: renda base fixa por país com presença (incentiva expansão geográfica)
+            titheGained += 0.3;
+            // Opção B: curva de faixas — primeiros 200k rendem mais por cabeça
+            const tier1 = Math.min(c.converts, 200_000);
+            const tier2 = Math.min(Math.max(c.converts - 200_000, 0), 800_000);
+            const tier3 = Math.max(c.converts - 1_000_000, 0);
+            const localBase = tier1 / 800_000 + tier2 / 1_600_000 + tier3 / 2_000_000;
             const templeBonus = c.templeLevel === 1 ? 1.3 : c.templeLevel === 2 ? 1.8 : c.templeLevel === 3 ? 2.5 : c.templeLevel >= 4 ? 4.0 : 1.0;
             titheGained += localBase * templeBonus;
           }
