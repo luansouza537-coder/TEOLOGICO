@@ -406,6 +406,9 @@ export default function App() {
             // FASE 6 — MASSA CRÍTICA: efeito de rede social quando credo é dominante
             if (convertPctLocal > 0.25 && !isLeaderConverted(c.id)) growthFactor *= 1.20;
 
+            // Cap growthFactor to prevent runaway stacking from dogma + doctrine combinations
+            growthFactor = Math.min(growthFactor, 0.20);
+
             // Core expansion factor hindered by local hostility (resistance slows down conversion)
             const hostilityMultiplier = 1 - (resistance / 100);
 
