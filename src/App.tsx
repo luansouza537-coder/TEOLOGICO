@@ -65,6 +65,7 @@ export default function App() {
         }
         if (!parsed.doctrines) parsed.doctrines = INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null }));
         if (parsed.tithe === undefined) parsed.tithe = 50;
+        if (parsed.faithPhase === undefined) parsed.faithPhase = 1;
         return parsed;
       } catch (e) {
         console.error('Falha ao restaurar dados de localStorage:', e);
@@ -96,12 +97,14 @@ export default function App() {
       eventCooldowns: {},
       doctrines: INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null })),
       tithe: 50,
+      faithPhase: 1,
     };
   });
 
   const [activeTab, setActiveTab] = useState<'map' | 'dogmas' | 'leaders' | 'rival' | 'faith'>('map');
   const [showTutorial, setShowTutorial] = useState(false);
   const [specChoiceCountryId, setSpecChoiceCountryId] = useState<string | null>(null);
+  const [phaseNotification, setPhaseNotification] = useState<2 | 3 | null>(null);
   const [isMuted, setIsMuted] = useState<boolean>(() => localStorage.getItem('audio_muted_v2') === 'true');
   const [newsText, setNewsText] = useState('CONEXÃO COLETIVA ESTÁVEL: Monitorando a disseminação teológica pelo globo...');
   const [floatingTexts, setFloatingTexts] = useState<{ id: number; text: string; x: number; y: number; colorClass: string; countryId?: string }[]>([]);
@@ -756,6 +759,21 @@ export default function App() {
 
         const updatedRivalProgress = Math.min(100, prev.rivalProgress + rivalIncrement);
 
+        // 4b. FAITH PHASE PROGRESSION
+        const totalWorldPop = updatedCountries.reduce((s, c) => s + c.population, 0);
+        const totalWorldConverts = updatedCountries.reduce((s, c) => s + c.converts, 0);
+        const worldConvertPct = totalWorldPop > 0 ? totalWorldConverts / totalWorldPop : 0;
+        const countriesAbove30 = updatedCountries.filter(c => c.converts / c.population >= 0.30).length;
+        const allCountriesHavePresence = updatedCountries.every(c => c.converts > 0);
+
+        let newFaithPhase = prev.faithPhase;
+        if (prev.faithPhase === 1 && countriesAbove30 >= 5) {
+          newFaithPhase = 2;
+        } else if (prev.faithPhase === 2 && worldConvertPct >= 0.50 && allCountriesHavePresence) {
+          newFaithPhase = 3;
+        }
+        const phaseAdvanced = newFaithPhase > prev.faithPhase;
+
         // 5. Evaluate Warning Streak (governos contra você se resistência > 85%)
         let newStreak = prev.resistanceStreak;
         if (avgResistance > 85) {
@@ -889,6 +907,14 @@ export default function App() {
           return prev_c.templePending > 0 && c.templePending === 0 && c.templeLevel > prev_c.templeLevel;
         }).length;
 
+        // Build phase advancement log
+        const phaseNames = ['', 'Centelha Sagrada', 'Credo Estabelecido', 'Era da Transcendência'];
+        const phaseDescs = ['', '', 'Dogmas e doutrinas intermediárias desbloqueadas. O mundo começa a notar sua presença.', 'Dogmas estratégicos desbloqueados. A metade do mundo foi alcançada pela fé!'];
+        if (phaseAdvanced) {
+          updatedLogs.unshift(`[MARCO HISTÓRICO] ✨ Sua fé ascendeu ao estágio de "${phaseNames[newFaithPhase]}"! ${phaseDescs[newFaithPhase]}`);
+          playSound('success');
+        }
+
         return {
           ...prev,
           cycle: nextCycle,
@@ -901,8 +927,9 @@ export default function App() {
           isGameOver,
           gameOverReason,
           totalTemples: prev.totalTemples + newlyCompletedTemples,
+          faithPhase: newFaithPhase,
           eventActive: isGameOver ? null : (newlyTriggeredEvent || prev.eventActive),
-          paused: isGameOver ? false : (newlyTriggeredEvent ? true : prev.paused),
+          paused: isGameOver ? false : (phaseAdvanced ? true : (newlyTriggeredEvent ? true : prev.paused)),
           lastEventCycle: newlyTriggeredEvent ? prev.cycle : prev.lastEventCycle,
           lastEventTimestamp: newlyTriggeredEvent ? now : prev.lastEventTimestamp,
           eventCooldowns: updatedEventCooldowns,
@@ -913,6 +940,13 @@ export default function App() {
 
     return () => clearInterval(timer);
   }, [state.started, state.paused, state.gameSpeed, state.isGameOver]);
+
+  // Phase advancement notification
+  useEffect(() => {
+    if (state.faithPhase === 2 || state.faithPhase === 3) {
+      setPhaseNotification(state.faithPhase);
+    }
+  }, [state.faithPhase]);
 
   // Dynamic World News Ticker
   useEffect(() => {
@@ -1013,6 +1047,7 @@ export default function App() {
       eventCooldowns: {},
       doctrines: INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null })),
       tithe: 50,
+      faithPhase: 1,
     });
     playSound('success');
   };
@@ -1047,6 +1082,7 @@ export default function App() {
       eventCooldowns: {},
       doctrines: INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null })),
       tithe: 50,
+      faithPhase: 1,
     });
   };
 
@@ -1799,6 +1835,7 @@ export default function App() {
               faith={state.faith}
               fervor={state.fervor}
               trait={state.religionTrait}
+              faithPhase={state.faithPhase}
               onPurchaseDogma={purchaseDogma}
             />
           )}
@@ -1839,8 +1876,24 @@ export default function App() {
               Activist: 'Sua fé é ativista e transformadora. Justiça social, libertação dos oprimidos e confronto direto com o poder são seus pilares.',
               Syncretist: 'Sua fé é sincretista e inclusiva. A harmonia entre tradições, o diálogo inter-religioso e a coexistência são sua marca.',
             };
+            const phaseInfo = [
+              null,
+              { name: 'Centelha Sagrada', desc: 'Culto emergente. Alcance 5 países com >30% de conversão para avançar.', color: 'border-amber-700/40 bg-amber-950/20 text-amber-300', dot: 'bg-amber-500' },
+              { name: 'Credo Estabelecido', desc: 'Religião organizada. Converta 50% do mundo com presença em todos os países para ascender.', color: 'border-orange-700/40 bg-orange-950/20 text-orange-300', dot: 'bg-orange-500' },
+              { name: 'Era da Transcendência', desc: 'Metade da humanidade abraçou sua fé. O ápice foi alcançado.', color: 'border-red-700/40 bg-red-950/20 text-red-300', dot: 'bg-red-500' },
+            ];
+            const currentPhaseInfo = phaseInfo[state.faithPhase ?? 1]!;
             return (
               <div className="flex flex-col gap-6" id="faith-panel">
+                {/* Faith Phase Banner */}
+                <div className={`rounded-lg border p-3 flex items-center gap-3 ${currentPhaseInfo.color}`}>
+                  <span className={`w-3 h-3 rounded-full shrink-0 ${currentPhaseInfo.dot} shadow-[0_0_8px_currentColor]`} />
+                  <div>
+                    <div className="text-[9px] uppercase font-mono tracking-widest opacity-70">Fase {state.faithPhase ?? 1} de 3</div>
+                    <div className="text-xs font-bold font-serif">{currentPhaseInfo.name}</div>
+                    {(state.faithPhase ?? 1) < 3 && <div className="text-[9px] opacity-60 mt-0.5">{currentPhaseInfo.desc}</div>}
+                  </div>
+                </div>
                 {/* Header identidade */}
                 <div className="flex flex-col md:flex-row gap-4 items-start">
                   <div className="flex-1 bg-[#241e0d] border border-[#cfb53b]/30 rounded-lg p-5">
@@ -1938,10 +1991,31 @@ export default function App() {
                   const universalDocs = doctrines.filter(d => d.section === 'universal');
                   const socialDocs = doctrines.filter(d => d.section === 'social');
 
+                  // Map tier to required phase
+                  const tierPhase: Record<string, number> = { basic: 1, intermediate: 2, strategic: 3 };
+                  const phaseReqLabel: Record<number, string> = { 2: 'Credo Estabelecido', 3: 'Era da Transcendência' };
+
                   const renderDoc = (doc: DoctrineChoice) => {
                     const cost = costMap[doc.tier];
                     const canAfford = state.faith >= cost.faith && state.fervor >= cost.fervor;
                     const chosen = doc.chosen;
+                    const requiredPhase = tierPhase[doc.tier] ?? 1;
+                    const isLocked = requiredPhase > (state.faithPhase ?? 1);
+
+                    if (isLocked) {
+                      return (
+                        <div key={doc.id} className="rounded-lg border border-zinc-800/40 bg-zinc-900/20 p-3 opacity-55">
+                          <div className="flex justify-between items-start mb-1 gap-1">
+                            <span className="text-[10px] font-bold uppercase tracking-wide text-zinc-500 font-serif leading-tight">{doc.topic}</span>
+                            <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded border shrink-0 ${tierTag[doc.tier]}`}>
+                              🔒 {phaseReqLabel[requiredPhase]}
+                            </span>
+                          </div>
+                          <p className="text-[9px] text-zinc-600 italic">Desbloqueie a fase "{phaseReqLabel[requiredPhase]}" para revelar esta posição doutrinária.</p>
+                        </div>
+                      );
+                    }
+
                     return (
                       <div key={doc.id} className={`rounded-lg border p-3 ${chosen ? 'border-[#cfb53b]/35 bg-[#1a1508]' : tierBg[doc.tier]}`}>
                         <div className="flex justify-between items-start mb-2 gap-1">
@@ -2113,6 +2187,34 @@ export default function App() {
               className="py-2.5 px-6 bg-[#cfb53b] hover:bg-[#e6ca4a] text-[#1e1a0c] font-extrabold uppercase rounded-lg shadow-md cursor-pointer text-xs font-sans tracking-widest mt-2 hover:shadow-[0_0_15px_rgba(207,181,59,0.35)] transition-all"
             >
               Aceitar Desígnio Celestial
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* FAITH PHASE ADVANCEMENT NOTIFICATION */}
+      {phaseNotification && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-40 animate-fade-in">
+          <div className={`w-full max-w-md border-2 p-6 rounded-xl text-center shadow-[0_0_60px_rgba(207,181,59,0.3)] flex flex-col gap-4 ${phaseNotification === 3 ? 'bg-[#1a0808] border-red-700' : 'bg-[#1a1208] border-orange-700'}`}>
+            <div className={`text-[10px] uppercase font-bold tracking-widest font-mono ${phaseNotification === 3 ? 'text-red-400' : 'text-orange-400'}`}>
+              ✨ Marco Histórico — Fase {phaseNotification} de 3
+            </div>
+            <div className={`text-2xl font-bold font-serif ${phaseNotification === 3 ? 'text-red-300' : 'text-orange-300'}`}>
+              {phaseNotification === 2 ? 'Credo Estabelecido' : 'Era da Transcendência'}
+            </div>
+            <p className="text-sm text-[#dfcfa0]/80 leading-relaxed">
+              {phaseNotification === 2
+                ? 'Sua fé saiu das sombras e se tornou uma religião organizada. Dogmas e doutrinas intermediárias foram revelados. O mundo começa a reagir à sua presença.'
+                : 'Metade da humanidade foi alcançada. Sua fé transcendeu fronteiras e culturas. Os dogmas mais poderosos estão agora ao seu alcance.'}
+            </p>
+            <div className={`text-xs font-mono px-3 py-2 rounded border ${phaseNotification === 3 ? 'border-red-800/50 bg-red-950/30 text-red-300' : 'border-orange-800/50 bg-orange-950/30 text-orange-300'}`}>
+              {phaseNotification === 2 ? '🔓 Dogmas Intermediários desbloqueados\n🔓 Doutrinas Intermediárias reveladas' : '🔓 Dogmas Estratégicos desbloqueados\n🔓 Doutrinas Estratégicas reveladas'}
+            </div>
+            <button
+              onClick={() => { setPhaseNotification(null); setState(prev => ({ ...prev, paused: false })); }}
+              className={`py-2.5 px-6 font-extrabold uppercase rounded-lg text-xs tracking-widest mt-1 cursor-pointer transition-all ${phaseNotification === 3 ? 'bg-red-700 hover:bg-red-600 text-white' : 'bg-orange-700 hover:bg-orange-600 text-white'}`}
+            >
+              Continuar a Missão
             </button>
           </div>
         </div>

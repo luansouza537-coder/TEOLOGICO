@@ -281,6 +281,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 35,
     costFervor: 0,
     purchased: false,
+    phase: 1,
     effect: 'Aumenta em 25% a taxa de conversão em países liberais e estáveis (como Alemanha, EUA, Japão).'
   },
   {
@@ -290,6 +291,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 40,
     costFervor: 0,
     purchased: false,
+    phase: 1,
     effect: 'Reduz a violência em 20% em países com violência alta e adiciona conversão significativa instantaneamente.'
   },
   {
@@ -299,6 +301,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 55,
     costFervor: 10,
     purchased: false,
+    phase: 1,
     effect: 'Gera +5 Fé por ciclo e diminui a hostilidade das autoridades (Resistência decai 10% globalmente).'
   },
   {
@@ -308,6 +311,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 70,
     costFervor: 20,
     purchased: false,
+    phase: 2,
     effect: 'Duplica a velocidade de infiltração na mente dos governantes mundiais.'
   },
   {
@@ -317,6 +321,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 45,
     costFervor: 0,
     purchased: false,
+    phase: 1,
     effect: '+30% conversão em países com regime Vibrante (Brasil, México, África do Sul).'
   },
   {
@@ -326,6 +331,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 50,
     costFervor: 0,
     purchased: false,
+    phase: 1,
     effect: 'Reduz a violência em -2 por ciclo nos 2 países com maior violência do mundo.'
   },
   {
@@ -335,6 +341,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 65,
     costFervor: 10,
     purchased: false,
+    phase: 2,
     effect: 'A cada ciclo, o país com maior resistência perde -1 ponto automaticamente.'
   },
   {
@@ -344,6 +351,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 45,
     costFervor: 5,
     purchased: false,
+    phase: 2,
     effect: '+10% conversão em países com regime Vibrante ou Autoritário.'
   },
   {
@@ -353,6 +361,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 40,
     costFervor: 0,
     purchased: false,
+    phase: 1,
     effect: '+15% conversão em democracias; +5 Fé por ciclo.'
   },
   {
@@ -362,6 +371,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 50,
     costFervor: 10,
     purchased: false,
+    phase: 2,
     effect: '+30% na taxa de conversão global base em todos os países ativos.'
   },
   {
@@ -371,6 +381,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 35,
     costFervor: 0,
     purchased: false,
+    phase: 1,
     effect: '+25% conversão em países com regime Vibrante (Brasil, México, África do Sul).'
   },
   {
@@ -380,6 +391,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 30,
     costFervor: 0,
     purchased: false,
+    phase: 1,
     effect: '+5 Fé por ciclo; +10% conversão em países com alta alfabetização (liberal, estável, democracia).'
   },
   {
@@ -389,6 +401,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 60,
     costFervor: 15,
     purchased: false,
+    phase: 2,
     effect: 'Eventos do tipo Êxtase e Profecia geram +50% mais Fé quando ocorrem.'
   },
   {
@@ -398,6 +411,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 55,
     costFervor: 0,
     purchased: false,
+    phase: 2,
     effect: 'Ao ser comprado: -5 resistência em todos os países. Passivo: +3 Fé por ciclo.'
   },
   {
@@ -407,6 +421,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 80,
     costFervor: 20,
     purchased: false,
+    phase: 3,
     effect: '+10 Fé por ciclo; reduz lentamente a resistência em países liberais e democráticos.'
   },
 
@@ -418,6 +433,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 45,
     costFervor: 0,
     purchased: false,
+    phase: 1,
     traitRequirement: 'Mistical',
     effect: 'Aumenta em 40% a dispersão automática em países com baixa resistência.'
   },
@@ -428,6 +444,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 60,
     costFervor: 5,
     purchased: false,
+    phase: 1,
     traitRequirement: 'Mistical',
     effect: 'Todos os eventos de "êxtase" místico geram +50% de Fé e +30 de Fervor imediato.'
   },
@@ -438,6 +455,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 80,
     costFervor: 15,
     purchased: false,
+    phase: 2,
     traitRequirement: 'Mistical',
     effect: 'Desbloqueia a ação ativa de Êxtase Coletivo, adicionando conversões em massa.'
   },
@@ -448,6 +466,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 110,
     costFervor: 30,
     purchased: false,
+    phase: 3,
     traitRequirement: 'Mistical',
     effect: 'A infiltração de líderes gera um surto automático de conversão de 15% na população vizinha.'
   },
@@ -460,6 +479,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 40,
     costFervor: 0,
     purchased: false,
+    phase: 1,
     traitRequirement: 'Prophetic',
     effect: 'Revela com antecedência eventos futuros negativos e concede +15% de resistência à perseguição.'
   },
@@ -470,6 +490,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 60,
     costFervor: 10,
     purchased: false,
+    phase: 1,
     traitRequirement: 'Prophetic',
     effect: 'Garante que crises econômicas e eventos de perseguição acelerem a conversão em 50%.'
   },
@@ -480,6 +501,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 80,
     costFervor: 15,
     purchased: false,
+    phase: 2,
     traitRequirement: 'Prophetic',
     effect: 'Aumenta drasticamente a taxa de conversão de grandes massas na China e na Índia.'
   },
@@ -490,6 +512,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 120,
     costFervor: 25,
     purchased: false,
+    phase: 3,
     traitRequirement: 'Prophetic',
     effect: 'Reduz o custo em fé da conversão de líderes políticos em 50% globalmente.'
   },
@@ -500,6 +523,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 45,
     costFervor: 0,
     purchased: false,
+    phase: 1,
     traitRequirement: 'Prophetic',
     effect: '+10% conversão global constante em todos os países ativos.'
   },
@@ -510,6 +534,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 50,
     costFervor: 10,
     purchased: false,
+    phase: 2,
     traitRequirement: 'Prophetic',
     effect: 'Sempre que um evento narrativo disparar, gera +20 Fervor adicional imediato.'
   },
@@ -520,6 +545,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 70,
     costFervor: 5,
     purchased: false,
+    phase: 2,
     traitRequirement: 'Prophetic',
     effect: '+30% conversão em países agrícolas (Brasil, Índia, Egito, África do Sul).'
   },
@@ -530,6 +556,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 85,
     costFervor: 15,
     purchased: false,
+    phase: 2,
     traitRequirement: 'Prophetic',
     effect: 'No ciclo imediatamente após qualquer evento narrativo, conversão global aumenta em ×1.4.'
   },
@@ -540,6 +567,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 90,
     costFervor: 10,
     purchased: false,
+    phase: 2,
     traitRequirement: 'Prophetic',
     effect: 'Reduz em 25% o custo de Fé da ação de Infiltrar Líder em regimes opressores e autoritários.'
   },
@@ -550,6 +578,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 70,
     costFervor: 15,
     purchased: false,
+    phase: 2,
     traitRequirement: 'Prophetic',
     effect: '+15 Fervor por ciclo; a Ordem Tecnocrática avança 30% mais devagar.'
   },
@@ -560,6 +589,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 110,
     costFervor: 20,
     purchased: false,
+    phase: 3,
     traitRequirement: 'Prophetic',
     effect: 'Ao ser comprado: -20 resistência em todos os países, mas +5 violência globalmente.'
   },
@@ -570,6 +600,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 65,
     costFervor: 15,
     purchased: false,
+    phase: 2,
     traitRequirement: 'Prophetic',
     effect: '+25% conversão nos países mais populosos (China, Índia, EUA, Brasil).'
   },
@@ -580,6 +611,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 75,
     costFervor: 20,
     purchased: false,
+    phase: 3,
     traitRequirement: 'Prophetic',
     effect: 'Quando eventos de penalidade ou neutros ocorrem, gera +40 Fervor adicional imediato.'
   },
@@ -590,6 +622,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 95,
     costFervor: 10,
     purchased: false,
+    phase: 3,
     traitRequirement: 'Prophetic',
     effect: 'Resistência de democracias e teocracias cai -1 por ciclo passivamente; +5 Fé por ciclo.'
   },
@@ -600,6 +633,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 150,
     costFervor: 40,
     purchased: false,
+    phase: 3,
     traitRequirement: 'Prophetic',
     effect: 'Em qualquer país com mais de 80% de infiltração do líder, a conversão acelera em ×2.0.'
   },
@@ -612,6 +646,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 40,
     costFervor: 5,
     purchased: false,
+    phase: 1,
     traitRequirement: 'Activist',
     effect: 'Dobra a velocidade de conversão e infiltração em regimes opressores ou autoritários.'
   },
@@ -622,6 +657,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 30,
     costFervor: 30,
     purchased: false,
+    phase: 1,
     traitRequirement: 'Activist',
     effect: 'Sempre que sua fé sofrer perseguição em regimes opressores, ganhe +150% de Fervor.'
   },
@@ -632,6 +668,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 75,
     costFervor: 15,
     purchased: false,
+    phase: 2,
     traitRequirement: 'Activist',
     effect: 'Diminui a resistência das democracias liberais e consolida o fervor popular (+35%).'
   },
@@ -642,6 +679,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 110,
     costFervor: 20,
     purchased: false,
+    phase: 3,
     traitRequirement: 'Activist',
     effect: 'Assegura que a taxa de violência de qualquer país sob nossa influência caia instantaneamente para 10%.'
   },
@@ -654,6 +692,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 35,
     costFervor: 0,
     purchased: false,
+    phase: 1,
     traitRequirement: 'Syncretist',
     effect: 'Zera a penalidade de conversão inicial. Ganho de frentes iniciais facilitado.'
   },
@@ -664,6 +703,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 60,
     costFervor: 5,
     purchased: false,
+    phase: 1,
     traitRequirement: 'Syncretist',
     effect: 'Cada festival local dobra as taxas de conversão passiva, e a resistência global cai em 25%.'
   },
@@ -674,6 +714,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 80,
     costFervor: 10,
     purchased: false,
+    phase: 2,
     traitRequirement: 'Syncretist',
     effect: 'A resistência máxima dos países nunca excederá 50% (como garantia doutrinária).'
   },
@@ -684,6 +725,7 @@ export const INITIAL_DOGMAS: Dogma[] = [
     costFaith: 115,
     costFervor: 15,
     purchased: false,
+    phase: 3,
     traitRequirement: 'Syncretist',
     effect: 'O Iluminado (conversão de líderes) avança automaticamente 20% em todos os países.'
   }

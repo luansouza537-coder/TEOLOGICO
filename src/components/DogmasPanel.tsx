@@ -12,11 +12,12 @@ interface DogmasPanelProps {
   faith: number;
   fervor: number;
   trait: ReligionTrait;
+  faithPhase: 1 | 2 | 3;
   onPurchaseDogma: (dogmaId: string) => void;
 }
 
-export default function DogmasPanel({ dogmas, faith, fervor, trait, onPurchaseDogma }: DogmasPanelProps) {
-  
+export default function DogmasPanel({ dogmas, faith, fervor, trait, faithPhase, onPurchaseDogma }: DogmasPanelProps) {
+
   // Categorise dogmas
   const universalDogmas = dogmas.filter((d) => !d.traitRequirement);
   const traitDogmas = dogmas.filter((d) => d.traitRequirement === trait);
@@ -32,9 +33,32 @@ export default function DogmasPanel({ dogmas, faith, fervor, trait, onPurchaseDo
     return faith >= d.costFaith && fervor >= d.costFervor;
   };
 
+  const phaseLabels: Record<number, string> = { 2: 'Credo Estabelecido', 3: 'Era da Transcendência' };
+  const phaseColors: Record<number, string> = { 2: 'text-orange-400 border-orange-700/40', 3: 'text-red-400 border-red-700/40' };
+
   const renderDogmaCard = (d: Dogma) => {
     const isAffordable = checkAffordable(d);
-    
+    const isLocked = (d.phase ?? 1) > faithPhase;
+
+    if (isLocked) {
+      return (
+        <div key={d.id} className="rounded-lg p-4 border border-zinc-800/50 bg-zinc-900/30 flex flex-col gap-2 relative opacity-60">
+          <div className="absolute top-2 right-2">
+            <ShieldAlert className="w-4 h-4 text-zinc-600" />
+          </div>
+          <div className="flex items-start gap-2">
+            <div>
+              <span className="text-sm font-bold font-serif text-zinc-500">{d.name}</span>
+              <div className={`text-[9px] font-mono px-1.5 py-0.5 rounded border mt-1 inline-block ${phaseColors[d.phase ?? 1]}`}>
+                🔒 Requer: {phaseLabels[d.phase ?? 1]}
+              </div>
+            </div>
+          </div>
+          <p className="text-[10px] text-zinc-600 italic leading-relaxed">"{d.description}"</p>
+        </div>
+      );
+    }
+
     return (
       <div
         key={d.id}
