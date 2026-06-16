@@ -277,7 +277,7 @@ export default function App() {
 
             // OBSTÁCULO 1 — BARREIRAS LINGUÍSTICAS E CULTURAIS
             const linguisticLen = (getDoc('doc_tradition') === 'B' || getDoc('doc_education') === 'A') ? 10 : 15;
-            const barrierMod = getDoc('doc_culture') === 'A' ? 0.7 : getDoc('doc_culture') === 'B' ? 1.2 : getDoc('doc_cultures') === 'A' ? 0.5 : 1.0;
+            const barrierMod = getDoc('doc_cultures') === 'A' ? 0.7 : getDoc('doc_cultures') === 'B' ? 1.2 : 1.0;
             if (cyclesPresent < linguisticLen) {
               const barrierStrength = (prev.religionTrait === 'Syncretist' ? 0.25 : 0.5) * barrierMod;
               const barrier = Math.max(0, (linguisticLen - cyclesPresent) / linguisticLen) * barrierStrength;
@@ -347,12 +347,12 @@ export default function App() {
               growthFactor *= 1.45;
             }
 
-            // Activist has +150% speed in oppressives, but -40% in stable democracies
+            // Activist has +80% speed in oppressives, but -30% in stable democracies
             if (prev.religionTrait === 'Activist') {
               if (['opressor', 'autoritario', 'teocracia'].includes(c.regimeType)) {
-                growthFactor *= 2.5; // +150% speed bonus
+                growthFactor *= 1.8; // reduced from 2.5 to prevent runaway stacking
               } else if (['liberal', 'estavel', 'democracia'].includes(c.regimeType)) {
-                growthFactor *= 0.6; // -40% speed penalty
+                growthFactor *= 0.7; // reduced penalty so democracies aren't dead zones
               }
             }
 
@@ -513,8 +513,8 @@ export default function App() {
             }
           }
 
-          // Limit resistance based on Syncretist doctrine rule (resistance global never crosses 60%, can set to 50% max with panteao_aberto)
-          const limitResistance = hasPanteaoAberto ? 50 : 60;
+          // Limit resistance based on Syncretist doctrine rule (raised to 70% to add some tension, 55% with panteao_aberto)
+          const limitResistance = hasPanteaoAberto ? 55 : 70;
           if (prev.religionTrait === 'Syncretist' && resistance > limitResistance) {
             resistance = limitResistance;
           }
@@ -623,16 +623,19 @@ export default function App() {
         let titheGained = 0;
         updatedCountries.forEach(c => {
           if (c.converts > 0) {
-            const localBase = c.converts / 500000;
-            const templeBonus = c.templeLevel === 1 ? 1.2 : c.templeLevel === 2 ? 1.5 : c.templeLevel === 3 ? 2.0 : c.templeLevel >= 4 ? 3.0 : 1.0;
+            // Harder early game: needs 2M converts for 1 tithe base (was 500k)
+            const localBase = c.converts / 2000000;
+            // Temple bonus reduced: requires established presence to be profitable
+            const templeBonus = c.templeLevel === 1 ? 1.3 : c.templeLevel === 2 ? 1.8 : c.templeLevel === 3 ? 2.5 : c.templeLevel >= 4 ? 4.0 : 1.0;
             titheGained += localBase * templeBonus;
           }
         });
         titheGained = Math.floor(titheGained);
-        const missionaryMaintenance = updatedCountries.reduce((s, c) => s + (c.missionariesSent ?? 0), 0);
+        // Maintenance costs raised — missionaries and temples are real burdens
+        const missionaryMaintenance = updatedCountries.reduce((s, c) => s + (c.missionariesSent ?? 0) * 2, 0);
         const templeMaintenance = updatedCountries.reduce((s, c) => {
           const t = c.templeLevel ?? 0;
-          return s + (t === 1 ? 2 : t === 2 ? 4 : t === 3 ? 7 : t === 4 ? 12 : 0);
+          return s + (t === 1 ? 3 : t === 2 ? 7 : t === 3 ? 14 : t === 4 ? 25 : 0);
         }, 0);
         const netTithe = titheGained - missionaryMaintenance - templeMaintenance;
 
@@ -642,6 +645,7 @@ export default function App() {
         const activeCountries = updatedCountries.filter(c => c.converts > 0).length;
 
         // Base: 1 Fé + 1 per active country (max ~13). Replaces flat +4.
+        let fervorGained = 0;
         let faithGained = 1 + activeCountries;
         faithGained += Math.floor(totalConvertsCount / 50000000); // 1 per 50M converts (was 10M)
 
@@ -698,15 +702,16 @@ export default function App() {
         if (japanLeaderConverted) faithGained = Math.floor(faithGained * 1.2);
         if (russiaLeaderConverted) faithGained = Math.floor(faithGained * 1.1); // centralização aumenta Fé
 
-        // Fervor gained: only under real persecution pressure (was too easy to accumulate)
+        // Fervor gained: baseline + persecution pressure
         const avgResistance = totalResistanceSum / updatedCountries.length;
-        let fervorGained = 0;
+        // Small baseline so players can always progress doctrines (was 0 if resistance < 50%)
+        fervorGained += 1;
         if (avgResistance > 50) {
-          fervorGained += Math.floor((avgResistance - 50) / 20); // requires >50% avg resistance now
+          fervorGained += Math.floor((avgResistance - 50) / 15); // slightly more generous scaling
         }
         // Syncretist generates less fervor — coexistence avoids confrontation but weakens defensive power
         if (prev.religionTrait === 'Syncretist') {
-          fervorGained = Math.floor(fervorGained * 0.5);
+          fervorGained = Math.floor(fervorGained * 0.7);
         }
         if (hasMartyrsFervor && prev.religionTrait === 'Activist') {
           // Additional fervor from oppressive regimes under resistance
@@ -814,7 +819,7 @@ export default function App() {
           const validEvents = RANDOM_EVENTS_POOL.filter((e) => {
             const traitOk = !e.traitRequirement || e.traitRequirement === prev.religionTrait;
             const lastFired = prev.eventCooldowns[e.id] ?? -999;
-            const cooldownOk = (prev.cycle - lastFired) >= EVENT_INDIVIDUAL_COOLDOWN_CYCLES;
+            const cooldownOk = (prev.cycle - lastFired) > EVENT_INDIVIDUAL_COOLDOWN_CYCLES;
             return traitOk && cooldownOk;
           });
 
@@ -1097,6 +1102,8 @@ export default function App() {
     if (countryObj.id === 'japan') cost += 15;
     if (countryObj.id === 'china') cost += 20;
     if (countryObj.id === 'saudi_arabia') cost += 25;
+    // Escalating cost per missionary already sent (each costs 15 more than the last)
+    cost += (countryObj.missionariesSent ?? 0) * 15;
     // Doctrine modifiers on missionary cost
     if (state.doctrines?.find(d => d.id === 'doc_ritual')?.chosen === 'A') cost += 10;
     if (state.doctrines?.find(d => d.id === 'doc_ritual')?.chosen === 'B') cost = Math.max(5, cost - 10);

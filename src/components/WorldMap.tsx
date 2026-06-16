@@ -123,6 +123,8 @@ export default function WorldMap({
     if (c.id === 'japan') base += 15;
     if (c.id === 'china') base += 20;
     if (c.id === 'saudi_arabia') base += 25;
+    // Escalating cost per missionary already sent (mirrors App.tsx logic)
+    base += (c.missionariesSent ?? 0) * 15;
     return base;
   };
 

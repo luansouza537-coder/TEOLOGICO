@@ -547,8 +547,8 @@ export const INITIAL_DOGMAS: Dogma[] = [
     id: 'relogio_juizo',
     name: 'Relógio do Juízo Final',
     description: 'Crie um contador público simbólico que mede o tempo até o colapso da civilização. A Ordem Tecnocrática recua.',
-    costFaith: 100,
-    costFervor: 30,
+    costFaith: 70,
+    costFervor: 15,
     purchased: false,
     traitRequirement: 'Prophetic',
     effect: '+15 Fervor por ciclo; a Ordem Tecnocrática avança 30% mais devagar.'
