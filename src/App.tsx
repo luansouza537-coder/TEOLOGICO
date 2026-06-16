@@ -81,7 +81,7 @@ export default function App() {
     };
   });
 
-  const [activeTab, setActiveTab] = useState<'map' | 'dogmas' | 'leaders' | 'rival'>('map');
+  const [activeTab, setActiveTab] = useState<'map' | 'dogmas' | 'leaders' | 'rival' | 'faith'>('map');
   const [showTutorial, setShowTutorial] = useState(false);
   const [isMuted, setIsMuted] = useState<boolean>(() => localStorage.getItem('audio_muted_v2') === 'true');
   const [newsText, setNewsText] = useState('CONEXÃO COLETIVA ESTÁVEL: Monitorando a disseminação teológica pelo globo...');
@@ -841,14 +841,21 @@ export default function App() {
     });
   };
 
-  // Action callback 2: Pacify Country (reduce violence)
-  const pacifyCountry = (countryId: string) => {
+  // Action callback 2: Pacify Country (reduce violence) — 3 tiers based on violence level
+  const pacifyCountry = (countryId: string, tier: 1 | 2 | 3) => {
     const countryObj = state.countries.find((c) => c.id === countryId);
-    if (!countryObj || state.faith < 25) return;
+    if (!countryObj || countryObj.converts === 0) return;
 
-    // Trigger visual floating text feedback on country coordinates
-    addFloatingText("-25 Fé", countryObj.coordinates.x, countryObj.coordinates.y, "text-red-500 font-bold font-mono", countryObj.id);
-    addFloatingText("Pacificado!", countryObj.coordinates.x, countryObj.coordinates.y - 5, "text-green-500 font-bold font-mono", countryObj.id);
+    const costs = { 1: { faith: 15, fervor: 0 }, 2: { faith: 25, fervor: 5 }, 3: { faith: 40, fervor: 15 } };
+    const effects = { 1: { violence: -8, resistance: 0 }, 2: { violence: -20, resistance: -5 }, 3: { violence: -35, resistance: 5 } };
+    const labels = { 1: 'Pregação de Paz', 2: 'Mobilização Comunitária', 3: 'Intervenção de Emergência' };
+
+    const cost = costs[tier];
+    const effect = effects[tier];
+    if (state.faith < cost.faith || state.fervor < cost.fervor) return;
+
+    addFloatingText(`-${cost.faith} Fé`, countryObj.coordinates.x, countryObj.coordinates.y, 'text-red-500 font-bold font-mono', countryObj.id);
+    addFloatingText('Pacificado!', countryObj.coordinates.x, countryObj.coordinates.y - 5, 'text-green-500 font-bold font-mono', countryObj.id);
 
     setState((prev) => {
       const country = prev.countries.find((c) => c.id === countryId);
@@ -856,17 +863,26 @@ export default function App() {
 
       const updated = prev.countries.map((c) => {
         if (c.id === countryId) {
-          return { ...c, violence: Math.max(0, c.violence - 18) };
+          return {
+            ...c,
+            violence: Math.max(0, c.violence + effect.violence),
+            resistance: Math.min(100, Math.max(0, c.resistance + effect.resistance)),
+          };
         }
         return c;
       });
 
+      const logMsg = tier === 3
+        ? `[INTERVENÇÃO] ${labels[tier]} em ${country.name} — violência cede, mas o governo observa com desconfiança.`
+        : `[AÇÃO] ${labels[tier]} em ${country.name} — comunidades respondem ao chamado de paz.`;
+
       playSound('click');
       return {
         ...prev,
-        faith: prev.faith - 25,
+        faith: prev.faith - cost.faith,
+        fervor: prev.fervor - cost.fervor,
         countries: updated,
-        logs: [`[AÇÃO] Púlpitos locais em ${country.name} proclamam harmonia social. Criminalidade cai!`, ...prev.logs]
+        logs: [logMsg, ...prev.logs]
       };
     });
   };
@@ -1159,6 +1175,15 @@ export default function App() {
           {/* Resources Status Display (Golden Faith, Crimson Fervor) */}
           <div className="flex flex-wrap items-center gap-4 md:gap-6">
             
+            {/* Faithful Counter */}
+            <div className="bg-[#1a2010] border border-green-900/50 rounded-lg py-1 px-3 flex items-center gap-2.5">
+              <span className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" />
+              <div>
+                <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Fiéis no Mundo</span>
+                <span className="text-md font-bold font-mono text-green-400">{totalConvertedWorld.toLocaleString()}</span>
+              </div>
+            </div>
+
             {/* Faith Indicator */}
             <div className="bg-[#241e0d] border border-[#cfb53b]/40 rounded-lg py-1 px-3 flex items-center gap-2.5">
               <span className="w-3 h-3 rounded-full bg-[#cfb53b] shadow-[0_0_8px_#cfb53b]" />
@@ -1335,6 +1360,17 @@ export default function App() {
           </button>
 
           <button
+            onClick={() => { playSound('click'); setActiveTab('faith'); }}
+            className={`px-4 py-2.5 font-serif font-bold text-sm uppercase tracking-wider rounded-t-lg border-t-2 border-x transition-all shrink-0 cursor-pointer ${
+              activeTab === 'faith'
+                ? 'bg-[#211a0a] border-t-[#cfb53b] border-x-[#cfb53b]/40 text-[#cfb53b]'
+                : 'bg-[#141108]/60 border-t-transparent border-x-transparent text-[#dfcfa0]/60 hover:text-white'
+            }`}
+          >
+            ✨ Sua Fé
+          </button>
+
+          <button
             onClick={() => setShowTutorial(!showTutorial)}
             className="ml-auto px-3 py-1 bg-amber-950/30 hover:bg-amber-950 border border-[#cfb53b]/30 text-xs font-serif text-amber-200 uppercase tracking-widest rounded transition-all cursor-pointer flex items-center gap-1 shrink-0"
           >
@@ -1465,6 +1501,112 @@ export default function App() {
               resistanceStreak={state.resistanceStreak}
             />
           )}
+
+          {activeTab === 'faith' && (() => {
+            const totalMissionaries = state.countries.reduce((a, c) => a + (c.missionariesSent ?? 0), 0);
+            const totalLeaders = state.countries.filter(c => c.leaderInfiltration >= 100).length;
+            const totalTemplesList = state.countries.filter(c => (c.templeLevel ?? 0) > 0);
+            const activeDogmas = state.dogmas.filter(d => d.purchased);
+            const convPct = totalWorldPopulation > 0 ? (totalConvertedWorld / totalWorldPopulation * 100) : 0;
+            const avgViolence = state.countries.reduce((a, c) => a + c.violence, 0) / state.countries.length;
+            const avgResistance = state.countries.reduce((a, c) => a + c.resistance, 0) / state.countries.length;
+            const traitDescriptions: Record<string, string> = {
+              Mistical: 'Sua fé é mística e transcendente. Rituais de êxtase, visões e experiências espirituais profundas formam o núcleo da doutrina.',
+              Prophetic: 'Sua fé é profética e apocalíptica. Revelações, sinais dos tempos e a urgência do fim dos dias impulsionam a conversão.',
+              Activist: 'Sua fé é ativista e transformadora. Justiça social, libertação dos oprimidos e confronto direto com o poder são seus pilares.',
+              Syncretist: 'Sua fé é sincretista e inclusiva. A harmonia entre tradições, o diálogo inter-religioso e a coexistência são sua marca.',
+            };
+            return (
+              <div className="flex flex-col gap-6" id="faith-panel">
+                {/* Header identidade */}
+                <div className="flex flex-col md:flex-row gap-4 items-start">
+                  <div className="flex-1 bg-[#241e0d] border border-[#cfb53b]/30 rounded-lg p-5">
+                    <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 tracking-widest">Seu Credo</span>
+                    <h2 className="text-3xl font-bold font-serif text-[#cfb53b] mt-1">{state.religionName}</h2>
+                    <span className="inline-block mt-2 px-2 py-0.5 bg-amber-950 border border-[#cfb53b]/30 text-[#cfb53b] text-[10px] font-bold uppercase font-mono rounded">
+                      {traitNames[state.religionTrait]}
+                    </span>
+                    <p className="text-xs text-[#dfcfa0]/70 mt-3 leading-relaxed italic">
+                      {traitDescriptions[state.religionTrait]}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-3 min-w-[200px]">
+                    <div className="bg-[#171308] border border-[#cfb53b]/15 rounded p-3">
+                      <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Objetivo</span>
+                      <span className="text-xs font-bold text-amber-200 mt-0.5 block">{goalNames[state.victoryGoal]}</span>
+                    </div>
+                    <div className="bg-[#171308] border border-[#cfb53b]/15 rounded p-3">
+                      <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Ciclos de Existência</span>
+                      <span className="text-2xl font-bold font-mono text-[#cfb53b]">#{state.cycle}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Barra de progresso global */}
+                <div className="bg-[#171308] border border-[#cfb53b]/20 rounded-lg p-4">
+                  <div className="flex justify-between items-center text-xs font-mono font-bold mb-2">
+                    <span className="text-green-400">🌍 Alcance Global da Fé</span>
+                    <span className="text-green-300">{totalConvertedWorld.toLocaleString()} fiéis — {convPct.toFixed(3)}% da humanidade</span>
+                  </div>
+                  <div className="w-full h-3 bg-black/60 rounded border border-green-900/30 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-green-800 to-green-500 transition-all duration-500" style={{ width: `${Math.min(100, convPct)}%` }} />
+                  </div>
+                </div>
+
+                {/* Grade de estatísticas */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { label: 'Missionários Enviados', value: totalMissionaries, color: 'text-[#cfb53b]' },
+                    { label: 'Líderes Convertidos', value: `${totalLeaders} / 12`, color: 'text-sky-400' },
+                    { label: 'Templos Erguidos', value: state.totalTemples, color: 'text-green-400' },
+                    { label: 'Dogmas Consagrados', value: `${activeDogmas.length} / ${state.dogmas.length}`, color: 'text-amber-300' },
+                    { label: 'Poder de Fé', value: state.faith, color: 'text-[#cfb53b]' },
+                    { label: 'Poder de Fervor', value: state.fervor, color: 'text-red-400' },
+                    { label: 'Resistência Média', value: `${avgResistance.toFixed(1)}%`, color: 'text-[#8b0000]' },
+                    { label: 'Violência Média', value: `${avgViolence.toFixed(1)}%`, color: 'text-orange-400' },
+                  ].map(({ label, value, color }) => (
+                    <div key={label} className="bg-[#171308] border border-[#cfb53b]/10 rounded p-3">
+                      <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/45 block">{label}</span>
+                      <span className={`text-xl font-bold font-mono ${color} block mt-0.5`}>{value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Países com templo */}
+                {totalTemplesList.length > 0 && (
+                  <div className="bg-[#171308] border border-[#cfb53b]/15 rounded-lg p-4">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#cfb53b] mb-3 font-serif">🏛️ Templos no Mundo</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2">
+                      {totalTemplesList.map(c => {
+                        const templeName = TEMPLE_NAMES[state.religionTrait]?.[c.templeLevel - 1] ?? 'Templo';
+                        return (
+                          <div key={c.id} className="bg-black/30 rounded px-2 py-1.5 border border-[#cfb53b]/10">
+                            <span className="text-[9px] font-mono text-[#dfcfa0]/50 block">{c.name}</span>
+                            <span className="text-[10px] font-bold text-[#cfb53b]">{templeName}</span>
+                            <span className="text-[9px] text-[#dfcfa0]/40 block">Nível {c.templeLevel}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Dogmas ativos */}
+                {activeDogmas.length > 0 && (
+                  <div className="bg-[#171308] border border-[#cfb53b]/15 rounded-lg p-4">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#cfb53b] mb-3 font-serif">📜 Dogmas Revelados</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {activeDogmas.map(d => (
+                        <span key={d.id} className="text-[10px] px-2 py-1 bg-amber-950/50 border border-[#cfb53b]/20 text-amber-200 rounded font-mono">
+                          {d.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
         </div>
 

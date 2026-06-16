@@ -85,7 +85,7 @@ interface WorldMapProps {
   fervor: number;
   trait: ReligionTrait;
   onSendMissionary: (countryId: string) => void;
-  onPacifyCountry: (countryId: string) => void;
+  onPacifyCountry: (countryId: string, tier: 1 | 2 | 3) => void;
   onInfiltrateLeader: (countryId: string) => void;
   onPerformEcstasyRitual: (countryId: string) => void;
   onOpenTemple: (countryId: string) => void;
@@ -121,13 +121,6 @@ export default function WorldMap({
     if (c.id === 'japan') base += 15;
     if (c.id === 'china') base += 20;
     if (c.id === 'saudi_arabia') base += 25;
-    return base;
-  };
-
-  const getPacifyCost = (c: Country) => {
-    // Mexico and Brazil are easier to pacify due to local faith, but others might vary
-    let base = 25;
-    if (c.id === 'mexico') base -= 5;
     return base;
   };
 
@@ -349,23 +342,41 @@ export default function WorldMap({
                 </span>
               </button>
 
-              {/* ACTION 2: Pacify (Social actions) */}
-              <button
-                onClick={() => onPacifyCountry(selectedCountry.id)}
-                disabled={faith < getPacifyCost(selectedCountry) || selectedCountry.converts === 0}
-                className={`py-2 px-3 rounded text-xs font-bold flex justify-between items-center transition-all ${
-                  faith >= getPacifyCost(selectedCountry) && selectedCountry.converts > 0
-                    ? 'bg-orange-850 hover:bg-orange-800 text-orange-200 cursor-pointer border border-orange-500/40'
-                    : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
-                }`}
-              >
-                <span className="flex items-center gap-1.5">
-                  <HeartHandshake className="w-4 h-4" /> Pacificar Sociedade
-                </span>
-                <span className="font-mono bg-[#171308]/20 px-1.5 py-0.5 rounded text-[10px]">
-                  -{getPacifyCost(selectedCountry)} Fé
-                </span>
-              </button>
+              {/* ACTION 2: Pacify (3 tiers based on violence) */}
+              {(() => {
+                const v = selectedCountry.violence;
+                const hasConverts = selectedCountry.converts > 0;
+                const tiers: { tier: 1|2|3; label: string; faith: number; fervor: number; violenceReq: number; desc: string }[] = [
+                  { tier: 1, label: 'Pregação de Paz', faith: 15, fervor: 0, violenceReq: 0, desc: '-8 violência' },
+                  { tier: 2, label: 'Mobilização Comunitária', faith: 25, fervor: 5, violenceReq: 40, desc: '-20 violência, -5 resistência' },
+                  { tier: 3, label: 'Intervenção de Emergência', faith: 40, fervor: 15, violenceReq: 65, desc: '-35 violência, +5 resistência' },
+                ];
+                const available = tiers.filter(t => v >= t.violenceReq);
+                const best = available[available.length - 1] ?? tiers[0];
+                const canAfford = faith >= best.faith && fervor >= best.fervor && hasConverts;
+                return (
+                  <div className="flex flex-col gap-1">
+                    <button
+                      onClick={() => onPacifyCountry(selectedCountry.id, best.tier)}
+                      disabled={!canAfford}
+                      className={`py-2 px-3 rounded text-xs font-bold flex justify-between items-center transition-all ${
+                        canAfford
+                          ? 'bg-orange-950 hover:bg-orange-900 text-orange-200 cursor-pointer border border-orange-500/40'
+                          : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <HeartHandshake className="w-4 h-4" /> {best.label}
+                      </span>
+                      <span className="font-mono bg-[#171308]/20 px-1.5 py-0.5 rounded text-[9px] flex gap-1">
+                        <span>{best.faith} Fé</span>
+                        {best.fervor > 0 && <span>{best.fervor} Fervor</span>}
+                      </span>
+                    </button>
+                    <span className="text-[9px] text-[#dfcfa0]/40 font-mono text-right">{best.desc} · Violência atual: {v.toFixed(0)}%</span>
+                  </div>
+                );
+              })()}
 
               {/* ACTION 3: Infiltrate Leader */}
               {(() => {
