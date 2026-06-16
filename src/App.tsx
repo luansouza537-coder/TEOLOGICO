@@ -14,8 +14,8 @@ import RivalPanel from './components/RivalPanel';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Gamepad2, Info, BookOpen, AlertTriangle } from 'lucide-react';
 
 const TEMPLE_NAMES: Record<string, string[]> = {
-  Mistical:   ['Gruta Sagrada', 'Círculo de Visões', 'Torre dos Sonhos', 'Catedral do Êxtase'],
-  Prophetic:  ['Sala das Escrituras', 'Torre do Vigia', 'Arquivo das Profecias', 'Templo do Apocalipse'],
+  Mistical:   ['Gruta do Véu', 'Santuário dos Arcanos', 'Torre dos Mistérios', 'Abismo Sagrado'],
+  Prophetic:  ['Posto da Palavra', 'Casa da Revelação', 'Tabernáculo do Oráculo', 'Trono da Profecia'],
   Activist:   ['Centro Comunitário', 'Hospital da Fé', 'Academia Popular', 'Sede da Revolução Pacífica'],
   Syncretist: ['Espaço Intercultural', 'Mesclário dos Povos', 'Biblioteca Universal', 'Templo da Harmonia Eterna'],
 };
