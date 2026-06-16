@@ -21,7 +21,7 @@ export function calcPeaceEffectiveness(
   const leaderWeight  = (leaderInfiltration / 100) * 0.20;
   const titheWeight   = (tithe > 50 ? 1 : tithe / 50) * 0.10;
   const raw = faithWeight + templeWeight + leaderWeight + titheWeight;
-  return Math.max(0.30, raw); // minimum 30% so early game always works
+  return Math.max(0.30, Math.min(1.0, raw));
 }
 
 export function peaceEffectivenessLabel(eff: number): string {

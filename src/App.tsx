@@ -369,7 +369,7 @@ export default function App() {
             if (getDoc('doc_violence') === 'A') violence = Math.max(0, violence - 0.3);
             if (getDoc('doc_violence') === 'B' && ['opressor', 'autoritario'].includes(c.regimeType)) growthFactor *= 1.15;
             if (getDoc('doc_tradition') === 'A' && ['estavel', 'teocracia'].includes(c.regimeType)) growthFactor *= 1.05;
-            if (getDoc('doc_culture') === 'B') growthFactor *= 1.12;
+            if (getDoc('doc_cultures') === 'B') growthFactor *= 1.12;
             if (getDoc('doc_destiny') === 'A' && ['liberal', 'democracia'].includes(c.regimeType)) growthFactor *= 1.10;
             if (getDoc('doc_leadership') === 'A' && leaderInfiltration < 100 && (converts / pop) > 0.05) leaderInfiltration = Math.min(100, leaderInfiltration + 0.15);
             if (getDoc('doc_gender') === 'A' && ['autoritario', 'teocracia'].includes(c.regimeType)) growthFactor *= 1.15;
@@ -421,6 +421,15 @@ export default function App() {
 
             // FASE 6 — MASSA CRÍTICA: efeito de rede social quando credo é dominante
             if (convertPctLocal > 0.25 && !isLeaderConverted(c.id)) growthFactor *= 1.20;
+
+            // Temple growth bonus (only when tithe is sufficient) — must be before addedConverts
+            if (c.templeLevel > 0 && hasTithe) {
+              growthFactor *= (1 + 0.03 * c.templeLevel);
+            }
+
+            // Leader converted — regional growth bonuses — must be before addedConverts
+            if (chinaLeaderConverted && ['china', 'india', 'japan'].includes(c.id)) growthFactor *= 1.5;
+            if (indiaLeaderConverted && ['india', 'south_africa', 'egypt'].includes(c.id)) growthFactor *= 1.3;
 
             // Cap growthFactor to prevent runaway stacking from dogma + doctrine combinations
             growthFactor = Math.min(growthFactor, 0.15);
@@ -483,14 +492,6 @@ export default function App() {
               }
               leaderInfiltration = Math.min(100, leaderInfiltration + leaderGrowth);
             }
-            // Temple growth bonus (only when tithe is sufficient)
-            if (c.templeLevel > 0 && hasTithe) {
-              growthFactor *= (1 + 0.03 * c.templeLevel);
-            }
-
-            // Leader converted — growth bonuses (inside converts > 0 so growthFactor exists)
-            if (chinaLeaderConverted && ['china', 'india', 'japan'].includes(c.id)) growthFactor *= 1.5;
-            if (indiaLeaderConverted && ['india', 'south_africa', 'egypt'].includes(c.id)) growthFactor *= 1.3;
           }
 
           // SATURAÇÃO: governos reagem quando conversão cresce sem o líder convertido
@@ -566,6 +567,9 @@ export default function App() {
           return { ...c, converts, resistance, violence, leaderInfiltration, cyclesPresent, lastConflictCycle, templeLevel, templePending, templeBuildCyclesLeft, templeSpec };
         });
 
+        // Logs array — initialized here so it can be appended throughout the tick
+        let updatedLogs = [...prev.logs];
+
         // Post-map passive dogma effects
         if (hasAssistenciaMedica) {
           const sorted = [...updatedCountries].sort((a, b) => b.violence - a.violence);
@@ -602,7 +606,7 @@ export default function App() {
               if (targetIdx !== -1) {
                 updatedCountries[targetIdx] = { ...updatedCountries[targetIdx], converts: 10 };
               }
-              prev.logs.unshift(`Dispersão: Missionários que cruzaram de ${sourceId.toUpperCase()} semearam os primeiros cultos em ${target.name}!`);
+              updatedLogs.unshift(`Dispersão: Missionários que cruzaram de ${sourceId.toUpperCase()} semearam os primeiros cultos em ${target.name}!`);
             }
           }
         }
@@ -614,7 +618,7 @@ export default function App() {
             return c.converts > 50000 && rate > 0.003;
           });
           if (apostasyCountry) {
-            prev.logs.unshift(`[APOSTASIA] Fiéis em ${apostasyCountry.name} questionam a doutrina — violência e resistência cultural geram deserções.`);
+            updatedLogs.unshift(`[APOSTASIA] Fiéis em ${apostasyCountry.name} questionam a doutrina — violência e resistência cultural geram deserções.`);
           }
         }
         if (Math.random() < 0.05) {
@@ -622,7 +626,7 @@ export default function App() {
             c.leaderInfiltration < 100 && (c.converts / c.population) > 0.5
           );
           if (saturatedCountry) {
-            prev.logs.unshift(`[REAÇÃO ESTATAL] O governo de ${saturatedCountry.name} intensifica restrições — a ascensão do credo gera alarme político.`);
+            updatedLogs.unshift(`[REAÇÃO ESTATAL] O governo de ${saturatedCountry.name} intensifica restrições — a ascensão do credo gera alarme político.`);
           }
         }
 
@@ -815,14 +819,14 @@ export default function App() {
           gameOverReason = 'victory';
         }
 
-        // Losses tests
-        if (newStreak >= 3) {
+        // Losses tests — only if victory not already triggered
+        if (!isGameOver && newStreak >= 3) {
           isGameOver = true;
           gameOverReason = 'resistance';
-        } else if (updatedRivalProgress >= 100) {
+        } else if (!isGameOver && updatedRivalProgress >= 100) {
           isGameOver = true;
           gameOverReason = 'rival';
-        } else if (prev.faith <= 0 && prev.fervor <= 0 && totalConvertsCount === 0) {
+        } else if (!isGameOver && prev.faith <= 0 && prev.fervor <= 0 && totalConvertsCount === 0) {
           isGameOver = true;
           gameOverReason = 'bankrupt';
         }
@@ -833,7 +837,6 @@ export default function App() {
 
         // 7. Narrative Random Event Dice roll (10% chance, 2-min global cooldown, 25-cycle individual cooldown)
         let newlyTriggeredEvent: GameEvent | null = null;
-        let updatedLogs = [...prev.logs];
 
         const EVENT_GLOBAL_COOLDOWN_MS = 120000; // 2 minutes real time
         const EVENT_INDIVIDUAL_COOLDOWN_CYCLES = 25;
@@ -928,6 +931,12 @@ export default function App() {
           return prev_c.templePending > 0 && c.templePending === 0 && c.templeLevel > prev_c.templeLevel;
         }).length;
 
+        // Count temples destroyed this cycle by violence
+        const newlyDestroyedTemples = updatedCountries.filter((c, i) => {
+          const prev_c = prev.countries[i];
+          return prev_c.templeLevel > 0 && c.templeLevel < prev_c.templeLevel && c.templePending === 0;
+        }).length;
+
         // Build phase advancement log
         const phaseNames = ['', 'Centelha Sagrada', 'Credo Estabelecido', 'Era da Transcendência'];
         const phaseDescs = ['', '', 'Dogmas e doutrinas intermediárias desbloqueadas. O mundo começa a notar sua presença.', 'Dogmas estratégicos desbloqueados. A metade do mundo foi alcançada pela fé!'];
@@ -956,7 +965,7 @@ export default function App() {
           resistanceStreak: newStreak,
           isGameOver,
           gameOverReason,
-          totalTemples: prev.totalTemples + newlyCompletedTemples,
+          totalTemples: Math.max(0, prev.totalTemples + newlyCompletedTemples - newlyDestroyedTemples),
           faithPhase: newFaithPhase,
           eventActive: isGameOver ? null : (newlyTriggeredEvent || prev.eventActive),
           paused: isGameOver ? false : (phaseAdvanced ? true : (newlyTriggeredEvent ? true : prev.paused)),
