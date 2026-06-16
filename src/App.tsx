@@ -770,10 +770,10 @@ export default function App() {
                 c.violence = Math.max(0, Math.min(100, c.violence + (picked.actionEffects.countryViolenceMod[c.id] || 0)));
               }
               if (picked.actionEffects.countryConvertsMod?.[c.id]) {
-                // If value is positive, add proportional population or raw
+                // If value is positive, only apply if player already has presence
                 const mod = picked.actionEffects.countryConvertsMod[c.id];
                 if (mod > 0) {
-                  if (c.converts === 0) c.converts = 1000;
+                  if (c.converts === 0) return; // no presence = event has no effect here
                   c.converts = Math.min(c.population, Math.floor(c.converts + mod));
                 } else if (mod < 0) {
                   // loss (persecution removes the exact mod amount from followers)
