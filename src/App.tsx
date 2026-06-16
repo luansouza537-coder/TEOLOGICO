@@ -340,6 +340,18 @@ export default function App() {
               }
             }
 
+            // FASE 7 — INFLUÊNCIA GRADUAL DO LÍDER: bônus intermediários antes da conversão total
+            if (leaderInfiltration >= 75) {
+              // Líder simpatizante ativo: reduz resistência e violência, acelera crescimento
+              growthFactor *= 1.12;
+              resistance = Math.max(0, resistance - 0.4);
+              violence = Math.max(0, violence - 0.3);
+            } else if (leaderInfiltration >= 50) {
+              // Líder receptivo: pequena redução de resistência e leve crescimento
+              growthFactor *= 1.08;
+              resistance = Math.max(0, resistance - 0.2);
+            }
+
             // FASE 5 — LÍDERES COMUNITÁRIOS: rede de líderes locais acelera a difusão
             const convertPctLocal = (converts / pop);
             if (convertPctLocal > 0.10) growthFactor *= 1.10;
