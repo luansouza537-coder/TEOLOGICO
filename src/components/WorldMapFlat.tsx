@@ -402,17 +402,44 @@ export default function WorldMapFlat({
         ctx.fill();
       }
 
-      // Temple dot: gold at top-right of node
-      if (c.templeLevel > 0) {
+      // Temple icon: drawn offset to top-right of node
+      if (c.templeLevel > 0 || c.templePending > 0) {
+        const sizes = [0, 6, 8, 10, 12];
+        const level = Math.min(c.templeLevel, 4);
+        const w = sizes[level] || 6;
+        const h = Math.round(w * 1.4);
+        const tx = p.x + nodeRadius + 3;
+        const ty = p.y - nodeRadius - h - 2;
+
+        const color = c.templeLevel > 0 ? '#cfb53b' : '#ffe066';
+        const alpha = c.templeLevel > 0 ? 1.0 : 0.65;
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = color;
+
+        // Roof triangle
         ctx.beginPath();
-        ctx.arc(p.x + nodeRadius * 0.7, p.y - nodeRadius * 0.7, 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = '#cfb53b';
+        ctx.moveTo(tx + w / 2, ty);
+        ctx.lineTo(tx, ty + h * 0.45);
+        ctx.lineTo(tx + w, ty + h * 0.45);
+        ctx.closePath();
         ctx.fill();
-      } else if (c.templePending > 0) {
-        ctx.beginPath();
-        ctx.arc(p.x + nodeRadius * 0.7, p.y - nodeRadius * 0.7, 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffe066';
-        ctx.fill();
+
+        // Base rectangle
+        ctx.fillRect(tx + w * 0.15, ty + h * 0.45, w * 0.7, h * 0.55);
+
+        ctx.restore();
+
+        // If pending construction on existing temple, add small yellow dot below
+        if (c.templePending > 0 && c.templeLevel > 0) {
+          ctx.save();
+          ctx.fillStyle = '#ffe066';
+          ctx.beginPath();
+          ctx.arc(tx + w / 2, ty + h + 4, 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
       }
 
       // Render tags and labels
