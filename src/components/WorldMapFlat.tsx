@@ -4,8 +4,8 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Country, ReligionTrait } from '../types';
-import { RotateCw, ZoomIn, ZoomOut, Compass, Map, Grid, Waves, Eye, EyeOff } from 'lucide-react';
+import { Country } from '../types';
+import { Map, Eye, EyeOff, RotateCw } from 'lucide-react';
 
 interface WorldMapFlatProps {
   countries: Country[];
@@ -14,643 +14,336 @@ interface WorldMapFlatProps {
   floatingTexts?: { id: number; text: string; x: number; y: number; colorClass: string; countryId?: string }[];
 }
 
-const PLAYABLE_LAT_LON: Record<string, { lat: number; lon: number; name: string }> = {
-  usa: { lat: 37.09, lon: -95.71, name: 'Estados Unidos' },
-  china: { lat: 35.86, lon: 104.19, name: 'China' },
-  india: { lat: 20.59, lon: 78.96, name: 'Índia' },
-  germany: { lat: 51.16, lon: 10.45, name: 'Alemanha' },
-  brazil: { lat: -14.23, lon: -51.92, name: 'Brasil' },
-  russia: { lat: 61.52, lon: 105.31, name: 'Rússia' },
-  egypt: { lat: 26.82, lon: 30.80, name: 'Egito' },
-  south_africa: { lat: -30.55, lon: 22.93, name: 'África do Sul' },
-  japan: { lat: 36.20, lon: 138.25, name: 'Japão' },
-  mexico: { lat: 23.63, lon: -102.55, name: 'México' },
-  saudi_arabia: { lat: 23.88, lon: 45.07, name: 'Arábia Saudita' },
-  australia: { lat: -25.27, lon: 133.77, name: 'Austrália' }
+const COUNTRY_POSITIONS: Record<string, { lat: number; lon: number; name: string }> = {
+  usa:          { lat: 37.09,  lon: -95.71, name: 'EUA' },
+  china:        { lat: 35.86,  lon: 104.19, name: 'China' },
+  india:        { lat: 20.59,  lon: 78.96,  name: 'Índia' },
+  germany:      { lat: 51.16,  lon: 10.45,  name: 'Alemanha' },
+  brazil:       { lat: -14.23, lon: -51.92, name: 'Brasil' },
+  russia:       { lat: 61.52,  lon: 105.31, name: 'Rússia' },
+  egypt:        { lat: 26.82,  lon: 30.80,  name: 'Egito' },
+  south_africa: { lat: -30.55, lon: 22.93,  name: 'África do Sul' },
+  japan:        { lat: 36.20,  lon: 138.25, name: 'Japão' },
+  mexico:       { lat: 23.63,  lon: -102.55,name: 'México' },
+  saudi_arabia: { lat: 23.88,  lon: 45.07,  name: 'Arábia Saudita' },
+  australia:    { lat: -25.27, lon: 133.77, name: 'Austrália' },
 };
 
-// Help map original grid coordinates back to playable country IDs
-const findPlayableIdFromGrid = (x: number, y: number): string | null => {
-  const mappings: Record<string, { x: number; y: number }> = {
-    usa: { x: 18, y: 35 },
-    china: { x: 82, y: 38 },
-    india: { x: 73, y: 48 },
-    germany: { x: 50, y: 25 },
-    brazil: { x: 33, y: 72 },
-    russia: { x: 68, y: 22 },
-    egypt: { x: 54, y: 50 },
-    south_africa: { x: 56, y: 80 },
-    japan: { x: 92, y: 34 },
-    mexico: { x: 14, y: 50 },
-    saudi_arabia: { x: 63, y: 48 },
-    australia: { x: 88, y: 82 }
-  };
-  
-  for (const [id, coord] of Object.entries(mappings)) {
-    if (Math.abs(coord.x - x) < 3.5 && Math.abs(coord.y - y) < 3.5) {
-      return id;
-    }
-  }
-  return null;
-};
+function project(lon: number, lat: number, w: number, h: number) {
+  const px = 0.04;
+  const py = 0.08;
+  const x = px * w + ((lon + 180) / 360) * (w * (1 - px * 2));
+  const minLat = -55, maxLat = 75;
+  const clat = Math.max(minLat, Math.min(maxLat, lat));
+  const y = py * h + (1 - (clat - minLat) / (maxLat - minLat)) * (h * (1 - py * 2));
+  return { x, y };
+}
 
-export default function WorldMapFlat({
-  countries,
-  selectedCountryId,
-  onSelectCountry,
-  floatingTexts = []
-}: WorldMapFlatProps) {
+export default function WorldMapFlat({ countries, selectedCountryId, onSelectCountry, floatingTexts = [] }: WorldMapFlatProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  // Layout states to make it custom-styled
   const [geoData, setGeoData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [showGrid, setShowGrid] = useState<boolean>(true);
-  const [showRoutes, setShowRoutes] = useState<boolean>(true);
-  const [showLabels, setShowLabels] = useState<boolean>(true);
-  const [hoveredCountryId, setHoveredCountryId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showLabels, setShowLabels] = useState(true);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const drawRef = useRef<() => void>(() => {});
 
-  // Pre-load Natural Earth simplified GeoJSON from a robust public fast CDN
+  // Load GeoJSON
   useEffect(() => {
     let active = true;
     fetch('https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_admin_0_countries.geojson')
-      .then((r) => {
-        if (!r.ok) throw new Error('Falha ao obter malha global.');
-        return r.json();
-      })
-      .then((data) => {
-        if (active) {
-          setGeoData(data);
-          setIsLoading(false);
-        }
-      })
-      .catch((err) => {
-        console.warn('Erro ao carregar mapa de países. Ativando modelo tático emulor.', err);
-        if (active) {
-          setIsLoading(false);
-          // Set to a basic fallback containing the 12 countries so the game works perfectly
-        }
-      });
-
-    return () => {
-      active = false;
-    };
+      .then(r => r.json())
+      .then(data => { if (active) { setGeoData(data); setIsLoading(false); } })
+      .catch(() => { if (active) setIsLoading(false); });
+    return () => { active = false; };
   }, []);
 
-  // Projection coordinate system mapping function
-  const project = (lon: number, lat: number, width: number, height: number) => {
-    // Standard Equirectangular/Plate Carree with balanced frame boundaries
-    // longitude: -180 to 180 mapped to 0 to width, with slight padding
-    const paddingX = width * 0.04;
-    const paddedWidth = width - paddingX * 2;
-    const x = paddingX + ((lon + 180) / 360) * paddedWidth;
-    
-    // latitude range cropped to focus on habitable regions (avoid extreme poles distorting too much)
-    const minLat = -55;
-    const maxLat = 75;
-    const paddingY = height * 0.08;
-    const paddedHeight = height - paddingY * 2;
-    
-    // Clamp coordinate values to stay gracefully inside bounds
-    const clampedLat = Math.max(minLat, Math.min(maxLat, lat));
-    const y = paddingY + paddedHeight * (1 - (clampedLat - minLat) / (maxLat - minLat));
-    
-    return { x, y };
-  };
-
-  // Resize sensor
+  // Resize
   useEffect(() => {
-    const handleResize = () => {
+    const resize = () => {
       const canvas = canvasRef.current;
       const container = containerRef.current;
       if (!canvas || !container) return;
-      
-      const width = container.clientWidth;
-      // Elegant 2:1 mapping aspect ratio with a subtle minimum height
-      const height = Math.max(340, width * 0.50);
-      canvas.width = width;
-      canvas.height = height;
+      canvas.width = container.clientWidth;
+      canvas.height = Math.max(300, container.clientWidth * 0.5);
     };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    resize();
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
   }, []);
 
-  // Main canvas rendering thread — extracted as named function for rAF loop
-  const drawMapRef = useRef<() => void>(() => {});
-
+  // Build draw function
   useEffect(() => {
-    const drawMap = () => {
+    drawRef.current = () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
-
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
+      const W = canvas.width;
+      const H = canvas.height;
 
-      const width = canvas.width;
-      const height = canvas.height;
+      // Background
+      ctx.fillStyle = '#0e0b04';
+      ctx.fillRect(0, 0, W, H);
 
-      // Dark warm background matching game theme
-      const bgGrad = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, Math.max(width, height)*0.7);
-      bgGrad.addColorStop(0, '#1a1408');
-      bgGrad.addColorStop(1, '#0a0800');
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, width, height);
-
-      // Grid lines: Parallels and Meridians for strategic tactical aesthetic
-      if (showGrid) {
-        ctx.strokeStyle = 'rgba(207, 181, 59, 0.045)';
-        ctx.lineWidth = 0.5;
-
-        // Meridians (every 20 degrees)
-        for (let lon = -180; lon <= 180; lon += 20) {
-          const p1 = project(lon, -55, width, height);
-          const p2 = project(lon, 75, width, height);
-          ctx.beginPath();
-          ctx.moveTo(p1.x, p1.y);
-          ctx.lineTo(p2.x, p2.y);
-          ctx.stroke();
-        }
-
-        // Parallels (every 15 degrees)
-        for (let lat = -50; lat <= 70; lat += 15) {
-          const p1 = project(-180, lat, width, height);
-          const p2 = project(180, lat, width, height);
-          ctx.beginPath();
-          ctx.moveTo(p1.x, p1.y);
-          ctx.lineTo(p2.x, p2.y);
-          ctx.stroke();
-        }
+      // Subtle grid
+      ctx.strokeStyle = 'rgba(207,181,59,0.04)';
+      ctx.lineWidth = 0.5;
+      for (let lon = -180; lon <= 180; lon += 30) {
+        const p1 = project(lon, -55, W, H);
+        const p2 = project(lon, 75, W, H);
+        ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+      }
+      for (let lat = -50; lat <= 70; lat += 20) {
+        const p1 = project(-180, lat, W, H);
+        const p2 = project(180, lat, W, H);
+        ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
       }
 
-      // Render world landmass polygons (All Countries)
-      if (geoData && geoData.features) {
+      // World landmass — uniform subtle fill, thin gold border
+      if (geoData?.features) {
         geoData.features.forEach((feature: any) => {
-          const name = feature.properties?.name || feature.properties?.name_sort || '';
+          const geom = feature.geometry;
+          if (!geom) return;
 
-          // Match country name to our playable list
-          const normName = name.toLowerCase();
-          let playableId: string | null = null;
-          if (normName.includes('united states')) playableId = 'usa';
-          else if (normName.includes('china')) playableId = 'china';
-          else if (normName.includes('india')) playableId = 'india';
-          else if (normName.includes('germany')) playableId = 'germany';
-          else if (normName.includes('brazil')) playableId = 'brazil';
-          else if (normName.includes('russia')) playableId = 'russia';
-          else if (normName.includes('egypt')) playableId = 'egypt';
-          else if (normName.includes('south africa')) playableId = 'south_africa';
-          else if (normName.includes('japan')) playableId = 'japan';
-          else if (normName.includes('mexico')) playableId = 'mexico';
-          else if (normName.includes('saudi arabia')) playableId = 'saudi_arabia';
-          else if (normName.includes('australia')) playableId = 'australia';
-
-          const geometry = feature.geometry;
-          if (!geometry) return;
-
-          const isPlayable = playableId !== null;
-          const isHovered = playableId === hoveredCountryId && isPlayable;
-          const isSelected = playableId === selectedCountryId && isPlayable;
-          const countryState = isPlayable ? countries.find(c => c.id === playableId) : null;
-
-          // Custom micro themes based on local converts index
-          let fillStyle = 'rgba(239, 230, 200, 0.035)'; // Default unplayable countries: soft background
-          let strokeStyle = 'rgba(207, 181, 59, 0.08)'; // Fine hairline divider borders
-          let strokeWidth = 0.5;
-
-          if (isPlayable && countryState) {
-            fillStyle = 'rgba(207, 181, 59, 0.04)'; // Playable: subtle gold tint
-            strokeStyle = 'rgba(207, 181, 59, 0.30)';
-            strokeWidth = 0.8;
-
-            if (isHovered) {
-              fillStyle = 'rgba(207, 181, 59, 0.10)';
-              strokeStyle = 'rgba(255, 255, 255, 0.5)';
-              strokeWidth = 1.2;
-            }
-
-            if (isSelected) {
-              fillStyle = 'rgba(207, 181, 59, 0.14)';
-              strokeStyle = 'rgba(255, 255, 255, 0.8)';
-              strokeWidth = 1.5;
+          const normName = (feature.properties?.name || '').toLowerCase();
+          let isPlayable = false;
+          for (const key of Object.keys(COUNTRY_POSITIONS)) {
+            const n = COUNTRY_POSITIONS[key].name.toLowerCase();
+            if (normName.includes(n) || (key === 'usa' && normName.includes('united states')) ||
+                (key === 'russia' && normName.includes('russia')) ||
+                (key === 'south_africa' && normName.includes('south africa')) ||
+                (key === 'saudi_arabia' && normName.includes('saudi'))) {
+              isPlayable = true; break;
             }
           }
 
-          // Draw individual polygon path coordinates
-          const drawPolygon = (coords: number[][]) => {
+          const drawPoly = (coords: number[][]) => {
             ctx.beginPath();
-            let started = false;
-            coords.forEach((coordPair) => {
-              const p = project(coordPair[0], coordPair[1], width, height);
-              if (!started) {
-                ctx.moveTo(p.x, p.y);
-                started = true;
-              } else {
-                ctx.lineTo(p.x, p.y);
-              }
+            coords.forEach(([lon, lat], i) => {
+              const p = project(lon, lat, W, H);
+              i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
             });
             ctx.closePath();
-            ctx.fillStyle = fillStyle;
+            ctx.fillStyle = isPlayable ? 'rgba(207,181,59,0.06)' : 'rgba(180,160,100,0.03)';
             ctx.fill();
-            ctx.strokeStyle = strokeStyle;
-            ctx.lineWidth = strokeWidth;
+            ctx.strokeStyle = isPlayable ? 'rgba(207,181,59,0.25)' : 'rgba(150,130,80,0.08)';
+            ctx.lineWidth = isPlayable ? 0.8 : 0.4;
             ctx.stroke();
           };
 
-          if (geometry.type === 'Polygon') {
-            drawPolygon(geometry.coordinates[0]);
-          } else if (geometry.type === 'MultiPolygon') {
-            geometry.coordinates.forEach((poly: any) => {
-              drawPolygon(poly[0]);
-            });
-          }
+          if (geom.type === 'Polygon') drawPoly(geom.coordinates[0]);
+          else if (geom.type === 'MultiPolygon') geom.coordinates.forEach((p: any) => drawPoly(p[0]));
         });
       }
 
-      // Draw connecting paths between adjacent playable countries represent aviation flights / route network
-      if (showRoutes) {
-        ctx.setLineDash([4, 4]);
-        countries.forEach((c, idx) => {
-          if (c.converts > 0) {
-            const originLatLon = PLAYABLE_LAT_LON[c.id];
-            const nextCountry = countries[(idx + 1) % countries.length];
-            const destLatLon = PLAYABLE_LAT_LON[nextCountry.id];
-
-            if (originLatLon && destLatLon) {
-              const p1 = project(originLatLon.lon, originLatLon.lat, width, height);
-              const p2 = project(destLatLon.lon, destLatLon.lat, width, height);
-
-              ctx.beginPath();
-              ctx.moveTo(p1.x, p1.y);
-              // Dynamic curves
-              const midX = (p1.x + p2.x) / 2;
-              const midY = (p1.y + p2.y) / 2 - 25;
-              ctx.quadraticCurveTo(midX, midY, p2.x, p2.y);
-              ctx.strokeStyle = 'rgba(207, 181, 59, 0.22)';
-              ctx.lineWidth = 1.0;
-              ctx.stroke();
-            }
-          }
-        });
-        ctx.setLineDash([]);
-      }
-
-      // Time-based pulse value for animations (computed once before the loop)
-      const now = Date.now();
-      const pulse = Math.sin(now / 600) * 0.5 + 0.5; // 0..1 oscillating
-
-      // DRAW THE DYNAMIC TACTICAL NODES for the 12 playable países
-      countries.forEach((c) => {
-        const geoInfo = PLAYABLE_LAT_LON[c.id];
-        if (!geoInfo) return;
-
-        const p = project(geoInfo.lon, geoInfo.lat, width, height);
+      // Draw country nodes
+      countries.forEach(c => {
+        const geo = COUNTRY_POSITIONS[c.id];
+        if (!geo) return;
+        const p = project(geo.lon, geo.lat, W, H);
         const isSelected = selectedCountryId === c.id;
-        const isHovered = hoveredCountryId === c.id;
-        const hasFollowers = c.converts > 0;
-        const percentConverts = (c.converts / c.population) * 100;
-
-        // Compute convertPct once for all glow/label logic
+        const isHovered = hoveredId === c.id;
         const convertPct = c.population > 0 ? c.converts / c.population : 0;
 
-        // Node size proportional to population (kept small to avoid overlap)
-        const pop = c.population;
-        const baseR = pop > 800_000_000 ? 13 :
-                      pop > 200_000_000 ? 11 :
-                      pop > 50_000_000  ? 9 :
-                      pop > 10_000_000  ? 8 : 7;
+        const R = 7; // fixed small radius for all nodes
 
-        // Color scheme setting
-        let nodeColor = '#3a2e12';
-        let strokeColor = '#cfb53b';
+        // Node fill color based on conversion
+        let fill = '#2a2210';
+        let stroke = '#cfb53b';
+        let strokeW = 1.5;
 
-        if (hasFollowers) {
-          if (percentConverts >= 50) {
-            nodeColor = '#cfb53b';
-            strokeColor = '#ffffff';
-          } else {
-            nodeColor = '#b46f1f';
-            strokeColor = '#cfb53b';
-          }
+        if (convertPct >= 0.5) {
+          fill = '#cfb53b';
+          stroke = '#fff8dc';
+          strokeW = 2;
+        } else if (convertPct > 0) {
+          fill = '#7a4e10';
+          stroke = '#cfb53b';
+          strokeW = 1.5;
         }
 
-        if (c.resistance > 70) {
-          nodeColor = '#8b0000';
-          strokeColor = '#fca5a5';
+        if (isSelected) {
+          stroke = '#ffffff';
+          strokeW = 2.5;
+        } else if (isHovered) {
+          stroke = 'rgba(255,255,255,0.6)';
+          strokeW = 2;
         }
 
-
-        // Draw pulse glow ring around active selection/hover
-        if (isSelected || isHovered) {
-          const selPulse = 6 + (isSelected ? Math.sin(performance.now() * 0.007) * 4 : 2);
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, baseR + selPulse, 0, Math.PI * 2);
-          ctx.strokeStyle = isSelected ? 'rgba(255, 255, 255, 0.4)' : 'rgba(207, 181, 59, 0.3)';
-          ctx.lineWidth = 1.2;
-          ctx.stroke();
-        }
-
-        // Central core dot
+        // Draw node
         ctx.beginPath();
-        ctx.arc(p.x, p.y, baseR, 0, Math.PI * 2);
-        ctx.fillStyle = nodeColor;
+        ctx.arc(p.x, p.y, R, 0, Math.PI * 2);
+        ctx.fillStyle = fill;
         ctx.fill();
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = 2.0;
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = strokeW;
         ctx.stroke();
 
-        // Icon inside node for fully infiltrated leaders
+        // Leader converted: star inside
         if (c.leaderInfiltration >= 100) {
           ctx.save();
           ctx.fillStyle = '#fff8dc';
-          ctx.font = `${baseR * 0.7}px serif`;
+          ctx.font = '7px serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText('✦', p.x, p.y);
           ctx.restore();
         }
 
-        // Warning dot: red at bottom-left when inactivity > 15 cycles and not well-established
-        const history = (c as any).convertsHistory as number[] | undefined;
-        const showInactivityWarning = history && history.length >= 5 &&
-          history[history.length - 1] < history[history.length - 5] &&
-          c.converts > 1000 && c.templeLevel < 3;
-        if (showInactivityWarning) {
-          ctx.beginPath();
-          ctx.arc(p.x - baseR * 0.7, p.y + baseR * 0.7, 2.5, 0, Math.PI * 2);
-          ctx.fillStyle = '#ef4444';
-          ctx.fill();
-        }
-
-        // Temple indicator — small icon top-right of node
-        if (c.templeLevel > 0 || (c.templePending && c.templePending > 0)) {
-          const iconSize = c.templeLevel >= 3 ? 7 : c.templeLevel >= 1 ? 5 : 4;
-          const tx = p.x + baseR + 2;
-          const ty = p.y - baseR - iconSize - 1;
-
+        // Temple icon: tiny triangle above node
+        if (c.templeLevel > 0) {
+          const ts = Math.min(5 + c.templeLevel, 8);
+          const tx = p.x - ts / 2;
+          const ty = p.y - R - ts - 1;
           ctx.save();
-          ctx.globalAlpha = c.templeLevel > 0 ? 1.0 : 0.6;
-
-          // Roof triangle
-          ctx.fillStyle = c.templeLevel > 0 ? '#cfb53b' : '#ffe066';
+          ctx.fillStyle = '#cfb53b';
           ctx.beginPath();
-          ctx.moveTo(tx + iconSize / 2, ty);
-          ctx.lineTo(tx, ty + iconSize * 0.5);
-          ctx.lineTo(tx + iconSize, ty + iconSize * 0.5);
+          ctx.moveTo(tx + ts / 2, ty);
+          ctx.lineTo(tx, ty + ts * 0.55);
+          ctx.lineTo(tx + ts, ty + ts * 0.55);
           ctx.closePath();
           ctx.fill();
-
-          // Base rectangle
-          ctx.fillRect(tx + iconSize * 0.2, ty + iconSize * 0.5, iconSize * 0.6, iconSize * 0.5);
-
+          ctx.fillRect(tx + ts * 0.2, ty + ts * 0.55, ts * 0.6, ts * 0.45);
+          ctx.restore();
+        } else if (c.templePending > 0) {
+          // Tiny pending dot above node
+          ctx.save();
+          ctx.fillStyle = 'rgba(255,224,102,0.7)';
+          ctx.beginPath();
+          ctx.arc(p.x, p.y - R - 4, 2, 0, Math.PI * 2);
+          ctx.fill();
           ctx.restore();
         }
 
-        // Render tags and labels
+        // Labels
         if (showLabels) {
           ctx.textAlign = 'center';
           ctx.textBaseline = 'alphabetic';
 
-          // Country name with improved styling
-          ctx.font = `bold ${Math.max(9, baseR * 0.55)}px "Space Grotesk", sans-serif`;
-          ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+          const name = geo.name;
+          ctx.font = 'bold 9px sans-serif';
+          ctx.strokeStyle = 'rgba(0,0,0,0.9)';
           ctx.lineWidth = 2.5;
-          ctx.strokeText(c.name, p.x, p.y + baseR + 12);
-          ctx.fillStyle = convertPct > 0.5 ? '#cfb53b' : convertPct > 0.1 ? '#dfcfa0' : '#8a8070';
-          ctx.fillText(c.name, p.x, p.y + baseR + 12);
+          ctx.strokeText(name, p.x, p.y + R + 11);
+          ctx.fillStyle = convertPct > 0.3 ? '#cfb53b' : '#9a8a6a';
+          ctx.fillText(name, p.x, p.y + R + 11);
 
-          // Convert count below name
           if (c.converts > 0) {
-            const countStr = c.converts >= 1_000_000
+            const n = c.converts >= 1_000_000
               ? `${(c.converts / 1_000_000).toFixed(1)}M`
-              : c.converts >= 1_000
-              ? `${Math.round(c.converts / 1_000)}K`
-              : `${c.converts}`;
-            ctx.font = `${Math.max(8, baseR * 0.45)}px "JetBrains Mono", monospace`;
-            ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+              : `${Math.round(c.converts / 1000)}K`;
+            ctx.font = '8px monospace';
+            ctx.strokeStyle = 'rgba(0,0,0,0.9)';
             ctx.lineWidth = 2;
-            ctx.strokeText(countStr, p.x, p.y + baseR + 23);
-            ctx.fillStyle = convertPct > 0.3 ? '#cfb53b' : 'rgba(207,181,59,0.6)';
-            ctx.fillText(countStr, p.x, p.y + baseR + 23);
-          }
-
-          // Draw conversion status percent label (keep existing)
-          if (hasFollowers) {
-            ctx.font = `bold ${Math.max(8, baseR * 0.45)}px monospace`;
+            ctx.strokeText(n, p.x, p.y + R + 21);
             ctx.fillStyle = '#cfb53b';
-            ctx.strokeStyle = 'rgba(0,0,0,0.7)';
-            ctx.lineWidth = 2;
-            const pctStr = percentConverts >= 1 ? `${Math.round(percentConverts)}%` : `${percentConverts.toFixed(3)}%`;
-            ctx.strokeText(pctStr, p.x, p.y + baseR + 34);
-            ctx.fillText(pctStr, p.x, p.y + baseR + 34);
+            ctx.fillText(n, p.x, p.y + R + 21);
           }
-
-          // Clean shadow values
-          ctx.shadowBlur = 0;
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 0;
         }
       });
 
-      // Render floating text feedback at exact geographical anchors
-      floatingTexts.forEach((f) => {
-        const matchedId = f.countryId || findPlayableIdFromGrid(f.x, f.y);
-        if (matchedId) {
-          const geoInfo = PLAYABLE_LAT_LON[matchedId];
-          if (geoInfo) {
-            const p = project(geoInfo.lon, geoInfo.lat, width, height);
-
-            ctx.font = 'bold 11px monospace';
-            ctx.textAlign = 'center';
-            ctx.shadowColor = '#000000';
-            ctx.shadowBlur = 4;
-
-            if (f.colorClass.includes('red')) ctx.fillStyle = '#f87171';
-            else if (f.colorClass.includes('green')) ctx.fillStyle = '#4ade80';
-            else if (f.colorClass.includes('sky')) ctx.fillStyle = '#38bdf8';
-            else ctx.fillStyle = '#eab308';
-
-            const mappings: Record<string, { x: number; y: number }> = {
-              usa: { x: 18, y: 35 },
-              china: { x: 82, y: 38 },
-              india: { x: 73, y: 48 },
-              germany: { x: 50, y: 25 },
-              brazil: { x: 33, y: 72 },
-              russia: { x: 68, y: 22 },
-              egypt: { x: 54, y: 50 },
-              south_africa: { x: 56, y: 80 },
-              japan: { x: 92, y: 34 },
-              mexico: { x: 14, y: 50 },
-              saudi_arabia: { x: 63, y: 48 },
-              australia: { x: 88, y: 82 }
-            };
-
-            const baseY = mappings[matchedId]?.y || f.y;
-            const customOffsetY = (f.y - baseY) * 2.5;
-
-            const driftUp = (f.id % 20) * 0.7;
-            ctx.fillText(f.text, p.x, p.y - 18 + customOffsetY - driftUp);
-
-            ctx.shadowBlur = 0;
-          }
-        }
+      // Floating texts
+      floatingTexts.forEach(f => {
+        const geo = f.countryId ? COUNTRY_POSITIONS[f.countryId] : null;
+        if (!geo) return;
+        const p = project(geo.lon, geo.lat, W, H);
+        ctx.font = 'bold 10px monospace';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 3;
+        ctx.fillStyle = f.colorClass.includes('red') ? '#f87171'
+          : f.colorClass.includes('green') ? '#4ade80'
+          : f.colorClass.includes('sky') ? '#38bdf8' : '#eab308';
+        const drift = (f.id % 20) * 0.7;
+        ctx.fillText(f.text, p.x, p.y - 18 - drift);
+        ctx.shadowBlur = 0;
       });
     };
+  }, [countries, selectedCountryId, hoveredId, geoData, showLabels, floatingTexts]);
 
-    drawMapRef.current = drawMap;
-  }, [countries, selectedCountryId, hoveredCountryId, geoData, showGrid, showRoutes, showLabels, floatingTexts]);
-
-  // rAF animation loop — always running so pulse animations are smooth
+  // rAF loop
   useEffect(() => {
-    let animFrameId: number;
-    const animate = () => {
-      drawMapRef.current();
-      animFrameId = requestAnimationFrame(animate);
-    };
-    animFrameId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animFrameId);
+    let id: number;
+    const loop = () => { drawRef.current(); id = requestAnimationFrame(loop); };
+    id = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(id);
   }, []);
 
-  // Click handler coordinates projection inversion
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // Click handler
+  const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const rect = canvas.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-
-    const width = canvas.width;
-    const height = canvas.height;
-
-    let closestCountryId: string | null = null;
-    let closestDist = 18; // px threshold
-
-    Object.entries(PLAYABLE_LAT_LON).forEach(([id, info]) => {
-      const p = project(info.lon, info.lat, width, height);
-      const dist = Math.sqrt((p.x - clickX) ** 2 + (p.y - clickY) ** 2);
-      if (dist < closestDist) {
-        closestDist = dist;
-        closestCountryId = id;
-      }
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    let best: string | null = null;
+    let bestDist = 20;
+    Object.entries(COUNTRY_POSITIONS).forEach(([id, geo]) => {
+      const p = project(geo.lon, geo.lat, canvas.width, canvas.height);
+      const d = Math.hypot(p.x - cx, p.y - cy);
+      if (d < bestDist) { bestDist = d; best = id; }
     });
-
-    if (closestCountryId) {
-      onSelectCountry(closestCountryId);
-    }
+    if (best) onSelectCountry(best);
   };
 
-  // Hover target selector
-  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // Hover handler
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const width = canvas.width;
-    const height = canvas.height;
-
-    let foundCountryId: string | null = null;
-    let closestDist = 14;
-
-    Object.entries(PLAYABLE_LAT_LON).forEach(([id, info]) => {
-      const p = project(info.lon, info.lat, width, height);
-      const dist = Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2);
-      if (dist < closestDist) {
-        closestDist = dist;
-        foundCountryId = id;
-      }
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    let best: string | null = null;
+    let bestDist = 16;
+    Object.entries(COUNTRY_POSITIONS).forEach(([id, geo]) => {
+      const p = project(geo.lon, geo.lat, canvas.width, canvas.height);
+      const d = Math.hypot(p.x - cx, p.y - cy);
+      if (d < bestDist) { bestDist = d; best = id; }
     });
-
-    if (foundCountryId !== hoveredCountryId) {
-      setHoveredCountryId(foundCountryId);
-    }
+    if (best !== hoveredId) setHoveredId(best);
   };
 
   return (
-    <div className="relative w-full border border-[#cfb53b]/20 bg-[#0f0c04] rounded-lg overflow-hidden flex flex-col items-center" id="flat-tactical-map-container" ref={containerRef}>
-      
-      {/* HUD Bar Controls overlay */}
-      <div className="absolute top-3 left-4 right-4 flex items-center justify-between z-20 pointer-events-none">
+    <div ref={containerRef} className="relative w-full border border-[#cfb53b]/20 bg-[#0e0b04] rounded-lg overflow-hidden">
+      {/* Header */}
+      <div className="absolute top-2 left-3 right-3 flex items-center justify-between z-20 pointer-events-none">
         <div className="flex items-center gap-2">
-          <Map className="w-5 h-5 text-[#cfb53b]" />
-          <div>
-            <h4 className="text-[10px] font-mono uppercase tracking-widest text-[#cfb53b]">Planisfério Político Plano</h4>
-            <p className="text-[9px] text-[#dfcfa0]/50 font-sans">Todos os países representados no tabuleiro</p>
-          </div>
+          <Map className="w-4 h-4 text-[#cfb53b]" />
+          <span className="text-[9px] font-mono uppercase tracking-widest text-[#cfb53b]">Planisfério Político Plano</span>
         </div>
-
-        {/* Dynamic Interactive Toggles */}
-        <div className="flex gap-1 bg-black/80 border border-[#cfb53b]/20 p-0.5 rounded pointer-events-auto">
-          <button
-            type="button"
-            onClick={() => setShowGrid(!showGrid)}
-            className={`p-1 rounded cursor-pointer transition-all ${showGrid ? 'bg-[#cfb53b]/20 text-[#cfb53b]' : 'text-[#dfcfa0]/40 hover:text-white'}`}
-            title="Exibir/Ocultar Linhas de Grade de Coordenadas"
-          >
-            <Grid className="w-3.5 h-3.5" />
-          </button>
-          
-          <button
-            type="button"
-            onClick={() => setShowRoutes(!showRoutes)}
-            className={`p-1 rounded cursor-pointer transition-all ${showRoutes ? 'bg-[#cfb53b]/20 text-[#cfb53b]' : 'text-[#dfcfa0]/40 hover:text-white'}`}
-            title="Exibir/Ocultar Rotas de Conexão Ativas"
-          >
-            <Waves className="w-3.5 h-3.5" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowLabels(!showLabels)}
-            className={`p-1 rounded cursor-pointer transition-all ${showLabels ? 'bg-[#cfb53b]/20 text-[#cfb53b]' : 'text-[#dfcfa0]/40 hover:text-white'}`}
-            title="Exibir/Ocultar Rótulos e Percentagens"
-          >
-            {showLabels ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-          </button>
-        </div>
+        <button
+          type="button"
+          className="pointer-events-auto p-1 rounded bg-black/60 border border-[#cfb53b]/20 text-[#cfb53b]/60 hover:text-[#cfb53b] transition-colors cursor-pointer"
+          onClick={() => setShowLabels(v => !v)}
+          title="Mostrar/ocultar labels"
+        >
+          {showLabels ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+        </button>
       </div>
 
       {isLoading && (
-        <div className="absolute inset-0 bg-[#0f0c04]/90 flex flex-col justify-center items-center gap-2 z-30">
-          <RotateCw className="w-6 h-6 text-[#cfb53b] animate-spin" />
-          <p className="text-xs font-mono text-[#dfcfa0]">Compilando fronteiras globais...</p>
+        <div className="absolute inset-0 bg-[#0e0b04]/90 flex flex-col items-center justify-center gap-2 z-30">
+          <RotateCw className="w-5 h-5 text-[#cfb53b] animate-spin" />
+          <p className="text-xs font-mono text-[#dfcfa0]/60">Carregando mapa...</p>
         </div>
       )}
 
-      {/* Target canvas */}
       <canvas
         ref={canvasRef}
-        onClick={handleCanvasClick}
-        onMouseMove={handleCanvasMouseMove}
-        onMouseLeave={() => setHoveredCountryId(null)}
-        className="w-full h-full block z-10 cursor-crosshair pb-1"
-        title="Selecione um país jogável no planisfério para convocar missões."
+        onClick={handleClick}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setHoveredId(null)}
+        className="w-full block cursor-crosshair"
       />
 
-      {/* Static Mini-Legend footer */}
-      <div className="absolute bottom-2 left-3 right-3 flex justify-between bg-black/75 border border-[#cfb53b]/15 p-1 px-3 rounded text-[9px] font-mono text-[#dfcfa0]/60 z-10 select-none">
-        <div className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#3a2e12] border border-[#cfb53b]/45" />
-          <span>Inativo / Profano</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#b46f1f] border border-[#cfb53b]" />
-          <span>Semeado (&lt;50%)</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#cfb53b] border border-white" />
-          <span>Dominante (50%+)</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#8b0000] border border-[#fca5a5]" />
-          <span>Alta Resistência</span>
-        </div>
+      {/* Legend */}
+      <div className="absolute bottom-2 left-3 right-3 flex justify-between bg-black/70 border border-[#cfb53b]/10 px-3 py-1 rounded text-[8px] font-mono text-[#dfcfa0]/50 select-none">
+        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-[#2a2210] border border-[#cfb53b]/50 inline-block" /> Inativo</span>
+        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-[#7a4e10] border border-[#cfb53b] inline-block" /> Semeado</span>
+        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-[#cfb53b] border border-white inline-block" /> Dominante</span>
+        <span className="flex items-center gap-1">✦ Líder convertido</span>
       </div>
-
     </div>
   );
 }
