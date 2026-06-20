@@ -376,11 +376,11 @@ export default function WorldMapFlat({
         // Gold glow for high conversion countries
         if (convertPct >= 0.3) {
           ctx.save();
-          ctx.shadowBlur = 18 + convertPct * 20;
+          ctx.shadowBlur = Math.min(10, 8 + convertPct * 5);
           ctx.shadowColor = '#cfb53b';
           ctx.beginPath();
           ctx.arc(p.x, p.y, baseR, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(207,181,59,0.15)';
+          ctx.fillStyle = 'rgba(207,181,59,0.12)';
           ctx.fill();
           ctx.restore();
         }
@@ -388,7 +388,7 @@ export default function WorldMapFlat({
         // Red glow for high violence
         if (c.violence > 70) {
           ctx.save();
-          ctx.shadowBlur = 14;
+          ctx.shadowBlur = 10;
           ctx.shadowColor = '#ff4400';
           ctx.beginPath();
           ctx.arc(p.x, p.y, baseR, 0, Math.PI * 2);
@@ -404,7 +404,7 @@ export default function WorldMapFlat({
           ctx.strokeStyle = '#cfb53b';
           ctx.lineWidth = 1.5;
           ctx.beginPath();
-          ctx.arc(p.x, p.y, baseR + 4 + pulse * 6, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, baseR + 4 + pulse * 3, 0, Math.PI * 2);
           ctx.stroke();
           ctx.restore();
         }
@@ -471,44 +471,28 @@ export default function WorldMapFlat({
           ctx.fill();
         }
 
-        // Temple icon: drawn offset to top-right of node
-        if (c.templeLevel > 0 || c.templePending > 0) {
-          const sizes = [0, 6, 8, 10, 12];
-          const level = Math.min(c.templeLevel, 4);
-          const w = sizes[level] || 6;
-          const h = Math.round(w * 1.4);
-          const tx = p.x + baseR + 3;
-          const ty = p.y - baseR - h - 2;
-
-          const color = c.templeLevel > 0 ? '#cfb53b' : '#ffe066';
-          const alpha = c.templeLevel > 0 ? 1.0 : 0.65;
+        // Temple indicator — small icon top-right of node
+        if (c.templeLevel > 0 || (c.templePending && c.templePending > 0)) {
+          const iconSize = c.templeLevel >= 3 ? 7 : c.templeLevel >= 1 ? 5 : 4;
+          const tx = p.x + baseR + 2;
+          const ty = p.y - baseR - iconSize - 1;
 
           ctx.save();
-          ctx.globalAlpha = alpha;
-          ctx.fillStyle = color;
+          ctx.globalAlpha = c.templeLevel > 0 ? 1.0 : 0.6;
 
           // Roof triangle
+          ctx.fillStyle = c.templeLevel > 0 ? '#cfb53b' : '#ffe066';
           ctx.beginPath();
-          ctx.moveTo(tx + w / 2, ty);
-          ctx.lineTo(tx, ty + h * 0.45);
-          ctx.lineTo(tx + w, ty + h * 0.45);
+          ctx.moveTo(tx + iconSize / 2, ty);
+          ctx.lineTo(tx, ty + iconSize * 0.5);
+          ctx.lineTo(tx + iconSize, ty + iconSize * 0.5);
           ctx.closePath();
           ctx.fill();
 
           // Base rectangle
-          ctx.fillRect(tx + w * 0.15, ty + h * 0.45, w * 0.7, h * 0.55);
+          ctx.fillRect(tx + iconSize * 0.2, ty + iconSize * 0.5, iconSize * 0.6, iconSize * 0.5);
 
           ctx.restore();
-
-          // If pending construction on existing temple, add small yellow dot below
-          if (c.templePending > 0 && c.templeLevel > 0) {
-            ctx.save();
-            ctx.fillStyle = '#ffe066';
-            ctx.beginPath();
-            ctx.arc(tx + w / 2, ty + h + 4, 2, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
-          }
         }
 
         // Render tags and labels
