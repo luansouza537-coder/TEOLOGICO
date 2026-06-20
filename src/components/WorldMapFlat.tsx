@@ -152,25 +152,12 @@ export default function WorldMapFlat({
       const width = canvas.width;
       const height = canvas.height;
 
-      // Ocean gradient background
-      const oceanGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      oceanGrad.addColorStop(0, '#0a1628');
-      oceanGrad.addColorStop(0.5, '#0d1f3c');
-      oceanGrad.addColorStop(1, '#081420');
-      ctx.fillStyle = oceanGrad;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Subtle grid (meridians/parallels)
-      ctx.strokeStyle = 'rgba(100, 150, 200, 0.06)';
-      ctx.lineWidth = 0.5;
-      const gridSpacingX = canvas.width / 12;
-      const gridSpacingY = canvas.height / 6;
-      for (let gx = 0; gx <= canvas.width; gx += gridSpacingX) {
-        ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, canvas.height); ctx.stroke();
-      }
-      for (let gy = 0; gy <= canvas.height; gy += gridSpacingY) {
-        ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(canvas.width, gy); ctx.stroke();
-      }
+      // Dark warm background matching game theme
+      const bgGrad = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, Math.max(width, height)*0.7);
+      bgGrad.addColorStop(0, '#1a1408');
+      bgGrad.addColorStop(1, '#0a0800');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, width, height);
 
       // Grid lines: Parallels and Meridians for strategic tactical aesthetic
       if (showGrid) {
@@ -373,36 +360,24 @@ export default function WorldMapFlat({
           strokeColor = '#fca5a5';
         }
 
-        // Gold glow for high conversion countries (subtle outer ring only)
-        if (convertPct >= 0.3) {
-          ctx.save();
-          ctx.globalAlpha = 0.25 * convertPct;
-          ctx.strokeStyle = '#cfb53b';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, baseR + 3, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.restore();
-        }
-
         // Active pulse ring for countries being actively converted
-        if (c.converts > 100 && convertPct > 0.05 && convertPct < 0.8) {
+        if (c.converts > 10000 && convertPct > 0.05 && convertPct < 0.8) {
           ctx.save();
-          ctx.globalAlpha = pulse * 0.35;
+          ctx.globalAlpha = pulse * 0.4;
           ctx.strokeStyle = '#cfb53b';
-          ctx.lineWidth = 1.5;
+          ctx.lineWidth = 1;
           ctx.beginPath();
-          ctx.arc(p.x, p.y, baseR + 4 + pulse * 3, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, baseR + 2 + pulse * 2, 0, Math.PI * 2);
           ctx.stroke();
           ctx.restore();
         }
 
-        // Orange pulsing ring when violence > 70
+        // Orange ring when violence > 70
         if (c.violence > 70) {
           ctx.beginPath();
-          ctx.arc(p.x, p.y, baseR + 4, 0, Math.PI * 2);
-          ctx.strokeStyle = '#ff6600';
-          ctx.lineWidth = 2;
+          ctx.arc(p.x, p.y, baseR + 2, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(255,102,0,0.7)';
+          ctx.lineWidth = 1;
           ctx.stroke();
         }
 
@@ -410,8 +385,8 @@ export default function WorldMapFlat({
         if (c.templePending > 0) {
           ctx.setLineDash([2, 2]);
           ctx.beginPath();
-          ctx.arc(p.x, p.y, baseR + 3, 0, Math.PI * 2);
-          ctx.strokeStyle = '#ffe066';
+          ctx.arc(p.x, p.y, baseR + 2, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(255,224,102,0.8)';
           ctx.lineWidth = 1;
           ctx.stroke();
           ctx.setLineDash([]);
