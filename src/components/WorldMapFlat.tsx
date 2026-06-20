@@ -347,12 +347,12 @@ export default function WorldMapFlat({
         // Compute convertPct once for all glow/label logic
         const convertPct = c.population > 0 ? c.converts / c.population : 0;
 
-        // Node size proportional to population
+        // Node size proportional to population (kept small to avoid overlap)
         const pop = c.population;
-        const baseR = pop > 800_000_000 ? 22 :
-                      pop > 200_000_000 ? 18 :
-                      pop > 50_000_000  ? 14 :
-                      pop > 10_000_000  ? 11 : 9;
+        const baseR = pop > 800_000_000 ? 13 :
+                      pop > 200_000_000 ? 11 :
+                      pop > 50_000_000  ? 9 :
+                      pop > 10_000_000  ? 8 : 7;
 
         // Color scheme setting
         let nodeColor = '#3a2e12';
@@ -373,27 +373,15 @@ export default function WorldMapFlat({
           strokeColor = '#fca5a5';
         }
 
-        // Gold glow for high conversion countries
+        // Gold glow for high conversion countries (subtle outer ring only)
         if (convertPct >= 0.3) {
           ctx.save();
-          ctx.shadowBlur = Math.min(10, 8 + convertPct * 5);
-          ctx.shadowColor = '#cfb53b';
+          ctx.globalAlpha = 0.25 * convertPct;
+          ctx.strokeStyle = '#cfb53b';
+          ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.arc(p.x, p.y, baseR, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(207,181,59,0.12)';
-          ctx.fill();
-          ctx.restore();
-        }
-
-        // Red glow for high violence
-        if (c.violence > 70) {
-          ctx.save();
-          ctx.shadowBlur = 10;
-          ctx.shadowColor = '#ff4400';
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, baseR, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(255,68,0,0.10)';
-          ctx.fill();
+          ctx.arc(p.x, p.y, baseR + 3, 0, Math.PI * 2);
+          ctx.stroke();
           ctx.restore();
         }
 
@@ -420,11 +408,11 @@ export default function WorldMapFlat({
 
         // Dashed yellow construction ring when templePending
         if (c.templePending > 0) {
-          ctx.setLineDash([3, 3]);
+          ctx.setLineDash([2, 2]);
           ctx.beginPath();
-          ctx.arc(p.x, p.y, baseR + 7, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, baseR + 3, 0, Math.PI * 2);
           ctx.strokeStyle = '#ffe066';
-          ctx.lineWidth = 1.5;
+          ctx.lineWidth = 1;
           ctx.stroke();
           ctx.setLineDash([]);
         }
