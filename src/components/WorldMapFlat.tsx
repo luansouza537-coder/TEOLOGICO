@@ -100,23 +100,52 @@ export default function WorldMapFlat({ countries, selectedCountryId, onSelectCou
         ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
       }
 
-      // World landmass — uniform subtle fill, thin gold border
+      // World landmass — colored fill by conversion state, thin border
       if (geoData?.features) {
+        // Build lookup: playable country id → state
+        const stateMap: Record<string, typeof countries[0]> = {};
+        countries.forEach(c => { stateMap[c.id] = c; });
+
+        const getPlayableId = (name: string): string | null => {
+          const n = name.toLowerCase();
+          if (n.includes('united states')) return 'usa';
+          if (n.includes('china')) return 'china';
+          if (n.includes('india') && !n.includes('indiana')) return 'india';
+          if (n.includes('germany')) return 'germany';
+          if (n.includes('brazil')) return 'brazil';
+          if (n.includes('russia')) return 'russia';
+          if (n.includes('egypt')) return 'egypt';
+          if (n.includes('south africa')) return 'south_africa';
+          if (n.includes('japan')) return 'japan';
+          if (n.includes('mexico')) return 'mexico';
+          if (n.includes('saudi')) return 'saudi_arabia';
+          if (n.includes('australia')) return 'australia';
+          return null;
+        };
+
         geoData.features.forEach((feature: any) => {
           const geom = feature.geometry;
           if (!geom) return;
+          const pid = getPlayableId(feature.properties?.name || '');
+          const cs = pid ? stateMap[pid] : null;
+          const isSelected = pid === selectedCountryId;
+          const isHovered = pid === hoveredId;
 
-          const normName = (feature.properties?.name || '').toLowerCase();
-          let isPlayable = false;
-          for (const key of Object.keys(COUNTRY_POSITIONS)) {
-            const n = COUNTRY_POSITIONS[key].name.toLowerCase();
-            if (normName.includes(n) || (key === 'usa' && normName.includes('united states')) ||
-                (key === 'russia' && normName.includes('russia')) ||
-                (key === 'south_africa' && normName.includes('south africa')) ||
-                (key === 'saudi_arabia' && normName.includes('saudi'))) {
-              isPlayable = true; break;
-            }
+          let fill = 'rgba(180,160,100,0.03)';
+          let stroke = 'rgba(120,100,60,0.07)';
+          let strokeW = 0.3;
+
+          if (cs) {
+            const pct = cs.converts / cs.population;
+            if (pct >= 0.5) fill = 'rgba(207,181,59,0.18)';
+            else if (pct > 0) fill = 'rgba(180,120,30,0.10)';
+            else fill = 'rgba(100,80,30,0.06)';
+            stroke = 'rgba(207,181,59,0.30)';
+            strokeW = 0.7;
           }
+
+          if (isSelected) { fill = 'rgba(207,181,59,0.28)'; stroke = 'rgba(255,255,255,0.6)'; strokeW = 1.2; }
+          else if (isHovered) { fill = 'rgba(207,181,59,0.14)'; stroke = 'rgba(207,181,59,0.6)'; strokeW = 1.0; }
 
           const drawPoly = (coords: number[][]) => {
             ctx.beginPath();
@@ -125,10 +154,10 @@ export default function WorldMapFlat({ countries, selectedCountryId, onSelectCou
               i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
             });
             ctx.closePath();
-            ctx.fillStyle = 'transparent';
+            ctx.fillStyle = fill;
             ctx.fill();
-            ctx.strokeStyle = isPlayable ? 'rgba(207,181,59,0.20)' : 'rgba(150,130,80,0.06)';
-            ctx.lineWidth = isPlayable ? 0.7 : 0.3;
+            ctx.strokeStyle = stroke;
+            ctx.lineWidth = strokeW;
             ctx.stroke();
           };
 
@@ -137,111 +166,75 @@ export default function WorldMapFlat({ countries, selectedCountryId, onSelectCou
         });
       }
 
-      // Draw country nodes
-      countries.forEach(c => {
-        const geo = COUNTRY_POSITIONS[c.id];
-        if (!geo) return;
-        const p = project(geo.lon, geo.lat, W, H);
-        const isSelected = selectedCountryId === c.id;
-        const isHovered = hoveredId === c.id;
-        const convertPct = c.population > 0 ? c.converts / c.population : 0;
+      // Draw country labels at center point (no circles)
+      if (showLabels) {
+        countries.forEach(c => {
+          const geo = COUNTRY_POSITIONS[c.id];
+          if (!geo) return;
+          const p = project(geo.lon, geo.lat, W, H);
+          const isSelected = selectedCountryId === c.id;
+          const isHovered = hoveredId === c.id;
+          const convertPct = c.population > 0 ? c.converts / c.population : 0;
 
-        const R = 7; // fixed small radius for all nodes
+          const labelColor = convertPct >= 0.5 ? '#cfb53b'
+            : convertPct > 0 ? '#c8a84a'
+            : '#7a6a4a';
 
-        // Node fill color based on conversion
-        let fill = '#2a2210';
-        let stroke = '#cfb53b';
-        let strokeW = 1.5;
-
-        if (convertPct >= 0.5) {
-          fill = '#cfb53b';
-          stroke = '#fff8dc';
-          strokeW = 2;
-        } else if (convertPct > 0) {
-          fill = '#7a4e10';
-          stroke = '#cfb53b';
-          strokeW = 1.5;
-        }
-
-        if (isSelected) {
-          stroke = '#ffffff';
-          strokeW = 2.5;
-        } else if (isHovered) {
-          stroke = 'rgba(255,255,255,0.6)';
-          strokeW = 2;
-        }
-
-        // Draw node
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, R, 0, Math.PI * 2);
-        ctx.fillStyle = fill;
-        ctx.fill();
-        ctx.strokeStyle = stroke;
-        ctx.lineWidth = strokeW;
-        ctx.stroke();
-
-        // Leader converted: star inside
-        if (c.leaderInfiltration >= 100) {
-          ctx.save();
-          ctx.fillStyle = '#fff8dc';
-          ctx.font = '7px serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText('✦', p.x, p.y);
-          ctx.restore();
-        }
 
-        // Temple icon: tiny triangle above node
-        if (c.templeLevel > 0) {
-          const ts = Math.min(5 + c.templeLevel, 8);
-          const tx = p.x - ts / 2;
-          const ty = p.y - R - ts - 1;
-          ctx.save();
-          ctx.fillStyle = '#cfb53b';
-          ctx.beginPath();
-          ctx.moveTo(tx + ts / 2, ty);
-          ctx.lineTo(tx, ty + ts * 0.55);
-          ctx.lineTo(tx + ts, ty + ts * 0.55);
-          ctx.closePath();
-          ctx.fill();
-          ctx.fillRect(tx + ts * 0.2, ty + ts * 0.55, ts * 0.6, ts * 0.45);
-          ctx.restore();
-        } else if (c.templePending > 0) {
-          // Tiny pending dot above node
-          ctx.save();
-          ctx.fillStyle = 'rgba(255,224,102,0.7)';
-          ctx.beginPath();
-          ctx.arc(p.x, p.y - R - 4, 2, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-        }
+          // Highlight box for selected/hovered
+          if (isSelected || isHovered) {
+            ctx.save();
+            ctx.font = 'bold 9px sans-serif';
+            const tw = ctx.measureText(geo.name).width;
+            ctx.fillStyle = isSelected ? 'rgba(207,181,59,0.25)' : 'rgba(207,181,59,0.12)';
+            ctx.fillRect(p.x - tw/2 - 3, p.y - 7, tw + 6, 14);
+            ctx.strokeStyle = isSelected ? 'rgba(207,181,59,0.7)' : 'rgba(207,181,59,0.3)';
+            ctx.lineWidth = 0.8;
+            ctx.strokeRect(p.x - tw/2 - 3, p.y - 7, tw + 6, 14);
+            ctx.restore();
+          }
 
-        // Labels
-        if (showLabels) {
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'alphabetic';
+          // Country name
+          ctx.font = `${isSelected ? 'bold' : ''} 9px sans-serif`;
+          ctx.strokeStyle = 'rgba(0,0,0,0.95)';
+          ctx.lineWidth = 3;
+          ctx.strokeText(geo.name, p.x, p.y);
+          ctx.fillStyle = isSelected ? '#ffffff' : labelColor;
+          ctx.fillText(geo.name, p.x, p.y);
 
-          const name = geo.name;
-          ctx.font = 'bold 9px sans-serif';
-          ctx.strokeStyle = 'rgba(0,0,0,0.9)';
-          ctx.lineWidth = 2.5;
-          ctx.strokeText(name, p.x, p.y + R + 11);
-          ctx.fillStyle = convertPct > 0.3 ? '#cfb53b' : '#9a8a6a';
-          ctx.fillText(name, p.x, p.y + R + 11);
-
+          // Convert count below name
           if (c.converts > 0) {
             const n = c.converts >= 1_000_000
               ? `${(c.converts / 1_000_000).toFixed(1)}M`
               : `${Math.round(c.converts / 1000)}K`;
-            ctx.font = '8px monospace';
+            ctx.font = '7px monospace';
+            ctx.strokeStyle = 'rgba(0,0,0,0.95)';
+            ctx.lineWidth = 2;
+            ctx.strokeText(n, p.x, p.y + 10);
+            ctx.fillStyle = '#cfb53b';
+            ctx.fillText(n, p.x, p.y + 10);
+          }
+
+          // Temple icon above name
+          if (c.templeLevel > 0) {
+            ctx.font = '8px serif';
             ctx.strokeStyle = 'rgba(0,0,0,0.9)';
             ctx.lineWidth = 2;
-            ctx.strokeText(n, p.x, p.y + R + 21);
+            ctx.strokeText('⛪', p.x, p.y - 10);
             ctx.fillStyle = '#cfb53b';
-            ctx.fillText(n, p.x, p.y + R + 21);
+            ctx.fillText('⛪', p.x, p.y - 10);
           }
-        }
-      });
+
+          // Leader converted
+          if (c.leaderInfiltration >= 100) {
+            ctx.font = '8px serif';
+            ctx.fillStyle = '#fff8dc';
+            ctx.fillText('✦', p.x + (c.templeLevel > 0 ? 8 : 0), p.y - 10);
+          }
+        });
+      }
 
       // Floating texts
       floatingTexts.forEach(f => {
