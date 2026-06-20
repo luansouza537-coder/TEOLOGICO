@@ -1723,6 +1723,18 @@ export default function App() {
                 <span className={`text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded border ${state.faithPhase === 3 ? 'border-red-700/50 bg-red-950/30 text-red-300' : state.faithPhase === 2 ? 'border-orange-700/50 bg-orange-950/30 text-orange-300' : 'border-amber-700/50 bg-amber-950/30 text-amber-400'}`}>
                   {state.faithPhase === 1 ? '✦ Centelha' : state.faithPhase === 2 ? '✦ Credo' : '✦ Transcendência'}
                 </span>
+                {/* #10: Cycles until next phase */}
+                {(() => {
+                  const faithPerCycle = Math.max(1, 1 + state.countries.filter(c => c.converts > 0).length);
+                  const nextPhaseThreshold = state.faithPhase === 1 ? 150 : state.faithPhase === 2 ? 500 : null;
+                  if (!nextPhaseThreshold) return null;
+                  const remaining = nextPhaseThreshold - state.faith;
+                  if (remaining <= 0) return null;
+                  const cycles = Math.ceil(remaining / faithPerCycle);
+                  return (
+                    <span className="text-[8px] font-mono text-[#dfcfa0]/35">~{cycles} ciclos p/ próx. fase</span>
+                  );
+                })()}
               </p>
             </div>
           </div>
@@ -2326,7 +2338,7 @@ export default function App() {
           </div>
 
           {/* Scrollable event listings items */}
-          <div className="bg-black/40 rounded border border-[#cfb53b]/10 p-3 h-24 overflow-y-auto flex flex-col gap-1 text-xs font-mono">
+          <div ref={logScrollRef} className="bg-black/40 rounded border border-[#cfb53b]/10 p-3 h-24 overflow-y-auto flex flex-col gap-1 text-xs font-mono">
             {(() => {
               const countryNames: Record<string, string> = {
                 'Brasil': 'brazil', 'EUA': 'usa', 'China': 'china', 'Índia': 'india',
