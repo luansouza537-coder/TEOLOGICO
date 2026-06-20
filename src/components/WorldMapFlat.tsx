@@ -125,10 +125,10 @@ export default function WorldMapFlat({ countries, selectedCountryId, onSelectCou
               i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
             });
             ctx.closePath();
-            ctx.fillStyle = isPlayable ? 'rgba(207,181,59,0.06)' : 'rgba(180,160,100,0.03)';
+            ctx.fillStyle = 'transparent';
             ctx.fill();
-            ctx.strokeStyle = isPlayable ? 'rgba(207,181,59,0.25)' : 'rgba(150,130,80,0.08)';
-            ctx.lineWidth = isPlayable ? 0.8 : 0.4;
+            ctx.strokeStyle = isPlayable ? 'rgba(207,181,59,0.20)' : 'rgba(150,130,80,0.06)';
+            ctx.lineWidth = isPlayable ? 0.7 : 0.3;
             ctx.stroke();
           };
 
