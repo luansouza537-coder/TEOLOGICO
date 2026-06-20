@@ -26,7 +26,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     templeSpec: null,
     cyclesPresent: 1,
     lastConflictCycle: -99,
-    localReligionStrength: 15
+    localReligionStrength: 15,
+    tags: ['Secular', 'Progressista'],
+    lastActionCycle: 0,
+    convertsHistory: []
   },
   {
     id: 'china',
@@ -48,7 +51,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
-    localReligionStrength: 30
+    localReligionStrength: 30,
+    tags: ['Autoritário'],
+    lastActionCycle: 0,
+    convertsHistory: []
   },
   {
     id: 'india',
@@ -70,7 +76,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
-    localReligionStrength: 70
+    localReligionStrength: 70,
+    tags: ['Devoto', 'Tribal'],
+    lastActionCycle: 0,
+    convertsHistory: []
   },
   {
     id: 'germany',
@@ -92,7 +101,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
-    localReligionStrength: 10
+    localReligionStrength: 10,
+    tags: ['Secular', 'Progressista'],
+    lastActionCycle: 0,
+    convertsHistory: []
   },
   {
     id: 'brazil',
@@ -114,7 +126,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
-    localReligionStrength: 20
+    localReligionStrength: 20,
+    tags: ['Devoto', 'Progressista'],
+    lastActionCycle: 0,
+    convertsHistory: []
   },
   {
     id: 'russia',
@@ -136,7 +151,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
-    localReligionStrength: 60
+    localReligionStrength: 60,
+    tags: ['Autoritário', 'Militarista'],
+    lastActionCycle: 0,
+    convertsHistory: []
   },
   {
     id: 'egypt',
@@ -158,7 +176,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
-    localReligionStrength: 75
+    localReligionStrength: 75,
+    tags: ['Devoto', 'Tribal'],
+    lastActionCycle: 0,
+    convertsHistory: []
   },
   {
     id: 'south_africa',
@@ -180,7 +201,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
-    localReligionStrength: 20
+    localReligionStrength: 20,
+    tags: ['Secular'],
+    lastActionCycle: 0,
+    convertsHistory: []
   },
   {
     id: 'japan',
@@ -202,7 +226,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
-    localReligionStrength: 50
+    localReligionStrength: 50,
+    tags: ['Secular', 'Autoritário'],
+    lastActionCycle: 0,
+    convertsHistory: []
   },
   {
     id: 'mexico',
@@ -224,7 +251,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
-    localReligionStrength: 25
+    localReligionStrength: 25,
+    tags: ['Devoto', 'Progressista'],
+    lastActionCycle: 0,
+    convertsHistory: []
   },
   {
     id: 'saudi_arabia',
@@ -246,7 +276,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
-    localReligionStrength: 90
+    localReligionStrength: 90,
+    tags: ['Devoto', 'Autoritário'],
+    lastActionCycle: 0,
+    convertsHistory: []
   },
   {
     id: 'australia',
@@ -268,7 +301,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
-    localReligionStrength: 5
+    localReligionStrength: 5,
+    tags: ['Secular', 'Progressista'],
+    lastActionCycle: 0,
+    convertsHistory: []
   }
 ];
 

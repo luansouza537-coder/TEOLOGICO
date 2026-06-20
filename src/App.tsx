@@ -14,6 +14,7 @@ import LeadersPanel from './components/LeadersPanel';
 import RivalPanel from './components/RivalPanel';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Gamepad2, Info, BookOpen, AlertTriangle } from 'lucide-react';
 import { calcPeaceEffectiveness } from './utils/peaceEffectiveness';
+import { playFileSound } from './utils/sound';
 
 const TEMPLE_NAMES: Record<string, string[]> = {
   Mistical:   ['Gruta do Véu', 'Santuário dos Arcanos', 'Torre dos Mistérios', 'Abismo Sagrado'],
@@ -63,6 +64,9 @@ export default function App() {
             cyclesPresent: c.cyclesPresent ?? 0,
             lastConflictCycle: c.lastConflictCycle ?? -99,
             localReligionStrength: c.localReligionStrength ?? 0,
+            tags: c.tags ?? ['Secular'],
+            lastActionCycle: c.lastActionCycle ?? 0,
+            convertsHistory: c.convertsHistory ?? [],
           }));
         }
         if (!parsed.doctrines) parsed.doctrines = INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null }));
@@ -115,6 +119,7 @@ export default function App() {
   const [newsText, setNewsText] = useState('CONEXÃO COLETIVA ESTÁVEL: Monitorando a disseminação teológica pelo globo...');
   const [floatingTexts, setFloatingTexts] = useState<{ id: number; text: string; x: number; y: number; colorClass: string; countryId?: string }[]>([]);
   const soundtrackRef = useRef<HTMLAudioElement | null>(null);
+  const alertPlayedThisCycleRef = useRef<number>(-1);
 
   // Sound preference state persistence
   useEffect(() => {
@@ -468,7 +473,9 @@ export default function App() {
             // Logistic growth: scales with existing converts × remaining space, not raw population
             // Small base → slow growth; large base → fast growth; near saturation → slows again
             const remainingFraction = (pop - converts) / pop;
-            const addedConverts = Math.floor(converts * growthFactor * remainingFraction * Math.max(0.01, hostilityMultiplier));
+            let addedConverts = Math.floor(converts * growthFactor * remainingFraction * Math.max(0.01, hostilityMultiplier));
+            // TAG: Secular — harder to convert (-20%)
+            if ((c.tags ?? []).includes('Secular')) addedConverts = Math.floor(addedConverts * 0.80);
             converts = Math.min(pop, converts + addedConverts);
 
             // APOSTASIA: fiéis abandonam a fé sob violência e resistência cultural alta
@@ -495,10 +502,12 @@ export default function App() {
             // DYNAMIC localReligionStrength update
             let localReligionStrength = c.localReligionStrength ?? 0;
             const convertFrac = converts / pop;
+            // TAG: Devoto — nationalism is 30% stronger (grows faster / decays slower)
+            const devotoBonusMult = (c.tags ?? []).includes('Devoto') ? 1.3 : 1.0;
             if (convertFrac < 0.05 && c.templeLevel === 0) {
-              localReligionStrength = Math.min(95, localReligionStrength + 0.3);
+              localReligionStrength = Math.min(95, localReligionStrength + 0.3 * devotoBonusMult);
             } else if (convertFrac > 0.30 && c.templeLevel > 0) {
-              localReligionStrength = Math.max(5, localReligionStrength - 0.5);
+              localReligionStrength = Math.max(5, localReligionStrength - 0.5 / devotoBonusMult);
             } else {
               localReligionStrength = localReligionStrength > 50
                 ? Math.max(50, localReligionStrength - 0.1)
@@ -509,7 +518,9 @@ export default function App() {
 
             // FASE 3 — ADAPTAÇÃO CULTURAL: após 20 ciclos de presença, resistência cai gradualmente
             if (cyclesPresent > 20) {
-              resistance = Math.max(0, resistance - 0.1);
+              // TAG: Progressista — resistance decays 20% faster
+              const resistDecay = (c.tags ?? []).includes('Progressista') ? 0.12 : 0.1;
+              resistance = Math.max(0, resistance - resistDecay);
             }
 
             // OBSTÁCULO 4 — CONFLITOS ENTRE GRUPOS
@@ -605,6 +616,16 @@ export default function App() {
               templeLevel = Math.max(0, templeLevel - 1);
               templeSpec = templeLevel < 2 ? null : templeSpec;
             }
+          }
+
+          // TAG: Autoritário — violence regenerates +30% faster
+          if ((c.tags ?? []).includes('Autoritário') && violence < c.violence) {
+            // If violence was reduced this cycle, it bounces back more in autoritarian states
+            violence = Math.min(c.violence, violence + (c.violence - violence) * 0.3);
+          }
+          // TAG: Militarista — base violence regeneration +30%
+          if ((c.tags ?? []).includes('Militarista') && violence < 100) {
+            violence = Math.min(100, violence + 0.3);
           }
 
           return { ...c, converts, resistance, violence, leaderInfiltration, cyclesPresent, lastConflictCycle, templeLevel, templePending, templeBuildCyclesLeft, templeSpec, localReligionStrength: (c as any)._updatedLocalReligionStrength ?? c.localReligionStrength };

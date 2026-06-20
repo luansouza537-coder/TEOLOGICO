@@ -5,6 +5,8 @@
 
 export type ReligionTrait = 'Mistical' | 'Prophetic' | 'Activist' | 'Syncretist';
 
+export type CountryTag = 'Secular' | 'Devoto' | 'Autoritário' | 'Tribal' | 'Progressista' | 'Militarista';
+
 export type VictoryGoalType = 'GlobalEcstasy' | 'PerpetualPeace' | 'OneFlock' | 'TheEnlightened';
 
 export interface Country {
@@ -28,6 +30,9 @@ export interface Country {
   cyclesPresent: number; // cycles with at least 1 convert (for linguistic barrier)
   lastConflictCycle: number; // last cycle a group conflict fired in this country
   localReligionStrength: number; // 0-100: strength of competing local religion/ideology
+  tags: CountryTag[]; // personality tags affecting gameplay mechanics
+  lastActionCycle: number; // last cycle the player took an action in this country (for inactivity decay)
+  convertsHistory: number[]; // rolling history of convert counts (last 50 cycles)
 }
 
 export interface Dogma {
