@@ -106,7 +106,9 @@ export default function App() {
   });
 
   const [activeTab, setActiveTab] = useState<'map' | 'dogmas' | 'leaders' | 'rival' | 'faith'>('map');
-  const [showTutorial, setShowTutorial] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(() => localStorage.getItem('tutorial_seen') !== 'true');
+  const [tutorialStep, setTutorialStep] = useState(0); // #5: interactive tutorial step
+  const [logFilter, setLogFilter] = useState<'all' | 'acao' | 'evento' | 'alerta'>('all'); // #3: log filter
   const [specChoiceCountryId, setSpecChoiceCountryId] = useState<string | null>(null);
   const [phaseNotification, setPhaseNotification] = useState<2 | 3 | null>(null);
   const [isMuted, setIsMuted] = useState<boolean>(() => localStorage.getItem('audio_muted_v2') === 'true');
@@ -490,6 +492,21 @@ export default function App() {
               converts = Math.max(0, converts - nationalismLost);
             }
 
+            // DYNAMIC localReligionStrength update
+            let localReligionStrength = c.localReligionStrength ?? 0;
+            const convertFrac = converts / pop;
+            if (convertFrac < 0.05 && c.templeLevel === 0) {
+              localReligionStrength = Math.min(95, localReligionStrength + 0.3);
+            } else if (convertFrac > 0.30 && c.templeLevel > 0) {
+              localReligionStrength = Math.max(5, localReligionStrength - 0.5);
+            } else {
+              localReligionStrength = localReligionStrength > 50
+                ? Math.max(50, localReligionStrength - 0.1)
+                : Math.min(50, localReligionStrength + 0.1);
+            }
+            // Store updated value (will be spread into result below)
+            (c as any)._updatedLocalReligionStrength = localReligionStrength;
+
             // FASE 3 — ADAPTAÇÃO CULTURAL: após 20 ciclos de presença, resistência cai gradualmente
             if (cyclesPresent > 20) {
               resistance = Math.max(0, resistance - 0.1);
@@ -590,7 +607,7 @@ export default function App() {
             }
           }
 
-          return { ...c, converts, resistance, violence, leaderInfiltration, cyclesPresent, lastConflictCycle, templeLevel, templePending, templeBuildCyclesLeft, templeSpec };
+          return { ...c, converts, resistance, violence, leaderInfiltration, cyclesPresent, lastConflictCycle, templeLevel, templePending, templeBuildCyclesLeft, templeSpec, localReligionStrength: (c as any)._updatedLocalReligionStrength ?? c.localReligionStrength };
         });
 
         // Logs array — initialized here so it can be appended throughout the tick
@@ -1575,6 +1592,25 @@ export default function App() {
   const totalConvertedWorld = state.countries.reduce((acc, curr) => acc + curr.converts, 0);
   const avgProgress = (totalConvertedWorld / totalWorldPopulation) * 100;
 
+  // Victory pace indicator (#4)
+  let victoryPaceText = '';
+  if (state.victoryGoal === 'GlobalEcstasy') {
+    const progress = totalWorldPopulation > 0 ? totalConvertedWorld / totalWorldPopulation : 0;
+    const remaining = 0.8 - progress;
+    const rate = state.cycle > 5 ? progress / state.cycle : 0;
+    victoryPaceText = rate > 0 ? `~${Math.ceil(remaining / rate)} ciclos` : '—';
+  } else if (state.victoryGoal === 'OneFlock') {
+    const superPowers = ['usa', 'china', 'india', 'germany'];
+    const converted = state.countries.filter(c => superPowers.includes(c.id) && c.converts / c.population >= 0.5 && c.leaderInfiltration >= 100).length;
+    victoryPaceText = `${converted}/4 potências`;
+  } else if (state.victoryGoal === 'TheEnlightened') {
+    const count = state.countries.filter(c => c.leaderInfiltration >= 100).length;
+    victoryPaceText = `${count}/12 líderes`;
+  } else if (state.victoryGoal === 'PerpetualPeace') {
+    const peaceful = state.countries.filter(c => c.violence < 20).length;
+    victoryPaceText = `${peaceful}/${state.countries.length} nações`;
+  }
+
   const traitNames: Record<ReligionTrait, string> = {
     Mistical: 'Mística',
     Prophetic: 'Profética',
@@ -1612,6 +1648,11 @@ export default function App() {
               </div>
               <p className="text-xs text-[#dfcfa0]/60 mt-0.5 flex items-center gap-2">
                 <Info className="w-3 h-3 text-[#cfb53b]" /> Objetivo: <strong className="text-amber-100">{goalNames[state.victoryGoal]}</strong>
+                {victoryPaceText && (
+                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-green-700/40 bg-green-950/20 text-green-400">
+                    {victoryPaceText}
+                  </span>
+                )}
                 {/* #6: Phase badge */}
                 <span className={`text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded border ${state.faithPhase === 3 ? 'border-red-700/50 bg-red-950/30 text-red-300' : state.faithPhase === 2 ? 'border-orange-700/50 bg-orange-950/30 text-orange-300' : 'border-amber-700/50 bg-amber-950/30 text-amber-400'}`}>
                   {state.faithPhase === 1 ? '✦ Centelha' : state.faithPhase === 2 ? '✦ Credo' : '✦ Transcendência'}
@@ -2202,9 +2243,31 @@ export default function App() {
             </button>
           </div>
 
+          {/* Log filter buttons */}
+          <div className="flex gap-1">
+            {(['all', 'acao', 'evento', 'alerta'] as const).map((f) => {
+              const labels: Record<string, string> = { all: 'Todos', acao: 'Ações', evento: 'Eventos', alerta: 'Alertas' };
+              return (
+                <button
+                  key={f}
+                  onClick={() => setLogFilter(f)}
+                  className={`px-2 py-0.5 text-[9px] font-mono uppercase rounded border cursor-pointer transition-colors ${logFilter === f ? 'bg-[#cfb53b]/20 border-[#cfb53b]/50 text-[#cfb53b]' : 'border-[#cfb53b]/15 text-[#dfcfa0]/40 hover:text-[#dfcfa0]/70'}`}
+                >
+                  {labels[f]}
+                </button>
+              );
+            })}
+          </div>
+
           {/* Scrollable event listings items */}
           <div className="bg-black/40 rounded border border-[#cfb53b]/10 p-3 h-24 overflow-y-auto flex flex-col gap-1 text-xs font-mono">
-            {state.logs.map((log, index) => {
+            {state.logs.slice(0, 60).filter((log) => {
+              if (logFilter === 'all') return true;
+              if (logFilter === 'acao') return log.includes('AÇÃO:') || log.includes('[AÇÃO]') || log.includes('[INFILTRAÇÃO]') || log.includes('[RITUAL]') || log.includes('[INTERVENÇÃO]') || log.includes('[TEMPLO]') || log.includes('[DOUTRINA]') || log.includes('[DOGMA');
+              if (logFilter === 'evento') return log.includes('EVENTO:') || log.includes('[EVENTO NARRATIVO]') || log.includes('[MARCO');
+              if (logFilter === 'alerta') return log.includes('ALERTA:') || log.includes('[APOSTASIA]') || log.includes('[REAÇÃO ESTATAL]') || log.includes('[FALHA]') || log.includes('[LÍDER CONVERTIDO]');
+              return true;
+            }).map((log, index) => {
               let cl = 'text-[#dfcfa0]';
               if (log.startsWith('[EVENTO NARRATIVO]')) cl = 'text-[#cfb53b] font-bold';
               else if (log.startsWith('[AÇÃO]')) cl = 'text-green-400';
@@ -2224,6 +2287,63 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* INTERACTIVE TUTORIAL OVERLAY */}
+      {showTutorial && !state.isGameOver && (() => {
+        const goalDescriptions: Record<string, string> = {
+          GlobalEcstasy: 'converter 80% da humanidade',
+          PerpetualPeace: 'reduzir violência abaixo de 20 em todas as nações',
+          OneFlock: 'controlar as 4 superpotências (EUA, China, Índia, Alemanha)',
+          TheEnlightened: 'converter todos os 12 líderes mundiais',
+        };
+        const steps = [
+          `Bem-vindo ao TEOLOGICO! Você fundou uma nova religião. Seu objetivo: ${goalDescriptions[state.victoryGoal] ?? state.victoryGoal}. Clique em um país no mapa para começar.`,
+          'Selecione um país e use "Missionar" para enviar missionários. Isso aumenta seus Fiéis.',
+          'Acumule Fé realizando ações. Use Fé para comprar Dogmas na aba Dogmas.',
+          'Construa Templos para acelerar a conversão e gerar Dízimos.',
+          'Converta o Líder do país para ganhar bônus poderosos — mas é muito difícil!',
+        ];
+        const isLast = tutorialStep >= steps.length - 1;
+        return (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="w-full max-w-md bg-[#1c1608] border-2 border-[#cfb53b] rounded-xl p-6 flex flex-col gap-4 shadow-[0_0_40px_rgba(207,181,59,0.3)]">
+              <div className="flex justify-between items-center">
+                <span className="text-[9px] font-mono uppercase tracking-widest text-[#cfb53b]/60">
+                  Passo {tutorialStep + 1} / {steps.length}
+                </span>
+                <button onClick={() => { localStorage.setItem('tutorial_seen', 'true'); setShowTutorial(false); }} className="text-[#cfb53b]/40 hover:text-[#cfb53b] cursor-pointer transition-colors text-xs">✕</button>
+              </div>
+              <p className="text-sm text-[#dfcfa0]/90 leading-relaxed font-serif">
+                {steps[tutorialStep]}
+              </p>
+              <div className="flex justify-between items-center mt-2">
+                <button
+                  onClick={() => setTutorialStep(s => Math.max(0, s - 1))}
+                  disabled={tutorialStep === 0}
+                  className="px-3 py-1.5 text-xs border border-[#cfb53b]/30 rounded text-[#dfcfa0]/60 hover:text-white cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  ← Anterior
+                </button>
+                {isLast ? (
+                  <button
+                    onClick={() => { localStorage.setItem('tutorial_seen', 'true'); setShowTutorial(false); }}
+                    className="px-4 py-1.5 text-xs bg-[#cfb53b] text-[#1e1a0c] font-bold rounded uppercase tracking-wider cursor-pointer hover:bg-[#e6ca4a] transition-colors"
+                  >
+                    Entendido
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setTutorialStep(s => Math.min(steps.length - 1, s + 1))}
+                    className="px-4 py-1.5 text-xs bg-[#cfb53b] text-[#1e1a0c] font-bold rounded uppercase tracking-wider cursor-pointer hover:bg-[#e6ca4a] transition-colors"
+                  >
+                    Próximo →
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 5. ACTIVE NARRATIVE EVENT OVERLAY POPUP */}
       {state.eventActive && !state.isGameOver && (

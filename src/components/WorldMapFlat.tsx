@@ -344,6 +344,26 @@ export default function WorldMapFlat({
         strokeColor = '#fca5a5';
       }
 
+      // Orange pulsing ring when violence > 70
+      if (c.violence > 70) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, (isSelected ? 7 : 5.2) + 4, 0, Math.PI * 2);
+        ctx.strokeStyle = '#ff6600';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      // Dashed yellow construction ring when templePending
+      if (c.templePending > 0) {
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, (isSelected ? 7 : 5.2) + 7, 0, Math.PI * 2);
+        ctx.strokeStyle = '#ffe066';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
       // Draw pulse glow ring around active selection/hover
       if (isSelected || isHovered) {
         const pulse = 6 + (isSelected ? Math.sin(performance.now() * 0.007) * 4 : 2);
@@ -362,6 +382,20 @@ export default function WorldMapFlat({
       ctx.strokeStyle = strokeColor;
       ctx.lineWidth = 2.0;
       ctx.stroke();
+
+      // Temple dot: gold at top-right of node
+      const nodeRadius = isSelected ? 7 : 5.2;
+      if (c.templeLevel > 0) {
+        ctx.beginPath();
+        ctx.arc(p.x + nodeRadius * 0.7, p.y - nodeRadius * 0.7, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#cfb53b';
+        ctx.fill();
+      } else if (c.templePending > 0) {
+        ctx.beginPath();
+        ctx.arc(p.x + nodeRadius * 0.7, p.y - nodeRadius * 0.7, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffe066';
+        ctx.fill();
+      }
 
       // Render tags and labels
       if (showLabels) {
