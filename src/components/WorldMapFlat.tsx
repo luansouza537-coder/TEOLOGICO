@@ -383,8 +383,26 @@ export default function WorldMapFlat({
       ctx.lineWidth = 2.0;
       ctx.stroke();
 
-      // Temple dot: gold at top-right of node
+      // Warning dot: red at bottom-left when inactivity > 15 cycles and not well-established
       const nodeRadius = isSelected ? 7 : 5.2;
+      // Note: cycle is not directly available here; we use lastActionCycle approximation via country data
+      // We detect inactivity by checking if lastActionCycle is set and converts > threshold
+      const lastAction = (c as any).lastActionCycle ?? 0;
+      // We can't access prev.cycle here directly, so we use a heuristic: if converts > 1000 and lastActionCycle is very low relative to converts growth
+      // Actually we pass countries from state which includes cycle indirectly — but we don't have cycle prop.
+      // Use a proxy: show warning if convertsHistory has recent downward trend
+      const history = (c as any).convertsHistory as number[] | undefined;
+      const showInactivityWarning = history && history.length >= 5 &&
+        history[history.length - 1] < history[history.length - 5] &&
+        c.converts > 1000 && c.templeLevel < 3;
+      if (showInactivityWarning) {
+        ctx.beginPath();
+        ctx.arc(p.x - nodeRadius * 0.7, p.y + nodeRadius * 0.7, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ef4444';
+        ctx.fill();
+      }
+
+      // Temple dot: gold at top-right of node
       if (c.templeLevel > 0) {
         ctx.beginPath();
         ctx.arc(p.x + nodeRadius * 0.7, p.y - nodeRadius * 0.7, 2.5, 0, Math.PI * 2);

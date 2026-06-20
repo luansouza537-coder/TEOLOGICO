@@ -299,6 +299,7 @@ export default function App() {
         let totalResistanceSum = 0;
         let totalViolenceSum = 0;
 
+        const decayLogs: string[] = [];
         const updatedCountries = prev.countries.map((c) => {
           let converts = c.converts;
           const pop = c.population;
@@ -478,6 +479,17 @@ export default function App() {
             if ((c.tags ?? []).includes('Secular')) addedConverts = Math.floor(addedConverts * 0.80);
             converts = Math.min(pop, converts + addedConverts);
 
+            // INACTIVITY DECAY: fiéis se perdem quando o jogador ignora o país por muito tempo
+            const cyclesSinceAction = prev.cycle - (c.lastActionCycle ?? 0);
+            if (cyclesSinceAction > 15 && c.templeLevel < 3) {
+              const decayRate = cyclesSinceAction > 30 ? 0.005 : 0.002;
+              const decayed = Math.floor(converts * decayRate);
+              converts = Math.max(0, converts - decayed);
+              if (decayed > 0 && cyclesSinceAction === 16) {
+                decayLogs.push(`⚠️ ALERTA: ${c.name} está perdendo fiéis por falta de atenção!`);
+              }
+            }
+
             // APOSTASIA: fiéis abandonam a fé sob violência e resistência cultural alta
             let apostasyMult = 1.0;
             if (getDoc('doc_salvation') === 'B') apostasyMult *= 0.5;
@@ -632,7 +644,7 @@ export default function App() {
         });
 
         // Logs array — initialized here so it can be appended throughout the tick
-        let updatedLogs = [...prev.logs];
+        let updatedLogs = [...decayLogs, ...prev.logs];
         // #7: helper to prepend cycle number to log entries
         const cycleLog = (msg: string) => `#${prev.cycle + 1} ${msg}`;
 
@@ -985,6 +997,18 @@ export default function App() {
           updatedLogs = updatedLogs.slice(0, 20);
         }
 
+        // CONVERTS HISTORY: track rolling convert count for sparkline chart
+        const countriesWithHistory = updatedCountries.map(c => ({
+          ...c,
+          convertsHistory: [...(c.convertsHistory ?? []).slice(-50), c.converts]
+        }));
+
+        // Sound: play alert if any decay log was added this cycle
+        if (decayLogs.length > 0 && alertPlayedThisCycleRef.current !== prev.cycle) {
+          alertPlayedThisCycleRef.current = prev.cycle;
+          playFileSound('alert', isMuted);
+        }
+
         const fervorFloor = getDoc('doc_destiny') === 'B' ? 5 : 0;
         const nextCycle = prev.cycle + 1;
         const updatedEventCooldowns = newlyTriggeredEvent
@@ -1026,7 +1050,7 @@ export default function App() {
           faith: prev.faith + faithGained,
           fervor: newFervor,
           tithe: Math.max(0, prev.tithe + netTithe),
-          countries: updatedCountries,
+          countries: countriesWithHistory,
           rivalProgress: updatedRivalProgress,
           resistanceStreak: newStreak,
           isGameOver,
@@ -1277,9 +1301,11 @@ export default function App() {
           else if (sent === 1) seedConverts = 200;  // 2nd: small cell formed
           else if (sent === 2) seedConverts = 500;  // 3rd: organized group
           else seedConverts = 1000;                 // 4th+: network between cities
+          // TAG: Tribal — missionaries are 50% more effective
+          if ((c.tags ?? []).includes('Tribal')) seedConverts = Math.floor(seedConverts * 1.5);
           const newConverts = Math.min(c.population, c.converts + seedConverts);
           // No resistance drop from missionaries — temples reduce resistance
-          return { ...c, converts: newConverts, missionariesSent: c.missionariesSent + 1 };
+          return { ...c, converts: newConverts, missionariesSent: c.missionariesSent + 1, lastActionCycle: prev.cycle };
         }
         return c;
       });
@@ -1329,6 +1355,7 @@ export default function App() {
             ...c,
             violence: Math.max(0, c.violence + scaledViolence),
             resistance: Math.min(100, Math.max(0, c.resistance + scaledResistance)),
+            lastActionCycle: prev.cycle,
           };
         }
         return c;
@@ -1428,13 +1455,14 @@ export default function App() {
         const updated = prev.countries.map((c) => {
           if (c.id !== countryId) return c;
           const nextVal = Math.min(100, c.leaderInfiltration + gain);
-          return { ...c, leaderInfiltration: nextVal };
+          return { ...c, leaderInfiltration: nextVal, lastActionCycle: prev.cycle };
         });
         const leaderConverted = (updated.find(c => c.id === countryId)?.leaderInfiltration ?? 0) >= 100;
         const messages = [...prev.logs];
         messages.unshift(`[INFILTRAÇÃO] Estágio ${stage.label}: encontros secretos avançam no círculo interno de ${country.name}.`);
         if (leaderConverted) {
           playSound('success');
+          playFileSound('leader', isMuted);
           messages.unshift(`[LÍDER CONVERTIDO] ${country.leaderName} foi completamente ILUMINADO! Bônus passivo permanente ativado.`);
         } else {
           playSound('click');
@@ -1452,7 +1480,7 @@ export default function App() {
         const violenceIncrease = isHostile && inf >= 50 ? 15 : 0;
         const updated = prev.countries.map((c) => {
           if (c.id !== countryId) return c;
-          return { ...c, leaderInfiltration: newInf, violence: Math.min(100, c.violence + violenceIncrease) };
+          return { ...c, leaderInfiltration: newInf, violence: Math.min(100, c.violence + violenceIncrease), lastActionCycle: prev.cycle };
         });
         const messages = [...prev.logs];
         messages.unshift(
@@ -1485,7 +1513,8 @@ export default function App() {
           return {
             ...c,
             converts: Math.min(c.population, c.converts + addedConverts),
-            resistance: Math.max(0, c.resistance - 10)
+            resistance: Math.max(0, c.resistance - 10),
+            lastActionCycle: prev.cycle,
           };
         }
         return c;
@@ -1535,7 +1564,7 @@ export default function App() {
 
     setState((prev) => {
       const updatedCountries = prev.countries.map((c) =>
-        c.id === countryId ? { ...c, templePending: nextLevel, templeBuildCyclesLeft: buildCycles } : c
+        c.id === countryId ? { ...c, templePending: nextLevel, templeBuildCyclesLeft: buildCycles, lastActionCycle: prev.cycle } : c
       );
 
       const logs = [...prev.logs];
@@ -1593,6 +1622,7 @@ export default function App() {
       });
 
       playSound('success');
+      playFileSound('dogma', isMuted);
       return {
         ...prev,
         faith: prev.faith - targetDogma.costFaith,

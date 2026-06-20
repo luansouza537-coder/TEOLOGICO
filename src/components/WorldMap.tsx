@@ -234,9 +234,37 @@ export default function WorldMap({
               <h2 className="text-2xl font-bold font-serif text-[#cfb53b] mt-1">
                 {selectedCountry.name}
               </h2>
-              <div className="text-xs text-[#dfcfa0]/65 font-mono">
+              {selectedCountry.tags && selectedCountry.tags.length > 0 && (
+                <div className="flex gap-1 flex-wrap mt-1">
+                  {selectedCountry.tags.map(tag => (
+                    <span key={tag} className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-[#cfb53b]/40 text-[#cfb53b]/70 uppercase tracking-wider">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="text-xs text-[#dfcfa0]/65 font-mono mt-1">
                 População: {selectedCountry.population.toLocaleString()}
               </div>
+              {selectedCountry.tags && selectedCountry.tags.length > 0 && (
+                <div className="flex flex-col gap-0.5 mt-1">
+                  {selectedCountry.tags.map(tag => {
+                    const desc: Record<string, string> = {
+                      'Secular': 'Conversão -20%',
+                      'Devoto': 'Nacionalismo +30%',
+                      'Autoritário': 'Violência +30%',
+                      'Tribal': 'Missionários +50%',
+                      'Progressista': 'Resistência -20%',
+                      'Militarista': 'Violência regenera +30%',
+                    };
+                    return desc[tag] ? (
+                      <span key={tag} className="text-[9px] font-mono text-[#dfcfa0]/45">
+                        [{tag}] {desc[tag]}
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              )}
               {COUNTRY_LORE[selectedCountry.id] && (
                 <p className="text-xs text-[#dfcfa0]/80 mt-2 leading-relaxed italic">
                   {COUNTRY_LORE[selectedCountry.id]}
@@ -315,6 +343,32 @@ export default function WorldMap({
               </div>
 
             </div>
+
+            {/* Converts History Sparkline */}
+            {selectedCountry.convertsHistory && selectedCountry.convertsHistory.length > 2 && (
+              <div className="border border-[#cfb53b]/20 rounded-lg p-3 bg-[#0e0b05]/60">
+                <div className="text-[9px] font-mono text-[#cfb53b]/50 uppercase tracking-wider mb-2">Fiéis — últimos {selectedCountry.convertsHistory.length} ciclos</div>
+                <svg width="100%" height="48" viewBox="0 0 200 48" preserveAspectRatio="none">
+                  {(() => {
+                    const data = selectedCountry.convertsHistory;
+                    const max = Math.max(...data, 1);
+                    const min = Math.min(...data, 0);
+                    const range = max - min || 1;
+                    const points = data.map((v, i) => {
+                      const x = (i / (data.length - 1)) * 200;
+                      const y = 48 - ((v - min) / range) * 44 - 2;
+                      return `${x},${y}`;
+                    }).join(' ');
+                    return (
+                      <>
+                        <polyline points={points} fill="none" stroke="#cfb53b" strokeWidth="1.5" strokeLinejoin="round" />
+                        <circle cx={200} cy={48 - ((data[data.length - 1] - min) / range) * 44 - 2} r="2.5" fill="#cfb53b" />
+                      </>
+                    );
+                  })()}
+                </svg>
+              </div>
+            )}
 
             <hr className="border-[#cfb53b]/10" />
 
