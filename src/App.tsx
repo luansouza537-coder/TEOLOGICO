@@ -459,6 +459,8 @@ export default function App() {
             // Temple growth bonus (only when tithe is sufficient) — must be before addedConverts
             if (c.templeLevel > 0 && hasTithe) {
               growthFactor *= (1 + 0.03 * c.templeLevel);
+              // Specialization bonus: conversion spec adds +20% growth
+              if (c.templeSpec === 'conversion') growthFactor *= 1.20;
             }
 
             // Leader converted — regional growth bonuses — must be before addedConverts
@@ -573,7 +575,7 @@ export default function App() {
             const templeResistDrop = c.templeLevel === 1 ? 0.2 : c.templeLevel === 2 ? 0.4 : c.templeLevel === 3 ? 0.7 : 1.2;
             resistance = Math.max(0, resistance - templeResistDrop);
             // Specialization bonus (C): chosen at level 2+
-            if (c.templeSpec === 'conversion') growthFactor *= 1.20;
+            // Note: growthFactor bonus is applied inside the converts > 0 block (see below)
             if (c.templeSpec === 'resistance') resistance = Math.max(0, resistance - 0.5);
             // Trait-specific bonuses on top
             if (prev.religionTrait === 'Activist') {
@@ -1649,7 +1651,11 @@ export default function App() {
     const progress = totalWorldPopulation > 0 ? totalConvertedWorld / totalWorldPopulation : 0;
     const remaining = 0.8 - progress;
     const rate = state.cycle > 5 ? progress / state.cycle : 0;
-    victoryPaceText = rate > 0 ? `~${Math.ceil(remaining / rate)} ciclos` : '—';
+    if (remaining <= 0) {
+      victoryPaceText = 'Vitória próxima!';
+    } else {
+      victoryPaceText = rate > 0 ? `~${Math.ceil(remaining / rate)} ciclos` : '—';
+    }
   } else if (state.victoryGoal === 'OneFlock') {
     const superPowers = ['usa', 'china', 'india', 'germany'];
     const converted = state.countries.filter(c => superPowers.includes(c.id) && c.converts / c.population >= 0.5 && c.leaderInfiltration >= 100).length;
