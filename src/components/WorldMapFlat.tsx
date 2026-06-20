@@ -360,37 +360,6 @@ export default function WorldMapFlat({
           strokeColor = '#fca5a5';
         }
 
-        // Active pulse ring for countries being actively converted
-        if (c.converts > 10000 && convertPct > 0.05 && convertPct < 0.8) {
-          ctx.save();
-          ctx.globalAlpha = pulse * 0.4;
-          ctx.strokeStyle = '#cfb53b';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, baseR + 2 + pulse * 2, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.restore();
-        }
-
-        // Orange ring when violence > 70
-        if (c.violence > 70) {
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, baseR + 2, 0, Math.PI * 2);
-          ctx.strokeStyle = 'rgba(255,102,0,0.7)';
-          ctx.lineWidth = 1;
-          ctx.stroke();
-        }
-
-        // Dashed yellow construction ring when templePending
-        if (c.templePending > 0) {
-          ctx.setLineDash([2, 2]);
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, baseR + 2, 0, Math.PI * 2);
-          ctx.strokeStyle = 'rgba(255,224,102,0.8)';
-          ctx.lineWidth = 1;
-          ctx.stroke();
-          ctx.setLineDash([]);
-        }
 
         // Draw pulse glow ring around active selection/hover
         if (isSelected || isHovered) {
