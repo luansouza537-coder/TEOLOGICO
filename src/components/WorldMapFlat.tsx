@@ -220,40 +220,20 @@ export default function WorldMapFlat({
           let strokeWidth = 0.5;
 
           if (isPlayable && countryState) {
-            const hasFollowers = countryState.converts > 0;
-            const percent = (countryState.converts / countryState.population) * 100;
-
-            if (hasFollowers) {
-              if (percent >= 50) {
-                fillStyle = 'rgba(207, 181, 59, 0.22)'; // Conversão dominante
-                strokeStyle = 'rgba(230, 192, 54, 0.55)';
-                strokeWidth = 1.3;
-              } else {
-                fillStyle = 'rgba(180, 115, 30, 0.12)'; // Iniciação parcial
-                strokeStyle = 'rgba(207, 181, 59, 0.4)';
-                strokeWidth = 1.0;
-              }
-            } else {
-              fillStyle = 'rgba(64, 53, 27, 0.08)'; // Playable but untouched
-              strokeStyle = 'rgba(207, 181, 59, 0.25)';
-              strokeWidth = 0.8;
-            }
-
-            if (countryState.resistance > 70) {
-              fillStyle = 'rgba(139, 0, 0, 0.14)'; // Hostil
-              strokeStyle = 'rgba(239, 68, 68, 0.4)';
-            }
+            fillStyle = 'rgba(207, 181, 59, 0.04)'; // Playable: subtle gold tint
+            strokeStyle = 'rgba(207, 181, 59, 0.30)';
+            strokeWidth = 0.8;
 
             if (isHovered) {
-              fillStyle = 'rgba(207, 181, 59, 0.35)';
-              strokeStyle = 'rgba(255, 255, 255, 0.8)';
-              strokeWidth = 1.5;
+              fillStyle = 'rgba(207, 181, 59, 0.10)';
+              strokeStyle = 'rgba(255, 255, 255, 0.5)';
+              strokeWidth = 1.2;
             }
 
             if (isSelected) {
-              fillStyle = 'rgba(207, 181, 59, 0.45)';
-              strokeStyle = '#ffffff';
-              strokeWidth = 1.8;
+              fillStyle = 'rgba(207, 181, 59, 0.14)';
+              strokeStyle = 'rgba(255, 255, 255, 0.8)';
+              strokeWidth = 1.5;
             }
           }
 
