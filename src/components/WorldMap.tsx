@@ -231,6 +231,14 @@ export default function WorldMap({
                   {selectedCountry.converts > 0 ? 'Semeado' : 'Não Semeado'}
                 </span>
               </div>
+              {/* Conversion percentage — large bold display */}
+              {(() => {
+                const pct = selectedCountry.population > 0 ? (selectedCountry.converts / selectedCountry.population * 100) : 0;
+                const pctStr = pct >= 1 ? `${pct.toFixed(1)}%` : `${pct.toFixed(3)}%`;
+                return (
+                  <div className="mt-1 text-2xl font-bold text-[#cfb53b] font-mono">{pctStr} <span className="text-xs text-[#dfcfa0]/50 font-normal">convertido</span></div>
+                );
+              })()}
               <h2 className="text-2xl font-bold font-serif text-[#cfb53b] mt-1">
                 {selectedCountry.name}
               </h2>
@@ -396,12 +404,13 @@ export default function WorldMap({
                 disabled={faith < getMissionaryCost(selectedCountry)}
                 className={`py-2 px-3 rounded text-xs font-bold flex justify-between items-center transition-all ${
                   faith >= getMissionaryCost(selectedCountry)
-                    ? 'bg-[#cfb53b] text-[#1e1a0c] hover:bg-[#e6ca4a] cursor-pointer'
+                    ? `bg-[#cfb53b] text-[#1e1a0c] hover:bg-[#e6ca4a] cursor-pointer${selectedCountry.converts === 0 ? ' ring-2 ring-white/50' : ''}`
                     : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
                 }`}
               >
                 <span className="flex items-center gap-1.5">
                   <Crosshair className="w-4 h-4" /> Enviar Missionários
+                  {selectedCountry.converts === 0 && <span className="text-[9px] font-mono bg-white/20 px-1 py-0.5 rounded">✦ Recomendado</span>}
                 </span>
                 <span className="font-mono bg-[#171308]/20 px-1.5 py-0.5 rounded text-[10px]">
                   -{getMissionaryCost(selectedCountry)} Fé
@@ -445,6 +454,7 @@ export default function WorldMap({
                     >
                       <span className="flex items-center gap-1.5">
                         <HeartHandshake className="w-4 h-4" /> {best.label}
+                        {v > 60 && <span className="text-[9px] font-mono bg-orange-400/20 px-1 py-0.5 rounded text-orange-200">✦ Recomendado</span>}
                       </span>
                       <span className="font-mono bg-[#171308]/20 px-1.5 py-0.5 rounded text-[9px] flex gap-1">
                         <span>{best.faith} Fé</span>
@@ -648,6 +658,7 @@ export default function WorldMap({
                           <span className="flex items-center gap-1.5">
                             <Building2 className="w-4 h-4 text-green-400" /> Construir {nextTempleName}
                             <span className="text-[9px] text-zinc-400 font-normal">({BUILD_CYCLES[nextLevel - 1]} ciclos)</span>
+                            {selectedCountry.converts > 0 && selectedCountry.templeLevel === 0 && tithe > 3 && <span className="text-[9px] font-mono bg-green-400/20 px-1 py-0.5 rounded text-green-200">✦ Recomendado</span>}
                           </span>
                           <span className="font-mono text-[9px] bg-black/30 px-1.5 py-0.5 rounded flex gap-1">
                             <span>{cost.faith} Fé</span>

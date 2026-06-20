@@ -120,6 +120,7 @@ export default function App() {
   const [floatingTexts, setFloatingTexts] = useState<{ id: number; text: string; x: number; y: number; colorClass: string; countryId?: string }[]>([]);
   const soundtrackRef = useRef<HTMLAudioElement | null>(null);
   const alertPlayedThisCycleRef = useRef<number>(-1);
+  const logScrollRef = useRef<HTMLDivElement>(null);
 
   // Sound preference state persistence
   useEffect(() => {
@@ -217,6 +218,13 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('religion_simulator_state_v2', JSON.stringify(state));
   }, [state]);
+
+  // Log scroll position preservation: only scroll to top if already near top
+  useEffect(() => {
+    const el = logScrollRef.current;
+    if (!el) return;
+    if (el.scrollTop < 50) el.scrollTop = 0;
+  }, [state.logs]);
 
   // Main Loop Manager
   useEffect(() => {
@@ -1035,6 +1043,7 @@ export default function App() {
         if (phaseAdvanced) {
           updatedLogs.unshift(cycleLog(`[MARCO HISTÓRICO] ✨ Sua fé ascendeu ao estágio de "${phaseNames[newFaithPhase]}"! ${phaseDescs[newFaithPhase]}`));
           playSound('success');
+          playFileSound('dogma', isMuted);
         }
 
         // Track run statistics for victory screen
@@ -1686,7 +1695,7 @@ export default function App() {
     <div className="min-h-screen bg-[#1e1a0c] text-[#dfcfa0] font-sans flex flex-col justify-between" id="game-app-instance">
       
       {/* 1. STATUS HEADER */}
-      <header className="bg-[#171308] border-b-2 border-[#cfb53b] px-4 py-3 md:px-6 relative z-20">
+      <header className={`bg-[#171308] border-b-2 px-4 py-3 md:px-6 relative z-20 ${(state.faithPhase ?? 1) === 3 ? 'border-[#8b1a1a]' : (state.faithPhase ?? 1) === 2 ? 'border-[#e07820]' : 'border-[#cfb53b]'}`}>
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           
           {/* Logo & Religion Identification */}
@@ -1740,7 +1749,7 @@ export default function App() {
             </div>
 
             {/* Faith Indicator — #2 tooltip, #5 toLocaleString */}
-            <div title="Fé: recurso principal. Ganho a cada ciclo com base em países ativos. Gasto em dogmas, missionários e ações." className="bg-[#241e0d] border border-[#cfb53b]/40 rounded-lg py-1 px-3 flex items-center gap-2.5 cursor-help">
+            <div title="Fé: recurso principal. Ganho a cada ciclo com base em países ativos. Gasto em dogmas, missionários e ações." className={`bg-[#241e0d] border border-[#cfb53b]/40 rounded-lg py-1 px-3 flex items-center gap-2.5 cursor-help${state.faith >= 800 ? ' faith-overflow' : ''}`}>
               <span className="w-3 h-3 rounded-full bg-[#cfb53b] shadow-[0_0_8px_#cfb53b]" />
               <div>
                 <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Poder de Fé</span>
@@ -2318,29 +2327,41 @@ export default function App() {
 
           {/* Scrollable event listings items */}
           <div className="bg-black/40 rounded border border-[#cfb53b]/10 p-3 h-24 overflow-y-auto flex flex-col gap-1 text-xs font-mono">
-            {state.logs.slice(0, 60).filter((log) => {
-              if (logFilter === 'all') return true;
-              if (logFilter === 'acao') return log.includes('AÇÃO:') || log.includes('[AÇÃO]') || log.includes('[INFILTRAÇÃO]') || log.includes('[RITUAL]') || log.includes('[INTERVENÇÃO]') || log.includes('[TEMPLO]') || log.includes('[DOUTRINA]') || log.includes('[DOGMA');
-              if (logFilter === 'evento') return log.includes('EVENTO:') || log.includes('[EVENTO NARRATIVO]') || log.includes('[MARCO');
-              if (logFilter === 'alerta') return log.includes('ALERTA:') || log.includes('[APOSTASIA]') || log.includes('[REAÇÃO ESTATAL]') || log.includes('[FALHA]') || log.includes('[LÍDER CONVERTIDO]');
-              return true;
-            }).map((log, index) => {
-              let cl = 'text-[#dfcfa0]';
-              if (log.startsWith('[EVENTO NARRATIVO]')) cl = 'text-[#cfb53b] font-bold';
-              else if (log.startsWith('[AÇÃO]')) cl = 'text-green-400';
-              else if (log.startsWith('[LÍDER CONVERTIDO]')) cl = 'text-sky-300 font-bold';
-              else if (log.startsWith('Dispersão:')) cl = 'text-amber-500 italic';
-              // #7: cycle tag prepended when log has a cycle marker
-              const cycleTag = log.match(/^#(\d+)/);
-              return (
-                <div key={index} className={`border-b border-[#cfb53b]/5 pb-1 leading-relaxed ${cl}`}>
-                  {cycleTag
-                    ? <><span className="text-zinc-600 mr-1">{cycleTag[0]}</span>• {log.replace(/^#\d+\s*/, '')}</>
-                    : <>• {log}</>
-                  }
-                </div>
-              );
-            })}
+            {(() => {
+              const countryNames: Record<string, string> = {
+                'Brasil': 'brazil', 'EUA': 'usa', 'China': 'china', 'Índia': 'india',
+                'Alemanha': 'germany', 'Rússia': 'russia', 'Egito': 'egypt',
+                'África do Sul': 'south_africa', 'Japão': 'japan', 'México': 'mexico',
+                'Arábia Saudita': 'saudi_arabia', 'Austrália': 'australia'
+              };
+              return state.logs.slice(0, 60).filter((log) => {
+                if (logFilter === 'all') return true;
+                if (logFilter === 'acao') return log.includes('AÇÃO:') || log.includes('[AÇÃO]') || log.includes('[INFILTRAÇÃO]') || log.includes('[RITUAL]') || log.includes('[INTERVENÇÃO]') || log.includes('[TEMPLO]') || log.includes('[DOUTRINA]') || log.includes('[DOGMA');
+                if (logFilter === 'evento') return log.includes('EVENTO:') || log.includes('[EVENTO NARRATIVO]') || log.includes('[MARCO');
+                if (logFilter === 'alerta') return log.includes('ALERTA:') || log.includes('[APOSTASIA]') || log.includes('[REAÇÃO ESTATAL]') || log.includes('[FALHA]') || log.includes('[LÍDER CONVERTIDO]');
+                return true;
+              }).map((log, index) => {
+                let cl = 'text-[#dfcfa0]';
+                if (log.startsWith('[EVENTO NARRATIVO]')) cl = 'text-[#cfb53b] font-bold';
+                else if (log.startsWith('[AÇÃO]')) cl = 'text-green-400';
+                else if (log.startsWith('[LÍDER CONVERTIDO]')) cl = 'text-sky-300 font-bold';
+                else if (log.startsWith('Dispersão:')) cl = 'text-amber-500 italic';
+                const cycleTag = log.match(/^#(\d+)/);
+                const foundCountryId = Object.entries(countryNames).find(([name]) => log.includes(name))?.[1];
+                const inner = cycleTag
+                  ? <><span className="text-zinc-600 mr-1">{cycleTag[0]}</span>• {log.replace(/^#\d+\s*/, '')}</>
+                  : <>• {log}</>;
+                return (
+                  <div
+                    key={index}
+                    className={`border-b border-[#cfb53b]/5 pb-1 leading-relaxed ${cl} ${foundCountryId ? 'cursor-pointer hover:text-[#cfb53b]' : ''}`}
+                    onClick={foundCountryId ? () => { setState(p => ({ ...p, selectedCountryId: foundCountryId })); setActiveTab('map'); } : undefined}
+                  >
+                    {inner}
+                  </div>
+                );
+              });
+            })()}
           </div>
         </div>
       </footer>

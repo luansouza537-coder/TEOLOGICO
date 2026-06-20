@@ -46,6 +46,7 @@ export default function WorldMapFlat({ countries, selectedCountryId, onSelectCou
   const [isLoading, setIsLoading] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const drawRef = useRef<() => void>(() => {});
 
   // Load GeoJSON
@@ -295,6 +296,7 @@ export default function WorldMapFlat({ countries, selectedCountryId, onSelectCou
       if (d < bestDist) { bestDist = d; best = id; }
     });
     if (best !== hoveredId) setHoveredId(best);
+    setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
   };
 
   return (
@@ -329,6 +331,29 @@ export default function WorldMapFlat({ countries, selectedCountryId, onSelectCou
         onMouseLeave={() => setHoveredId(null)}
         className="w-full block cursor-crosshair"
       />
+
+      {/* Tooltip on hover */}
+      {(() => {
+        const hoveredCountry = hoveredId ? countries.find(c => c.id === hoveredId) : null;
+        if (!hoveredId || !hoveredCountry) return null;
+        const pct = hoveredCountry.population > 0 ? (hoveredCountry.converts / hoveredCountry.population * 100) : 0;
+        const pctStr = pct >= 1 ? pct.toFixed(1) : pct.toFixed(3);
+        const converts = hoveredCountry.converts >= 1_000_000
+          ? `${(hoveredCountry.converts / 1_000_000).toFixed(1)}M`
+          : hoveredCountry.converts >= 1000
+            ? `${Math.round(hoveredCountry.converts / 1000)}K`
+            : hoveredCountry.converts.toString();
+        return (
+          <div
+            className="absolute pointer-events-none z-30 bg-[#1a1408]/95 border border-[#cfb53b]/40 rounded-lg px-3 py-2 text-xs font-mono"
+            style={{ left: tooltipPos.x + 12, top: tooltipPos.y - 40 }}
+          >
+            <div className="text-[#cfb53b] font-bold">{hoveredCountry.name}</div>
+            <div className="text-[#dfcfa0]/70">{converts} fiéis</div>
+            <div className="text-[#cfb53b]/80">{pctStr}% convertido</div>
+          </div>
+        );
+      })()}
 
       {/* Legend */}
       <div className="absolute bottom-2 left-3 right-3 flex justify-between bg-black/70 border border-[#cfb53b]/10 px-3 py-1 rounded text-[8px] font-mono text-[#dfcfa0]/50 select-none">
