@@ -290,13 +290,13 @@ export default function WorldMap({
                 <div className="flex justify-between text-xs font-mono mb-1">
                   <span>Conversão:</span>
                   <span className="text-[#cfb53b] font-bold">
-                    {((selectedCountry.converts / selectedCountry.population) * 100).toFixed(2)}%
+                    {(selectedCountry.population > 0 ? (selectedCountry.converts / selectedCountry.population) * 100 : 0).toFixed(2)}%
                   </span>
                 </div>
                 <div className="w-full h-2 bg-[#120f05] rounded overflow-hidden border border-[#cfb53b]/20">
                   <div
                     className="h-full bg-gradient-to-r from-amber-600 to-[#cfb53b] transition-all duration-300"
-                    style={{ width: `${Math.min(100, (selectedCountry.converts / selectedCountry.population) * 100)}%` }}
+                    style={{ width: `${Math.min(100, selectedCountry.population > 0 ? (selectedCountry.converts / selectedCountry.population) * 100 : 0)}%` }}
                   />
                 </div>
                 <div className="text-[10px] text-amber-100/50 text-right mt-0.5">
@@ -602,7 +602,7 @@ export default function WorldMap({
                 const canBuildNext = availableLevel >= nextLevel && nextLevel <= 4;
                 const cost = nextLevel <= 4 ? templeCosts[nextLevel - 1] : null;
                 const presenceReq = nextLevel <= 4 ? PRESENCE_REQ[nextLevel - 1] : 0;
-                const convertPct = selectedCountry.converts / selectedCountry.population;
+                const convertPct = selectedCountry.population > 0 ? selectedCountry.converts / selectedCountry.population : 0;
                 const meetsPresence = convertPct >= presenceReq;
                 const canAfford = cost ? faith >= cost.faith && fervor >= cost.fervor && tithe >= cost.tithe : false;
                 const traitNames = templeNames[trait] ?? [];

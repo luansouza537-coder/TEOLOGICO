@@ -72,6 +72,12 @@ export default function App() {
         if (!parsed.doctrines) parsed.doctrines = INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null }));
         if (parsed.tithe === undefined) parsed.tithe = 50;
         if (parsed.faithPhase === undefined) parsed.faithPhase = 1;
+        if (parsed.peakFervor === undefined) parsed.peakFervor = parsed.fervor ?? 0;
+        if (parsed.firstCountryConverted === undefined) parsed.firstCountryConverted = null;
+        if (parsed.lastEventCycle === undefined) parsed.lastEventCycle = -99;
+        if (parsed.lastEventTimestamp === undefined) parsed.lastEventTimestamp = 0;
+        if (parsed.eventCooldowns === undefined) parsed.eventCooldowns = {};
+        if (parsed.rivalName === undefined) parsed.rivalName = 'A Ordem Tecnocrática';
         return parsed;
       } catch (e) {
         console.error('Falha ao restaurar dados de localStorage:', e);
@@ -1010,7 +1016,7 @@ export default function App() {
         // CONVERTS HISTORY: track rolling convert count for sparkline chart
         const countriesWithHistory = updatedCountries.map(c => ({
           ...c,
-          convertsHistory: [...(c.convertsHistory ?? []).slice(-50), c.converts]
+          convertsHistory: [...(c.convertsHistory ?? []).slice(-49), c.converts]
         }));
 
         // Sound: play alert if any decay log was added this cycle

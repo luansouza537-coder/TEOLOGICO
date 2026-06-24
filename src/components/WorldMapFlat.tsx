@@ -137,7 +137,7 @@ export default function WorldMapFlat({ countries, selectedCountryId, onSelectCou
           let strokeW = 0.3;
 
           if (cs) {
-            const pct = cs.converts / cs.population;
+            const pct = cs.population > 0 ? cs.converts / cs.population : 0;
             if (pct >= 0.5) fill = 'rgba(207,181,59,0.18)';
             else if (pct > 0) fill = 'rgba(180,120,30,0.10)';
             else fill = 'rgba(100,80,30,0.06)';
@@ -346,7 +346,10 @@ export default function WorldMapFlat({ countries, selectedCountryId, onSelectCou
         return (
           <div
             className="absolute pointer-events-none z-30 bg-[#1a1408]/95 border border-[#cfb53b]/40 rounded-lg px-3 py-2 text-xs font-mono"
-            style={{ left: tooltipPos.x + 12, top: tooltipPos.y - 40 }}
+            style={{
+              left: Math.min(tooltipPos.x + 12, (containerRef.current?.clientWidth ?? 9999) - 160),
+              top: Math.max(4, tooltipPos.y - 40),
+            }}
           >
             <div className="text-[#cfb53b] font-bold">{hoveredCountry.name}</div>
             <div className="text-[#dfcfa0]/70">{converts} fiéis</div>
