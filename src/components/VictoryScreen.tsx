@@ -48,13 +48,16 @@ export default function VictoryScreen({ state, onNewGame, onViewWorld }: Victory
   const [visible, setVisible] = useState(false);
   const [particlesReady, setParticlesReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
   const transitionToContent = () => {
     setVideoFading(true);
     setTimeout(() => {
+      if (!mountedRef.current) return;
       setPhase('content');
-      setTimeout(() => setVisible(true), 50);
-      setTimeout(() => setParticlesReady(true), 450);
+      setTimeout(() => { if (mountedRef.current) setVisible(true); }, 50);
+      setTimeout(() => { if (mountedRef.current) setParticlesReady(true); }, 450);
     }, 800);
   };
 

@@ -127,6 +127,8 @@ export default function App() {
   const soundtrackRef = useRef<HTMLAudioElement | null>(null);
   const alertPlayedThisCycleRef = useRef<number>(-1);
   const logScrollRef = useRef<HTMLDivElement>(null);
+  const isMutedRef = useRef(isMuted);
+  useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
 
   // Sound preference state persistence
   useEffect(() => {
@@ -314,7 +316,7 @@ export default function App() {
         let totalViolenceSum = 0;
 
         const decayLogs: string[] = [];
-        const updatedCountries = prev.countries.map((c) => {
+        let updatedCountries = prev.countries.map((c) => {
           let converts = c.converts;
           const pop = c.population;
           let resistance = c.resistance;
@@ -323,6 +325,7 @@ export default function App() {
 
           let cyclesPresent = c.cyclesPresent ?? 0;
           let lastConflictCycle = c.lastConflictCycle ?? -99;
+          let localReligionStrength = c.localReligionStrength ?? 0;
 
           if (converts > 0) {
             cyclesPresent += 1;
@@ -528,7 +531,6 @@ export default function App() {
             }
 
             // DYNAMIC localReligionStrength update
-            let localReligionStrength = c.localReligionStrength ?? 0;
             const convertFrac = converts / pop;
             // TAG: Devoto — nationalism is 30% stronger (grows faster / decays slower)
             const devotoBonusMult = (c.tags ?? []).includes('Devoto') ? 1.3 : 1.0;
@@ -541,8 +543,7 @@ export default function App() {
                 ? Math.max(50, localReligionStrength - 0.1)
                 : Math.min(50, localReligionStrength + 0.1);
             }
-            // Store updated value (will be spread into result below)
-            (c as any)._updatedLocalReligionStrength = localReligionStrength;
+            // localReligionStrength is already a local variable and will be spread into result below
 
             // FASE 3 — ADAPTAÇÃO CULTURAL: após 20 ciclos de presença, resistência cai gradualmente
             if (cyclesPresent > 20) {
@@ -656,7 +657,7 @@ export default function App() {
             violence = Math.min(100, violence + 0.3);
           }
 
-          return { ...c, converts, resistance, violence, leaderInfiltration, cyclesPresent, lastConflictCycle, templeLevel, templePending, templeBuildCyclesLeft, templeSpec, localReligionStrength: (c as any)._updatedLocalReligionStrength ?? c.localReligionStrength };
+          return { ...c, converts, resistance, violence, leaderInfiltration, cyclesPresent, lastConflictCycle, templeLevel, templePending, templeBuildCyclesLeft, templeSpec, localReligionStrength };
         });
 
         // Logs array — initialized here so it can be appended throughout the tick
@@ -920,7 +921,7 @@ export default function App() {
         } else if (!isGameOver && updatedRivalProgress >= 100) {
           isGameOver = true;
           gameOverReason = 'rival';
-        } else if (!isGameOver && prev.faith <= 0 && prev.fervor <= 0 && totalConvertsCount === 0) {
+        } else if (!isGameOver && (prev.faith + faithGained) <= 0 && (prev.fervor + fervorGained) <= 0 && totalConvertsCount === 0) {
           isGameOver = true;
           gameOverReason = 'bankrupt';
         }
@@ -951,33 +952,31 @@ export default function App() {
             newlyTriggeredEvent = picked;
             playSound('event');
 
-            // Apply immediately to country parameters
-            updatedCountries.forEach((c) => {
-              if (picked.actionEffects.countryResistanceMod?.[c.id]) {
-                c.resistance = Math.max(0, Math.min(100, c.resistance + (picked.actionEffects.countryResistanceMod[c.id] || 0)));
-              }
-              if (picked.actionEffects.countryViolenceMod?.[c.id]) {
-                c.violence = Math.max(0, Math.min(100, c.violence + (picked.actionEffects.countryViolenceMod[c.id] || 0)));
-              }
-              if (picked.actionEffects.countryConvertsMod?.[c.id]) {
-                const mod = picked.actionEffects.countryConvertsMod[c.id];
-                if (mod > 0) {
-                  if (c.converts === 0) return;
-                  c.converts = Math.min(c.population, Math.floor(c.converts + mod));
-                } else if (mod < 0) {
-                  c.converts = Math.max(0, Math.floor(c.converts + mod));
+            // Apply immediately to country parameters (immutable map)
+            updatedCountries = updatedCountries.map((c) => {
+              const resistMod = picked.actionEffects?.countryResistanceMod?.[c.id];
+              const violenceMod = picked.actionEffects?.countryViolenceMod?.[c.id];
+              const convertsMod = picked.actionEffects?.countryConvertsMod?.[c.id];
+              const convertsModPct = picked.actionEffects?.countryConvertsModPct?.[c.id];
+              const globalConvertsModPct = picked.actionEffects?.globalConvertsModPct;
+              let { converts, resistance, violence } = c;
+              if (resistMod !== undefined) resistance = Math.max(0, Math.min(100, resistance + resistMod));
+              if (violenceMod !== undefined) violence = Math.max(0, Math.min(100, violence + violenceMod));
+              if (convertsMod !== undefined) {
+                if (convertsMod > 0) {
+                  if (converts > 0) converts = Math.min(c.population, Math.floor(converts + convertsMod));
+                } else if (convertsMod < 0) {
+                  converts = Math.max(0, Math.floor(converts + convertsMod));
                 }
               }
-              // Percentage-based convert loss per country
-              if (picked.actionEffects.countryConvertsModPct?.[c.id] && c.converts > 0) {
-                const pct = picked.actionEffects.countryConvertsModPct[c.id];
-                c.converts = Math.max(0, Math.floor(c.converts * (1 + pct / 100)));
+              if (convertsModPct !== undefined && converts > 0) {
+                converts = Math.max(0, Math.floor(converts * (1 + convertsModPct / 100)));
               }
-              // Global percentage loss
-              if (picked.actionEffects.globalConvertsModPct !== undefined && c.converts > 0) {
-                const pct = picked.actionEffects.globalConvertsModPct;
-                c.converts = Math.max(0, Math.floor(c.converts * (1 + pct / 100)));
+              if (globalConvertsModPct !== undefined && converts > 0) {
+                converts = Math.max(0, Math.floor(converts * (1 + globalConvertsModPct / 100)));
               }
+              if (converts === c.converts && resistance === c.resistance && violence === c.violence) return c;
+              return { ...c, converts, resistance, violence };
             });
 
             // Apply global currency modifiers of event
@@ -1022,7 +1021,7 @@ export default function App() {
         // Sound: play alert if any decay log was added this cycle
         if (decayLogs.length > 0 && alertPlayedThisCycleRef.current !== prev.cycle) {
           alertPlayedThisCycleRef.current = prev.cycle;
-          playFileSound('alert', isMuted);
+          playFileSound('alert', isMutedRef.current);
         }
 
         const fervorFloor = getDoc('doc_destiny') === 'B' ? 5 : 0;
@@ -1049,7 +1048,7 @@ export default function App() {
         if (phaseAdvanced) {
           updatedLogs.unshift(cycleLog(`[MARCO HISTÓRICO] ✨ Sua fé ascendeu ao estágio de "${phaseNames[newFaithPhase]}"! ${phaseDescs[newFaithPhase]}`));
           playSound('success');
-          playFileSound('dogma', isMuted);
+          playFileSound('dogma', isMutedRef.current);
         }
 
         // Track run statistics for victory screen
@@ -1090,21 +1089,28 @@ export default function App() {
   }, [state.started, state.paused, state.gameSpeed, state.isGameOver]);
 
   // Phase advancement notification
+  const prevFaithPhaseRef = useRef<1 | 2 | 3>(state.faithPhase);
   useEffect(() => {
-    if (state.faithPhase === 2 || state.faithPhase === 3) {
-      setPhaseNotification(state.faithPhase);
+    if (state.faithPhase > prevFaithPhaseRef.current) {
+      setPhaseNotification(state.faithPhase as 2 | 3);
     }
+    prevFaithPhaseRef.current = state.faithPhase;
   }, [state.faithPhase]);
 
   // Dynamic World News Ticker
+  const newsStateRef = useRef({ countries: state.countries, religionName: state.religionName, rivalProgress: state.rivalProgress, fervor: state.fervor });
+  useEffect(() => {
+    newsStateRef.current = { countries: state.countries, religionName: state.religionName, rivalProgress: state.rivalProgress, fervor: state.fervor };
+  }, [state.countries, state.religionName, state.rivalProgress, state.fervor]);
+
   useEffect(() => {
     if (!state.started || state.paused || state.isGameOver) return;
 
     const interval = setInterval(() => {
       setNewsText(() => {
         const newsOptions: string[] = [];
-        const activeCountries = state.countries;
-        const religion = state.religionName || "Credo";
+        const activeCountries = newsStateRef.current.countries;
+        const religion = newsStateRef.current.religionName || "Credo";
 
         // Build list of converting countries
         const converting = activeCountries.filter(c => c.converts > 0);
@@ -1135,14 +1141,14 @@ export default function App() {
         }
 
         // Rival status
-        if (state.rivalProgress > 75) {
-          newsOptions.push(`[SINAL INIMIGO] Dispositivos de sincronização neural de '${state.rivalName}' estão transmitindo doutrina cética.`);
-        } else if (state.rivalProgress > 40) {
-          newsOptions.push(`[FRENTE RIVAL] '${state.rivalName}' rotula cultos de ${religion} como perigosos estorvos metafísicos.`);
+        if (newsStateRef.current.rivalProgress > 75) {
+          newsOptions.push(`[SINAL INIMIGO] Dispositivos de sincronização neural de 'A Ordem Tecnocrática' estão transmitindo doutrina cética.`);
+        } else if (newsStateRef.current.rivalProgress > 40) {
+          newsOptions.push(`[FRENTE RIVAL] 'A Ordem Tecnocrática' rotula cultos de ${religion} como perigosos estorvos metafísicos.`);
         }
 
         // High Fervor or high cycle news
-        if (state.fervor > 80) {
+        if (newsStateRef.current.fervor > 80) {
           newsOptions.push(`[ALERTA SAGRADO] Onda global de fervor cria um senso de destino divino inegável pelas massas.`);
         }
 
@@ -1157,7 +1163,7 @@ export default function App() {
     }, 7000);
 
     return () => clearInterval(interval);
-  }, [state.started, state.paused, state.isGameOver, state.countries, state.religionName, state.rivalProgress, state.fervor]);
+  }, [state.started, state.paused, state.isGameOver]);
 
   // Handle Religion Initialization
   const handleStartGame = (name: string, trait: ReligionTrait, goal: VictoryGoalType) => {
@@ -1205,6 +1211,7 @@ export default function App() {
   // Reset Game fully
   const handleResetGame = () => {
     playSound('alert');
+    setPhaseNotification(null);
     localStorage.removeItem('religion_simulator_state_v2');
     setState({
       started: false,
@@ -1308,6 +1315,7 @@ export default function App() {
     setState((prev) => {
       const country = prev.countries.find((c) => c.id === countryId);
       if (!country) return prev;
+      if (prev.faith < cost) return prev;
 
       const updated = prev.countries.map((c) => {
         if (c.id === countryId) {
@@ -1365,6 +1373,7 @@ export default function App() {
     setState((prev) => {
       const country = prev.countries.find((c) => c.id === countryId);
       if (!country) return prev;
+      if (prev.faith < cost.faith || prev.fervor < cost.fervor) return prev;
 
       const updated = prev.countries.map((c) => {
         if (c.id === countryId) {
@@ -1479,7 +1488,7 @@ export default function App() {
         messages.unshift(`[INFILTRAÇÃO] Estágio ${stage.label}: encontros secretos avançam no círculo interno de ${country.name}.`);
         if (leaderConverted) {
           playSound('success');
-          playFileSound('leader', isMuted);
+          playFileSound('leader', isMutedRef.current);
           messages.unshift(`[LÍDER CONVERTIDO] ${country.leaderName} foi completamente ILUMINADO! Bônus passivo permanente ativado.`);
         } else {
           playSound('click');
@@ -1580,6 +1589,9 @@ export default function App() {
     addFloatingText(`-${cost.tithe} Díz`, countryObj.coordinates.x, countryObj.coordinates.y + 5, 'text-emerald-400 font-bold font-mono', countryObj.id);
 
     setState((prev) => {
+      const country = prev.countries.find(c => c.id === countryId);
+      if (!country || country.templePending > 0) return prev;
+      if (prev.faith < cost.faith || prev.fervor < cost.fervor || prev.tithe < cost.tithe) return prev;
       const updatedCountries = prev.countries.map((c) =>
         c.id === countryId ? { ...c, templePending: nextLevel, templeBuildCyclesLeft: buildCycles, lastActionCycle: prev.cycle } : c
       );
@@ -1639,7 +1651,7 @@ export default function App() {
       });
 
       playSound('success');
-      playFileSound('dogma', isMuted);
+      playFileSound('dogma', isMutedRef.current);
       return {
         ...prev,
         faith: prev.faith - targetDogma.costFaith,
@@ -1965,7 +1977,7 @@ export default function App() {
           </button>
 
           <button
-            onClick={() => setShowTutorial(!showTutorial)}
+            onClick={() => { if (!showTutorial) setTutorialStep(0); setShowTutorial(!showTutorial); }}
             className="ml-auto px-3 py-1 bg-amber-950/30 hover:bg-amber-950 border border-[#cfb53b]/30 text-xs font-serif text-amber-200 uppercase tracking-widest rounded transition-all cursor-pointer flex items-center gap-1 shrink-0"
           >
             <BookOpen className="w-3.5 h-3.5 text-[#cfb53b]" /> {showTutorial ? 'Fechar Guia' : 'Guia de Jogo'}
