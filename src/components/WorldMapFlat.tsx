@@ -99,9 +99,10 @@ export default function WorldMapFlat({ countries, selectedCountryId, onSelectCou
       maxZoom: 6,
     });
 
-    // Stadia Alidade Smooth Dark tiles (free, no API key needed)
-    L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; Stadia Maps &copy; OpenMapTiles &copy; OpenStreetMap',
+    // CartoDB Dark Matter tiles (free, no API key needed)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      subdomains: 'abcd',
       maxZoom: 20,
     }).addTo(map);
 
