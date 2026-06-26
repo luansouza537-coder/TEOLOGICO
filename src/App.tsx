@@ -1646,7 +1646,7 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen bg-[#1e1a0c] text-[#dfcfa0] font-sans flex flex-col overflow-hidden" id="game-app-instance">
+    <div className="bg-[#1e1a0c] text-[#dfcfa0] font-sans flex flex-col overflow-hidden" style={{ height: '100dvh' }} id="game-app-instance">
       
       {/* 1. STATUS HEADER — 2 compact rows */}
       <header className={`bg-[#171308] border-b-2 relative z-20 ${state.faithPhase === 3 ? 'border-[#8b1a1a]' : state.faithPhase === 2 ? 'border-[#e07820]' : 'border-[#cfb53b]'}`}>
@@ -1848,6 +1848,30 @@ export default function App() {
       {/* 2. MAIN PANEL — fills remaining height, scrolls internally */}
       <main className="flex-1 min-h-0 overflow-y-auto relative z-10">
 
+        {/* Map tab — edge-to-edge, no padding */}
+        {activeTab === 'map' && (
+          <WorldMap
+            countries={state.countries}
+            selectedCountryId={state.selectedCountryId}
+            onSelectCountry={(id) => setState(p => ({ ...p, selectedCountryId: id }))}
+            faith={state.faith}
+            fervor={state.fervor}
+            trait={state.religionTrait}
+            onSendMissionary={sendMissionary}
+            onPacifyCountry={pacifyCountry}
+            onInfiltrateLeader={infiltrateLeader}
+            onPerformEcstasyRitual={performEcstasyRitual}
+            onOpenTemple={openTemple}
+            totalTemples={state.totalTemples}
+            templeCosts={TEMPLE_COSTS}
+            templeNames={TEMPLE_NAMES}
+            floatingTexts={floatingTexts}
+            tithe={state.tithe}
+          />
+        )}
+
+        {/* All other tabs — with padding */}
+        {activeTab !== 'map' && (
         <div className="max-w-7xl mx-auto p-3 md:p-4">
 
         {/* Guide tab — static manual */}
@@ -1918,27 +1942,6 @@ export default function App() {
         {activeTab !== 'guide' && (
         <div className="bg-[#211a0a] border border-[#cfb53b]/30 rounded-lg relative overflow-hidden">
           
-          {activeTab === 'map' && (
-            <WorldMap
-              countries={state.countries}
-              selectedCountryId={state.selectedCountryId}
-              onSelectCountry={(id) => setState(p => ({ ...p, selectedCountryId: id }))}
-              faith={state.faith}
-              fervor={state.fervor}
-              trait={state.religionTrait}
-              onSendMissionary={sendMissionary}
-              onPacifyCountry={pacifyCountry}
-              onInfiltrateLeader={infiltrateLeader}
-              onPerformEcstasyRitual={performEcstasyRitual}
-              onOpenTemple={openTemple}
-              totalTemples={state.totalTemples}
-              templeCosts={TEMPLE_COSTS}
-              templeNames={TEMPLE_NAMES}
-              floatingTexts={floatingTexts}
-              tithe={state.tithe}
-            />
-          )}
-
           {activeTab === 'dogmas' && (
             <DogmasPanel
               dogmas={state.dogmas}
@@ -2184,6 +2187,7 @@ export default function App() {
         </div>
         )}
         </div>
+        )}
 
       </main>
 
