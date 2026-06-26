@@ -115,6 +115,7 @@ export default function App() {
   });
 
   const [activeTab, setActiveTab] = useState<'map' | 'dogmas' | 'leaders' | 'rival' | 'faith' | 'guide'>('map');
+  const [faithSubTab, setFaithSubTab] = useState<'visao' | 'doutrinas'>('visao');
   const [showTutorial, setShowTutorial] = useState(() => localStorage.getItem('tutorial_seen') !== 'true');
   const [tutorialStep, setTutorialStep] = useState(0); // #5: interactive tutorial step
   const [specChoiceCountryId, setSpecChoiceCountryId] = useState<string | null>(null);
@@ -1999,6 +2000,25 @@ export default function App() {
             return (
               <div className="flex flex-col gap-3" id="faith-panel">
 
+                {/* Sub-tab switcher */}
+                <div className="flex gap-1">
+                  {(['visao', 'doutrinas'] as const).map(tab => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setFaithSubTab(tab)}
+                      className={`flex-1 py-1.5 text-[10px] font-mono uppercase tracking-wider rounded border transition-all cursor-pointer ${
+                        faithSubTab === tab
+                          ? 'bg-[#cfb53b] text-[#1e1a0c] border-[#cfb53b] font-bold'
+                          : 'bg-transparent text-[#cfb53b]/50 border-[#cfb53b]/20 hover:text-[#cfb53b]'
+                      }`}
+                    >
+                      {tab === 'visao' ? 'Visão Geral' : 'Doutrinas'}
+                    </button>
+                  ))}
+                </div>
+
+                {faithSubTab === 'visao' && <>
                 {/* Compact identity strip */}
                 <div className="bg-[#1a1508] border border-[#cfb53b]/25 rounded-lg px-3 py-2.5 flex items-center gap-3">
                   <div className="flex-1 min-w-0">
@@ -2077,8 +2097,9 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Posições Doutrinárias */}
-                {(() => {
+                </>}
+
+                {faithSubTab === 'doutrinas' && ((() => {
                   const doctrines = state.doctrines ?? [];
                   const costMap = { basic: { faith: 150, fervor: 30 }, intermediate: { faith: 250, fervor: 60 }, strategic: { faith: 400, fervor: 100 } };
                   const tierLabel = { basic: 'Básica', intermediate: 'Intermediária', strategic: 'Estratégica' };
@@ -2179,7 +2200,7 @@ export default function App() {
                       {renderSection(socialDocs, 'Estrutura Social (21–30)')}
                     </div>
                   );
-                })()}
+                })())}
               </div>
             );
           })()}
