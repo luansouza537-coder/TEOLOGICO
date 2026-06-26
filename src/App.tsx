@@ -96,7 +96,6 @@ export default function App() {
       selectedCountryId: 'usa', // focus USA initially to show details
       dogmas: INITIAL_DOGMAS,
       countries: INITIAL_COUNTRIES,
-      logs: ['Espaço cósmico silencioso. Inicie seu Credo para ver o desenrolar da fé.'],
       eventActive: null,
       rivalProgress: 0,
       rivalName: 'A Ordem Tecnocrática',
@@ -118,7 +117,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'map' | 'dogmas' | 'leaders' | 'rival' | 'faith' | 'guide'>('map');
   const [showTutorial, setShowTutorial] = useState(() => localStorage.getItem('tutorial_seen') !== 'true');
   const [tutorialStep, setTutorialStep] = useState(0); // #5: interactive tutorial step
-  const [logFilter, setLogFilter] = useState<'all' | 'acao' | 'evento' | 'alerta'>('all'); // #3: log filter
   const [specChoiceCountryId, setSpecChoiceCountryId] = useState<string | null>(null);
   const [phaseNotification, setPhaseNotification] = useState<2 | 3 | null>(null);
   const [isMuted, setIsMuted] = useState<boolean>(() => localStorage.getItem('audio_muted_v2') === 'true');
@@ -126,7 +124,6 @@ export default function App() {
   const [floatingTexts, setFloatingTexts] = useState<{ id: number; text: string; x: number; y: number; colorClass: string; countryId?: string }[]>([]);
   const soundtrackRef = useRef<HTMLAudioElement | null>(null);
   const alertPlayedThisCycleRef = useRef<number>(-1);
-  const logScrollRef = useRef<HTMLDivElement>(null);
   const isMutedRef = useRef(isMuted);
   useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
 
@@ -226,13 +223,6 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('religion_simulator_state_v2', JSON.stringify(state));
   }, [state]);
-
-  // Log scroll position preservation: only scroll to top if already near top
-  useEffect(() => {
-    const el = logScrollRef.current;
-    if (!el) return;
-    if (el.scrollTop < 50) el.scrollTop = 0;
-  }, [state.logs]);
 
   // Main Loop Manager
   useEffect(() => {
@@ -660,11 +650,6 @@ export default function App() {
           return { ...c, converts, resistance, violence, leaderInfiltration, cyclesPresent, lastConflictCycle, templeLevel, templePending, templeBuildCyclesLeft, templeSpec, localReligionStrength };
         });
 
-        // Logs array — initialized here so it can be appended throughout the tick
-        let updatedLogs = [...decayLogs, ...prev.logs];
-        // #7: helper to prepend cycle number to log entries
-        const cycleLog = (msg: string) => `#${prev.cycle + 1} ${msg}`;
-
         // Post-map passive dogma effects
         if (hasAssistenciaMedica) {
           const sorted = [...updatedCountries].sort((a, b) => b.violence - a.violence);
@@ -701,27 +686,7 @@ export default function App() {
               if (targetIdx !== -1) {
                 updatedCountries[targetIdx] = { ...updatedCountries[targetIdx], converts: 10 };
               }
-              updatedLogs.unshift(cycleLog(`Dispersão: Missionários que cruzaram de ${sourceId.toUpperCase()} semearam os primeiros cultos em ${target.name}!`));
             }
-          }
-        }
-
-        // Logs ocasionais de apostasia e saturação (5% de chance por ciclo para não poluir)
-        if (Math.random() < 0.05) {
-          const apostasyCountry = updatedCountries.find(c => {
-            const rate = (c.violence / 100) * 0.004 + (c.resistance / 100) * 0.002;
-            return c.converts > 50000 && rate > 0.003;
-          });
-          if (apostasyCountry) {
-            updatedLogs.unshift(cycleLog(`[APOSTASIA] Fiéis em ${apostasyCountry.name} questionam a doutrina — violência e resistência cultural geram deserções.`));
-          }
-        }
-        if (Math.random() < 0.05) {
-          const saturatedCountry = updatedCountries.find(c =>
-            c.leaderInfiltration < 100 && (c.converts / c.population) > 0.5
-          );
-          if (saturatedCountry) {
-            updatedLogs.unshift(cycleLog(`[REAÇÃO ESTATAL] O governo de ${saturatedCountry.name} intensifica restrições — a ascensão do credo gera alarme político.`));
           }
         }
 
@@ -1000,16 +965,9 @@ export default function App() {
               faithGained += picked.actionEffects.globalFaithCostMod; // negative value = drain
             }
 
-            // Push to logs
-            updatedLogs.unshift(cycleLog(`[EVENTO NARRATIVO] ${picked.title}: ${picked.description}`));
             faithGained += eventFaithBonus;
             fervorGained += eventFervorBonus;
           }
-        }
-
-        // Limit log queue size to avoid rendering bottlenecks
-        if (updatedLogs.length > 20) {
-          updatedLogs = updatedLogs.slice(0, 20);
         }
 
         // CONVERTS HISTORY: track rolling convert count for sparkline chart
@@ -1046,7 +1004,6 @@ export default function App() {
         const phaseNames = ['', 'Centelha Sagrada', 'Credo Estabelecido', 'Era da Transcendência'];
         const phaseDescs = ['', '', 'Dogmas e doutrinas intermediárias desbloqueadas. O mundo começa a notar sua presença.', 'Dogmas estratégicos desbloqueados. A metade do mundo foi alcançada pela fé!'];
         if (phaseAdvanced) {
-          updatedLogs.unshift(cycleLog(`[MARCO HISTÓRICO] ✨ Sua fé ascendeu ao estágio de "${phaseNames[newFaithPhase]}"! ${phaseDescs[newFaithPhase]}`));
           playSound('success');
           playFileSound('dogma', isMutedRef.current);
         }
@@ -1078,7 +1035,6 @@ export default function App() {
           lastEventCycle: newlyTriggeredEvent ? prev.cycle : prev.lastEventCycle,
           lastEventTimestamp: newlyTriggeredEvent ? now : prev.lastEventTimestamp,
           eventCooldowns: updatedEventCooldowns,
-          logs: updatedLogs,
           peakFervor: newPeakFervor,
           firstCountryConverted: newFirstCountry,
         };
@@ -1188,7 +1144,6 @@ export default function App() {
       selectedCountryId: 'usa',
       dogmas: INITIAL_DOGMAS.map(d => ({ ...d, purchased: false })),
       countries: presetCountries,
-      logs: [`O credo "${name}" foi revelado ao mundo. Iniciando dispersão divina pelo globo!`],
       eventActive: null,
       rivalProgress: 0,
       rivalName: 'A Ordem Tecnocrática',
@@ -1226,7 +1181,6 @@ export default function App() {
       selectedCountryId: 'usa',
       dogmas: INITIAL_DOGMAS.map(d => ({ ...d, purchased: false })),
       countries: INITIAL_COUNTRIES.map(c => ({ ...c, converts: c.id === 'usa' ? 120 : 0, leaderInfiltration: c.id === 'usa' ? 5 : 0, missionariesSent: 0, templeLevel: 0, cyclesPresent: c.id === 'usa' ? 1 : 0, lastConflictCycle: -99 })),
-      logs: ['Espaço cósmico silencioso. Inicie seu Credo para ver o desenrolar da fé.'],
       eventActive: null,
       rivalProgress: 0,
       rivalName: 'A Ordem Tecnocrática',
@@ -1283,7 +1237,6 @@ export default function App() {
         fervor: prev.fervor - cost.fervor,
         doctrines: updatedDoctrines,
         countries: updatedCountries,
-        logs: [`[DOUTRINA] "${doc.topic}" definida: ${chosenLabel} — um pilar do credo firmado para sempre.`, ...prev.logs]
       };
     });
   };

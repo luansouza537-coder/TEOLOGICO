@@ -88,7 +88,6 @@ export interface GameState {
   selectedCountryId: string | null;
   dogmas: Dogma[];
   countries: Country[];
-  logs: string[];
   eventActive: GameEvent | null;
   rivalProgress: number; // 0 to 100 % towards rival victory
   rivalName: string;
