@@ -34,7 +34,13 @@ export default function LeadersPanel({ countries, faith, fervor, totalTemples, g
       case 'japan': return '+20% Fé gerada por ciclo globalmente.';
       case 'mexico': return 'Violência no México, EUA e Brasil cai -1 por ciclo.';
       case 'saudi_arabia': return 'Resistência da Arábia Saudita reduzida a zero permanentemente.';
-      case 'australia': return 'Dispersão transpacífica ativa: Austrália acessível por vizinhança.';
+      case 'australia':   return 'Dispersão transpacífica ativa: Austrália acessível por vizinhança.';
+      case 'turkey':      return 'Resistência de Egito e Alemanha cai 8% permanentemente ao converter.';
+      case 'iran':        return 'Sem presença: +0.3% resistência global/ciclo. Com presença: -0.3% global/ciclo.';
+      case 'south_korea': return '+1.5% converts passivos no Japão e Indonésia por ciclo.';
+      case 'indonesia':   return 'Após 10% da população: crescimento viral +50%. Antes: 30% mais lento.';
+      case 'nigeria':     return 'População cresce 50.000/ciclo. Potencial de conversão aumenta com o tempo.';
+      case 'haiti':       return 'Missões custam 50% menos. Violência destrói templos 2× mais rápido.';
       default: return 'Gera bônus de conversão regional.';
     }
   };

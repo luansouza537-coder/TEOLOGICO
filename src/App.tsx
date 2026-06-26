@@ -21,17 +21,23 @@ import { playFileSound } from './utils/sound';
 // Geographic neighbors for aura_iluminada dogma effect
 const COUNTRY_NEIGHBORS: Record<string, string[]> = {
   usa:          ['mexico', 'brazil'],
-  mexico:       ['usa', 'brazil'],
-  brazil:       ['usa', 'mexico', 'south_africa'],
-  germany:      ['russia', 'egypt'],
+  mexico:       ['usa', 'brazil', 'haiti'],
+  brazil:       ['usa', 'mexico', 'south_africa', 'haiti'],
+  germany:      ['russia', 'egypt', 'turkey'],
   russia:       ['germany', 'china', 'india'],
-  china:        ['russia', 'india', 'japan'],
-  india:        ['russia', 'china', 'egypt', 'south_africa'],
-  japan:        ['china', 'australia'],
-  egypt:        ['germany', 'india', 'saudi_arabia', 'south_africa'],
-  saudi_arabia: ['egypt'],
-  south_africa: ['brazil', 'india', 'egypt'],
-  australia:    ['japan'],
+  china:        ['russia', 'india', 'japan', 'south_korea'],
+  india:        ['russia', 'china', 'egypt', 'south_africa', 'iran'],
+  japan:        ['china', 'australia', 'south_korea', 'indonesia'],
+  egypt:        ['germany', 'india', 'saudi_arabia', 'south_africa', 'nigeria', 'turkey'],
+  saudi_arabia: ['egypt', 'turkey', 'iran'],
+  south_africa: ['brazil', 'india', 'egypt', 'nigeria'],
+  australia:    ['japan', 'indonesia'],
+  turkey:       ['germany', 'egypt', 'saudi_arabia', 'iran'],
+  iran:         ['saudi_arabia', 'turkey', 'india'],
+  south_korea:  ['japan', 'china', 'indonesia'],
+  indonesia:    ['japan', 'australia', 'south_korea'],
+  nigeria:      ['egypt', 'south_africa'],
+  haiti:        ['mexico', 'brazil'],
 };
 
 const TEMPLE_NAMES: Record<string, string[]> = {
@@ -495,6 +501,11 @@ export default function App() {
             // Country special traits
             if (c.id === 'brazil') growthFactor *= 1.4; // Brasil: conversão orgânica 40% mais rápida
             if (c.id === 'south_africa' && activeDogmaIds.some(id => ['caridade_global', 'assistencia_medica', 'rede_ajuda_mutua'].includes(id))) growthFactor *= 1.5; // África do Sul: ações humanitárias triplicam impacto
+            if (c.id === 'indonesia') {
+              const convertFracIndo = c.population > 0 ? c.converts / c.population : 0;
+              if (convertFracIndo >= 0.10) growthFactor *= 1.5; // crescimento viral após 10%
+              else growthFactor *= 0.7; // resistência islâmica: 30% mais lenta antes de 10%
+            }
 
             // Temple growth bonus (only when tithe is sufficient) — must be before addedConverts
             if (c.templeLevel > 0 && hasTithe) {
@@ -663,7 +674,8 @@ export default function App() {
 
           // TEMPLE VULNERABILITY (E): high violence can destroy temple level
           if (templeLevel > 0 && templePending === 0) {
-            const destructionChance = violence > 90 ? 0.05 : violence > 70 ? 0.02 : 0;
+            let destructionChance = violence > 90 ? 0.05 : violence > 70 ? 0.02 : 0;
+            if (c.id === 'haiti') destructionChance *= 2; // Haiti: violência destrói templos 2× mais rápido
             if (destructionChance > 0 && Math.random() < destructionChance) {
               templeLevel = Math.max(0, templeLevel - 1);
               templeSpec = templeLevel < 2 ? null : templeSpec;
@@ -733,6 +745,41 @@ export default function App() {
               return c;
             });
           }
+        }
+
+        // iran passive: sem presença → +0.3% resistência global; com presença → -0.3% global
+        const iranObj = updatedCountries.find(c => c.id === 'iran');
+        if (iranObj) {
+          const iranDelta = iranObj.converts > 0 ? -0.3 : 0.3;
+          updatedCountries = updatedCountries.map(c =>
+            c.id !== 'iran'
+              ? { ...c, resistance: Math.min(100, Math.max(0, c.resistance + iranDelta)) }
+              : c
+          );
+        }
+
+        // nigeria: população cresce +50.000 por ciclo
+        const nigeriaIdx = updatedCountries.findIndex(c => c.id === 'nigeria');
+        if (nigeriaIdx !== -1) {
+          updatedCountries[nigeriaIdx] = {
+            ...updatedCountries[nigeriaIdx],
+            population: updatedCountries[nigeriaIdx].population + 50000,
+          };
+        }
+
+        // south_korea: líder convertido → +1.5% converts no Japão e Indonésia por ciclo
+        const skObj = updatedCountries.find(c => c.id === 'south_korea');
+        if (skObj && skObj.leaderInfiltration >= 100) {
+          ['japan', 'indonesia'].forEach(targetId => {
+            const idx = updatedCountries.findIndex(c => c.id === targetId);
+            if (idx !== -1 && updatedCountries[idx].converts > 0) {
+              const surge = Math.floor(updatedCountries[idx].converts * 0.015);
+              updatedCountries[idx] = {
+                ...updatedCountries[idx],
+                converts: Math.min(updatedCountries[idx].population, updatedCountries[idx].converts + surge),
+              };
+            }
+          });
         }
 
         if (hasAssistenciaMedica) {
@@ -1352,6 +1399,7 @@ export default function App() {
     if (countryObj.id === 'japan') cost = Math.round(cost * 1.4); // Japão: ceticismo cultural +40% custo
     if (countryObj.id === 'china') cost = Math.round(cost * 1.5); // China: censura +50% custo
     if (countryObj.id === 'saudi_arabia') cost += 25;
+    if (countryObj.id === 'haiti') cost = Math.round(cost * 0.5); // Haiti: receptividade extrema -50% custo
     // Escalating cost per missionary already sent (each costs 15 more than the last)
     cost += (countryObj.missionariesSent ?? 0) * 15;
     // Doctrine modifiers on missionary cost
@@ -1565,7 +1613,16 @@ export default function App() {
         } else {
           playSound('click');
         }
-        return { ...prev, faith: prev.faith - baseFaith, fervor: prev.fervor - baseFervor, countries: updated };
+        // Turkey special trait: converting leader reduces Egypt and Germany resistance by 8%
+        let finalCountries = updated;
+        if (leaderConverted && countryId === 'turkey') {
+          finalCountries = finalCountries.map(c =>
+            ['egypt', 'germany'].includes(c.id)
+              ? { ...c, resistance: Math.max(0, c.resistance - 8) }
+              : c
+          );
+        }
+        return { ...prev, faith: prev.faith - baseFaith, fervor: prev.fervor - baseFervor, countries: finalCountries };
       });
     } else {
       // Failure: lose cost AND lose 20 infiltration progress
@@ -1774,7 +1831,7 @@ export default function App() {
     victoryPaceText = `${converted}/4 potências`;
   } else if (state.victoryGoal === 'TheEnlightened') {
     const count = state.countries.filter(c => c.leaderInfiltration >= 100).length;
-    victoryPaceText = `${count}/12 líderes`;
+    victoryPaceText = `${count}/18 líderes`;
   } else if (state.victoryGoal === 'PerpetualPeace') {
     const peaceful = state.countries.filter(c => c.violence < 20).length;
     victoryPaceText = `${peaceful}/${state.countries.length} nações`;
