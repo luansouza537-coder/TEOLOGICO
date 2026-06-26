@@ -122,6 +122,7 @@ export default function App() {
   const [isMuted, setIsMuted] = useState<boolean>(() => localStorage.getItem('audio_muted_v2') === 'true');
   const [newsText, setNewsText] = useState('CONEXÃO COLETIVA ESTÁVEL: Monitorando a disseminação teológica pelo globo...');
   const [floatingTexts, setFloatingTexts] = useState<{ id: number; text: string; x: number; y: number; colorClass: string; countryId?: string }[]>([]);
+  const [saveToast, setSaveToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const soundtrackRef = useRef<HTMLAudioElement | null>(null);
   const alertPlayedThisCycleRef = useRef<number>(-1);
   const isMutedRef = useRef(isMuted);
@@ -1709,7 +1710,18 @@ export default function App() {
         <div className="border-t border-[#cfb53b]/15 px-3 py-1.5 flex items-center gap-1.5 bg-[#130f04]">
           {/* Save */}
           <button
-            onClick={() => { localStorage.setItem('religion_simulator_state_v2', JSON.stringify(state)); playSound('click'); }}
+            onClick={() => {
+              try {
+                const saveData = { state, savedAt: Date.now() };
+                localStorage.setItem('religion_simulator_MANUAL_SAVE', JSON.stringify(saveData));
+                playSound('click');
+                setSaveToast({ msg: 'Salvo!', ok: true });
+                setTimeout(() => setSaveToast(null), 2000);
+              } catch(_) {
+                setSaveToast({ msg: 'Erro ao salvar', ok: false });
+                setTimeout(() => setSaveToast(null), 2000);
+              }
+            }}
             className="flex items-center gap-1 px-2 py-1 rounded border border-[#cfb53b]/30 bg-[#1a1508] text-[#cfb53b]/70 hover:text-[#cfb53b] hover:bg-[#241e0a] transition-colors cursor-pointer text-[9px] font-mono uppercase tracking-wide"
             title="Salvar jogo manualmente"
           >
@@ -1719,11 +1731,26 @@ export default function App() {
           {/* Load */}
           <button
             onClick={() => {
-              const saved = localStorage.getItem('religion_simulator_state_v2');
-              if (saved) { try { setState(JSON.parse(saved)); playSound('click'); } catch(_) {} }
+              const raw = localStorage.getItem('religion_simulator_MANUAL_SAVE');
+              if (!raw) {
+                setSaveToast({ msg: 'Sem save', ok: false });
+                setTimeout(() => setSaveToast(null), 2000);
+                return;
+              }
+              try {
+                const { state: saved, savedAt } = JSON.parse(raw);
+                const mins = Math.round((Date.now() - savedAt) / 60000);
+                setState(saved);
+                playSound('click');
+                setSaveToast({ msg: `Carregado (${mins < 1 ? '<1' : mins}min atrás)`, ok: true });
+                setTimeout(() => setSaveToast(null), 2500);
+              } catch(_) {
+                setSaveToast({ msg: 'Save corrompido', ok: false });
+                setTimeout(() => setSaveToast(null), 2000);
+              }
             }}
             className="flex items-center gap-1 px-2 py-1 rounded border border-[#cfb53b]/30 bg-[#1a1508] text-[#cfb53b]/70 hover:text-[#cfb53b] hover:bg-[#241e0a] transition-colors cursor-pointer text-[9px] font-mono uppercase tracking-wide"
-            title="Carregar último save"
+            title="Carregar save manual"
           >
             <FolderOpen className="w-3 h-3" /> Carregar
           </button>
@@ -2460,6 +2487,17 @@ export default function App() {
 
       {/* Soundtrack — loop infinito, controlado pelo toggle de mute */}
       <audio ref={soundtrackRef} src="/soundtrack.mp3" loop preload="auto" />
+
+      {/* Save/Load toast notification */}
+      {saveToast && (
+        <div className={`fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg border text-xs font-mono font-bold shadow-lg animate-fade-in pointer-events-none ${
+          saveToast.ok
+            ? 'bg-green-950 border-green-700/60 text-green-300'
+            : 'bg-red-950 border-red-700/60 text-red-300'
+        }`}>
+          {saveToast.ok ? '✓' : '✗'} {saveToast.msg}
+        </div>
+      )}
 
     </div>
   );
