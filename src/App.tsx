@@ -12,6 +12,8 @@ import DogmasPanel from './components/DogmasPanel';
 import VictoryScreen from './components/VictoryScreen';
 import LeadersPanel from './components/LeadersPanel';
 import RivalPanel from './components/RivalPanel';
+import SplashScreen from './components/SplashScreen';
+import MainMenu from './components/MainMenu';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Gamepad2, Info, BookOpen, AlertTriangle, Map, ScrollText, Crown, Skull, Sparkles, Save, FolderOpen } from 'lucide-react';
 import { calcPeaceEffectiveness } from './utils/peaceEffectiveness';
 import { playFileSound } from './utils/sound';
@@ -113,6 +115,9 @@ export default function App() {
       peakFervor: 5,
     };
   });
+
+  const hasSave = !!localStorage.getItem('religion_simulator_state_v2');
+  const [appScreen, setAppScreen] = useState<'splash' | 'menu' | 'creation' | 'game'>(() => 'splash');
 
   const [activeTab, setActiveTab] = useState<'map' | 'dogmas' | 'leaders' | 'rival' | 'faith' | 'guide'>('map');
   const [faithSubTab, setFaithSubTab] = useState<'visao' | 'doutrinas'>('visao');
@@ -1199,6 +1204,7 @@ export default function App() {
       firstCountryConverted: null,
       peakFervor: 5,
     });
+    setAppScreen('menu');
   };
 
   // Doctrine purchase callback
@@ -1600,8 +1606,25 @@ export default function App() {
     });
   };
 
-  if (!state.started) {
-    return <CreationScreen onStart={handleStartGame} />;
+  if (appScreen === 'splash') {
+    return <SplashScreen onComplete={() => setAppScreen('menu')} />;
+  }
+
+  if (appScreen === 'menu') {
+    return (
+      <MainMenu
+        hasSave={hasSave}
+        onNewGame={() => setAppScreen('creation')}
+        onLoadGame={() => {
+          if (state.started) setAppScreen('game');
+          else setAppScreen('creation');
+        }}
+      />
+    );
+  }
+
+  if (appScreen === 'creation' || !state.started) {
+    return <CreationScreen onStart={(name: string, trait: ReligionTrait, goal: VictoryGoalType) => { handleStartGame(name, trait, goal); setAppScreen('game'); }} />;
   }
 
   // Formatting helpers
