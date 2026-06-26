@@ -62,24 +62,19 @@ export default function LeadersPanel({ countries, faith, fervor, hasGrandeJulgam
     return { faith: Math.max(5, baseFaith), fervor: Math.max(2, baseFervor) };
   };
 
+  const convertedCount = countries.filter(c => c.leaderInfiltration >= 100).length;
+
   return (
     <div className="flex flex-col gap-5" id="leaders-panel-component">
-      
-      {/* Informative Header card */}
-      <div className="bg-[#241e0d] border border-[#cfb53b]/30 p-4 rounded-lg flex items-start gap-3">
-        <Crown className="w-6 h-6 text-[#cfb53b] shrink-0 mt-0.5" />
-        <div>
-          <h4 className="text-sm font-bold uppercase tracking-wider text-[#cfb53b] font-serif">
-            A Conquista dos Governantes Mundiais
-          </h4>
-          <p className="text-xs text-[#dfcfa0]/85 mt-1 leading-relaxed">
-            Converter a liderança política de um país é a forma máxima de consolidação teológica. Quando um líder atinge <strong className="text-sky-400">100% de conversão</strong>, ele decreta reformas de apoio e fornece um <strong className="text-amber-200">Bônus Passivo Permanente</strong> para a sua religião. O objetivo de vitória <strong>"O Iluminado"</strong> requer converter todos os 12 líderes, enquanto <strong>"Um Só Rebanho"</strong> exige converter as 4 superpotências (EUA, China, Índia e Alemanha).
-          </p>
-        </div>
+
+      {/* Compact header line */}
+      <div className="flex items-center justify-between text-[10px] font-mono text-[#dfcfa0]/40 mb-1">
+        <span className="flex items-center gap-1"><Crown className="w-3 h-3 text-[#cfb53b]" /> Converta líderes para bônus permanentes</span>
+        <span>{convertedCount}/{countries.length} convertidos</span>
       </div>
 
       {/* Grid of Leaders */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-2">
         {countries.map((c) => {
           const isConverted = c.leaderInfiltration >= 100;
           const costs = getInfiltrationCost(c);
@@ -91,7 +86,7 @@ export default function LeadersPanel({ countries, faith, fervor, hasGrandeJulgam
           return (
             <div
               key={c.id}
-              className={`rounded-lg p-4 border flex flex-col justify-between gap-3 relative overflow-hidden transition-all duration-300 ${
+              className={`rounded-lg p-2.5 border flex flex-col justify-between gap-2 relative overflow-hidden transition-all duration-300 ${
                 isConverted
                   ? 'bg-[#12202b] border-sky-800 shadow-[0_0_15px_rgba(14,165,233,0.15)] text-sky-100'
                   : 'bg-[#1b1609] border-[#cfb53b]/20 hover:border-[#cfb53b]/40 text-[#dfcfa0]'
@@ -116,11 +111,11 @@ export default function LeadersPanel({ countries, faith, fervor, hasGrandeJulgam
 
               {/* Leader Details */}
               <div>
-                <h4 className="text-base font-bold font-serif text-[#cfb53b]">
+                <h4 className="text-sm font-bold font-serif text-[#cfb53b]">
                   {c.leaderName}
                 </h4>
                 <p className="text-[10px] text-[#dfcfa0]/50 mt-0.5">
-                  {convertPct}% da população convertida · Resistência {c.resistance}%
+                  {convertPct}% pop · Res {c.resistance}%
                 </p>
               </div>
 
@@ -143,30 +138,17 @@ export default function LeadersPanel({ countries, faith, fervor, hasGrandeJulgam
                 </div>
               </div>
 
-              {/* Passive Reward display */}
-              <div className="bg-black/40 rounded p-2 border border-[#cfb53b]/10">
-                <span className="text-[9px] uppercase font-bold tracking-wider text-amber-200 block">
-                  Bônus ao converter:
-                </span>
-                <span className="text-[10px] text-[#dfcfa0]/80 mt-1 block italic font-medium leading-normal">
-                  {getLeaderPassiveBuff(c)}
-                </span>
-              </div>
-
               {/* Action button or converted state */}
               {!isConverted ? (
                 <div className="flex flex-col gap-1.5 mt-1">
-                  {/* Risk indicator */}
-                  {c.resistance > 40 && (
-                    <div className={`flex items-center gap-1 text-[9px] font-mono ${risk.color}`}>
-                      <AlertTriangle className="w-3 h-3" />
-                      <span>Contra-inteligência: {risk.label} de detecção</span>
-                    </div>
+                  {/* Risk indicator - inline, only when resistance > 60 */}
+                  {c.resistance > 60 && (
+                    <span className="text-[9px] font-mono text-red-400">⚠ {risk.label}</span>
                   )}
                   <button
                     onClick={() => onInfiltrateLeader(c.id)}
                     disabled={!canAfford || c.converts === 0}
-                    className={`py-2 px-3 rounded text-[11px] font-bold flex justify-between items-center transition-all ${
+                    className={`py-1.5 px-2 rounded text-[10px] font-bold flex justify-between items-center transition-all ${
                       canAfford && c.converts > 0
                         ? 'bg-sky-900 hover:bg-sky-800 text-sky-100 hover:shadow-[0_0_10px_rgba(14,165,233,0.3)] cursor-pointer'
                         : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
@@ -176,8 +158,7 @@ export default function LeadersPanel({ countries, faith, fervor, hasGrandeJulgam
                       <UserCheck className="w-3.5 h-3.5" /> Semear Doutrina
                     </span>
                     <span className="font-mono text-[9px] bg-black/30 px-1 py-0.5 rounded flex gap-1 text-sky-300">
-                      <span>{costs.faith} Fé</span>
-                      <span>{costs.fervor} Fervor</span>
+                      <span>{costs.faith}F {costs.fervor}Fv</span>
                     </span>
                   </button>
                   {c.converts === 0 && (
@@ -185,8 +166,8 @@ export default function LeadersPanel({ countries, faith, fervor, hasGrandeJulgam
                   )}
                 </div>
               ) : (
-                <div className="mt-2 py-1.5 px-2 bg-sky-950/60 rounded border border-sky-900 text-xs text-sky-300 font-medium flex items-center justify-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" /> Presença Divina Estabelecida
+                <div className="mt-2 py-1.5 px-2 bg-sky-950/60 rounded border border-sky-900 text-[9px] text-sky-300 font-medium flex items-center justify-center gap-1.5">
+                  ✦ Estabelecida
                 </div>
               )}
             </div>

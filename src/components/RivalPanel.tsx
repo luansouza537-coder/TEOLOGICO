@@ -22,7 +22,7 @@ export default function RivalPanel({
   victoryGoal,
   resistanceStreak
 }: RivalPanelProps) {
-  
+
   // Calculations
   const totalPopulation = countries.reduce((acc, curr) => acc + curr.population, 0);
   const totalConverts = countries.reduce((acc, curr) => acc + curr.converts, 0);
@@ -106,7 +106,7 @@ export default function RivalPanel({
                   style={{ width: `${(superpowersControlledCount / 4) * 100}%` }}
                 />
               </div>
-              
+
               {/* Checkbox checklist */}
               <div className="grid grid-cols-2 gap-2 mt-2 border-t border-[#cfb53b]/10 pt-2 text-[10px] font-mono">
                 {superpowers.map((id) => {
@@ -160,31 +160,16 @@ export default function RivalPanel({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" id="rival-panel-component">
-      
+
       {/* LEFT COLUMN: Core Worldwide Metrics & Goals */}
       <div className="flex flex-col gap-4">
-        
-        <h3 className="text-xl font-bold font-serif text-[#cfb53b] uppercase tracking-wider border-b border-[#cfb53b]/25 pb-1 flex items-center gap-1.5">
+
+        <h3 className="text-sm font-bold font-serif text-[#cfb53b] uppercase tracking-wider flex items-center gap-1.5">
           <Globe className="w-5 h-5" /> Métricas e Metas Globais
         </h3>
 
         {/* Dynamic goal interface card */}
         {renderGoalStatus()}
-
-        {/* Global Statistics Summary Cards */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-[#171308] border border-[#cfb53b]/10 p-3 rounded">
-            <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Média de Resistência</span>
-            <span className="text-lg font-bold font-mono text-[#8b0000] block mt-0.5">{avgResistance.toFixed(1)}%</span>
-            <span className="text-[9px] text-[#dfcfa0]/60">Se passar de 85%, governos fecham cerco.</span>
-          </div>
-
-          <div className="bg-[#171308] border border-[#cfb53b]/10 p-3 rounded">
-            <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Média de Violência</span>
-            <span className="text-lg font-bold font-mono text-orange-400 block mt-0.5">{avgViolence.toFixed(1)}%</span>
-            <span className="text-[9px] text-[#dfcfa0]/60">Reduzível com ações coletivas sociais.</span>
-          </div>
-        </div>
 
         {/* Warning Streak Indicator */}
         {resistanceStreak > 0 && (
@@ -216,10 +201,8 @@ export default function RivalPanel({
             {rivalName}
           </h3>
           <p className="text-xs text-[#dfcfa0]/75 leading-relaxed mt-2">
-            Essa congregação rival de cientistas materialistas e niilistas nega o espírito e busca construir uma utopia mecânica estéril. Eles espalham sua dúvida entre os povos. Se alcançarem sua meta primeiro, você falhará em sua missão cósmica.
+            Nega o espírito e busca construir uma utopia mecânica. Se alcançarem sua meta primeiro, você falhará.
           </p>
-
-          <hr className="border-red-950/50 my-4" />
 
           {/* Rival's progress bar */}
           <div className="bg-[#120505] border border-red-950/60 rounded p-4">
@@ -240,12 +223,12 @@ export default function RivalPanel({
         </div>
 
         {/* Action item block */}
-        <div className="bg-[#120a0a] border border-red-950 p-3 rounded mt-4">
+        <div className="bg-[#120a0a] border border-red-950 p-2 rounded mt-4">
           <span className="text-[10px] uppercase font-bold text-red-400 flex items-center gap-1">
             <ShieldAlert className="w-3.5 h-3.5" /> Antagonismo Religioso
           </span>
           <p className="text-[10px] text-[#dfcfa0]/70 mt-1 leading-normal">
-            Você ganha mais <strong className="text-red-400">Fervor</strong> de emergência quando a resistência global está alta, permitindo adotar dogmas de oposição fundamentais. Balanceie a impopularidade com o ganho defensivo de Fervor!
+            Resistência global alta gera mais Fervor de emergência — use para dogmas defensivos.
           </p>
         </div>
       </div>
