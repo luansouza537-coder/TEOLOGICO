@@ -2065,37 +2065,131 @@ export default function App() {
                   ))}
                 </div>
 
-                {/* Templos + Dogmas side by side */}
-                {(totalTemplesList.length > 0 || activeDogmas.length > 0) && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {totalTemplesList.length > 0 && (
-                      <div className="bg-[#171308] border border-[#cfb53b]/15 rounded-lg px-2 py-2">
-                        <div className="text-[9px] font-mono text-[#cfb53b]/60 uppercase tracking-wider mb-1.5">🏛️ Templos ({state.totalTemples})</div>
-                        <div className="flex flex-col gap-1">
-                          {totalTemplesList.map(c => {
-                            const templeName = TEMPLE_NAMES[state.religionTrait]?.[c.templeLevel - 1] ?? 'Templo';
+                {/* A — Victory Goal Progress */}
+                {(() => {
+                  const superpowers = ['usa', 'china', 'india', 'germany'];
+                  const totalInf = state.countries.filter(c => c.leaderInfiltration >= 100).length;
+                  const conversionRate = totalWorldPopulation > 0 ? (totalConvertedWorld / totalWorldPopulation) * 100 : 0;
+
+                  if (state.victoryGoal === 'OneFlock') {
+                    return (
+                      <div className="bg-[#171308] border border-[#cfb53b]/20 rounded-lg px-3 py-2.5">
+                        <div className="text-[9px] font-mono text-[#cfb53b]/60 uppercase tracking-wider mb-2">🎯 Um Só Rebanho — Superpotências</div>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {superpowers.map(id => {
+                            const c = state.countries.find(x => x.id === id)!;
+                            const convPctC = c ? (c.converts / c.population) * 100 : 0;
+                            const leaderOk = c?.leaderInfiltration >= 100;
+                            const convOk = convPctC >= 50;
+                            const done = leaderOk && convOk;
                             return (
-                              <div key={c.id} className="flex justify-between items-center text-[9px] font-mono">
-                                <span className="text-[#dfcfa0]/60 truncate">{c.name}</span>
-                                <span className="text-[#cfb53b] shrink-0 ml-1">Nv{c.templeLevel}</span>
+                              <div key={id} className={`rounded px-2 py-1.5 border ${done ? 'border-[#cfb53b]/40 bg-amber-950/20' : 'border-zinc-800/40 bg-zinc-900/20'}`}>
+                                <div className="flex justify-between items-center">
+                                  <span className={`text-[10px] font-bold font-mono ${done ? 'text-[#cfb53b]' : 'text-zinc-400'}`}>{c?.name ?? id}</span>
+                                  {done && <span className="text-[9px] text-[#cfb53b]">✓</span>}
+                                </div>
+                                <div className="flex gap-1 mt-1">
+                                  <div className="flex-1">
+                                    <div className="text-[8px] font-mono text-[#dfcfa0]/35 mb-0.5">Conv {convPctC.toFixed(1)}%</div>
+                                    <div className="h-1 bg-zinc-800 rounded overflow-hidden"><div className={`h-full ${convOk ? 'bg-[#cfb53b]' : 'bg-zinc-600'} transition-all`} style={{ width: `${Math.min(100, convPctC)}%` }} /></div>
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="text-[8px] font-mono text-[#dfcfa0]/35 mb-0.5">Líder {c?.leaderInfiltration.toFixed(0)}%</div>
+                                    <div className="h-1 bg-zinc-800 rounded overflow-hidden"><div className={`h-full ${leaderOk ? 'bg-sky-400' : 'bg-sky-800'} transition-all`} style={{ width: `${c?.leaderInfiltration ?? 0}%` }} /></div>
+                                  </div>
+                                </div>
                               </div>
                             );
                           })}
                         </div>
                       </div>
-                    )}
-                    {activeDogmas.length > 0 && (
-                      <div className="bg-[#171308] border border-[#cfb53b]/15 rounded-lg px-2 py-2">
-                        <div className="text-[9px] font-mono text-[#cfb53b]/60 uppercase tracking-wider mb-1.5">📜 Dogmas ({activeDogmas.length})</div>
-                        <div className="flex flex-col gap-1">
-                          {activeDogmas.map(d => (
-                            <div key={d.id} className="text-[9px] font-mono text-amber-200/70 truncate">✓ {d.name}</div>
-                          ))}
+                    );
+                  }
+                  if (state.victoryGoal === 'TheEnlightened') {
+                    return (
+                      <div className="bg-[#171308] border border-sky-900/30 rounded-lg px-3 py-2.5">
+                        <div className="flex justify-between text-[9px] font-mono text-sky-400/70 uppercase tracking-wider mb-2">
+                          <span>🎯 O Iluminado — Líderes</span>
+                          <span>{totalInf}/12</span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-1">
+                          {state.countries.map(c => {
+                            const done = c.leaderInfiltration >= 100;
+                            return (
+                              <div key={c.id} className={`rounded px-1.5 py-1 text-center border ${done ? 'border-sky-600/40 bg-sky-950/30' : 'border-zinc-800/30 bg-zinc-900/20'}`}>
+                                <div className={`text-[8px] font-mono truncate ${done ? 'text-sky-300' : 'text-zinc-500'}`}>{c.name.split(' ')[0]}</div>
+                                <div className={`text-[9px] font-bold font-mono ${done ? 'text-sky-400' : 'text-zinc-600'}`}>{done ? '✓' : `${c.leaderInfiltration.toFixed(0)}%`}</div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
-                    )}
+                    );
+                  }
+                  if (state.victoryGoal === 'GlobalEcstasy') {
+                    return (
+                      <div className="bg-[#171308] border border-green-900/30 rounded-lg px-3 py-2.5">
+                        <div className="text-[9px] font-mono text-green-400/70 uppercase tracking-wider mb-1.5">🎯 Êxtase Global — Meta: 80%</div>
+                        <div className="flex justify-between text-[10px] font-mono mb-1">
+                          <span className="text-[#dfcfa0]/50">Progresso</span>
+                          <span className="text-green-300 font-bold">{conversionRate.toFixed(4)}% / 80%</span>
+                        </div>
+                        <div className="h-2 bg-zinc-800 rounded overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-green-700 to-green-400 transition-all" style={{ width: `${Math.min(100, (conversionRate / 80) * 100)}%` }} />
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (state.victoryGoal === 'PerpetualPeace') {
+                    const safe = state.countries.filter(c => c.violence < 20).length;
+                    return (
+                      <div className="bg-[#171308] border border-orange-900/30 rounded-lg px-3 py-2.5">
+                        <div className="text-[9px] font-mono text-orange-400/70 uppercase tracking-wider mb-2">🎯 Paz Perpétua — Violência &lt; 20%</div>
+                        <div className="grid grid-cols-4 gap-1">
+                          {state.countries.map(c => {
+                            const ok = c.violence < 20;
+                            return (
+                              <div key={c.id} className={`rounded px-1.5 py-1 text-center border ${ok ? 'border-orange-600/30 bg-orange-950/20' : 'border-zinc-800/30 bg-zinc-900/20'}`}>
+                                <div className={`text-[8px] font-mono truncate ${ok ? 'text-orange-300' : 'text-zinc-500'}`}>{c.name.split(' ')[0]}</div>
+                                <div className={`text-[9px] font-bold font-mono ${ok ? 'text-orange-400' : 'text-red-500'}`}>{c.violence.toFixed(0)}%</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="text-[9px] font-mono text-[#dfcfa0]/40 mt-1.5">{safe}/12 países pacíficos</div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
+                {/* B — Mini país grid */}
+                <div className="bg-[#171308] border border-[#cfb53b]/15 rounded-lg px-3 py-2.5">
+                  <div className="text-[9px] font-mono text-[#cfb53b]/60 uppercase tracking-wider mb-2">🗺️ Status por País</div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {state.countries.map(c => {
+                      const pct = c.population > 0 ? (c.converts / c.population) * 100 : 0;
+                      const barColor = pct >= 50 ? 'bg-[#cfb53b]' : pct > 0 ? 'bg-amber-700' : 'bg-zinc-700';
+                      const textColor = pct >= 50 ? 'text-[#cfb53b]' : pct > 0 ? 'text-amber-600' : 'text-zinc-600';
+                      const hasTemple = (c.templeLevel ?? 0) > 0;
+                      const leaderDone = c.leaderInfiltration >= 100;
+                      return (
+                        <div key={c.id} className="bg-black/20 border border-[#cfb53b]/8 rounded px-1.5 py-1">
+                          <div className="flex justify-between items-center">
+                            <span className="text-[8px] font-mono text-[#dfcfa0]/50 truncate">{c.name}</span>
+                            <span className="text-[8px] shrink-0 ml-0.5">
+                              {leaderDone ? '👑' : hasTemple ? '⛪' : ''}
+                            </span>
+                          </div>
+                          <div className={`text-[10px] font-bold font-mono ${textColor}`}>{pct >= 1 ? `${pct.toFixed(1)}%` : pct > 0 ? `${pct.toFixed(3)}%` : '—'}</div>
+                          <div className="h-0.5 bg-zinc-800 rounded overflow-hidden mt-0.5">
+                            <div className={`h-full ${barColor} transition-all`} style={{ width: `${Math.min(100, pct)}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
+                </div>
 
                 </>}
 
