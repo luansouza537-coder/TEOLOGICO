@@ -55,18 +55,24 @@ interface WorldMapFlatProps {
 }
 
 const COUNTRY_POSITIONS: Record<string, { lat: number; lon: number; name: string }> = {
-  usa:          { lat: 37.09,  lon: -95.71, name: 'EUA' },
-  china:        { lat: 35.86,  lon: 104.19, name: 'China' },
-  india:        { lat: 20.59,  lon: 78.96,  name: 'Índia' },
-  germany:      { lat: 51.16,  lon: 10.45,  name: 'Alemanha' },
-  brazil:       { lat: -14.23, lon: -51.92, name: 'Brasil' },
-  russia:       { lat: 61.52,  lon: 105.31, name: 'Rússia' },
-  egypt:        { lat: 26.82,  lon: 30.80,  name: 'Egito' },
-  south_africa: { lat: -30.55, lon: 22.93,  name: 'África do Sul' },
-  japan:        { lat: 36.20,  lon: 138.25, name: 'Japão' },
+  usa:          { lat: 37.09,  lon: -95.71,  name: 'EUA' },
+  china:        { lat: 35.86,  lon: 104.19,  name: 'China' },
+  india:        { lat: 20.59,  lon: 78.96,   name: 'Índia' },
+  germany:      { lat: 51.16,  lon: 10.45,   name: 'Alemanha' },
+  brazil:       { lat: -14.23, lon: -51.92,  name: 'Brasil' },
+  russia:       { lat: 61.52,  lon: 105.31,  name: 'Rússia' },
+  egypt:        { lat: 26.82,  lon: 30.80,   name: 'Egito' },
+  south_africa: { lat: -30.55, lon: 22.93,   name: 'África do Sul' },
+  japan:        { lat: 36.20,  lon: 138.25,  name: 'Japão' },
   mexico:       { lat: 23.63,  lon: -102.55, name: 'México' },
-  saudi_arabia: { lat: 23.88,  lon: 45.07,  name: 'Arábia Saudita' },
-  australia:    { lat: -25.27, lon: 133.77, name: 'Austrália' },
+  saudi_arabia: { lat: 23.88,  lon: 45.07,   name: 'Arábia Saudita' },
+  australia:    { lat: -25.27, lon: 133.77,  name: 'Austrália' },
+  turkey:       { lat: 38.96,  lon: 35.24,   name: 'Turquia' },
+  iran:         { lat: 32.43,  lon: 53.69,   name: 'Irã' },
+  south_korea:  { lat: 35.91,  lon: 127.77,  name: 'Coreia do Sul' },
+  indonesia:    { lat: -0.79,  lon: 113.92,  name: 'Indonésia' },
+  nigeria:      { lat: 9.08,   lon: 8.67,    name: 'Nigéria' },
+  haiti:        { lat: 18.97,  lon: -72.28,  name: 'Haiti' },
 };
 
 function getMarkerColor(country: Country): string {
