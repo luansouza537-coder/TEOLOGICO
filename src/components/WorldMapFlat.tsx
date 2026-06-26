@@ -206,48 +206,44 @@ export default function WorldMapFlat({ countries, selectedCountryId, onSelectCou
   }, [selectedCountryId]);
 
   return (
-    <div className="relative w-full overflow-hidden bg-[#0e0b04]" style={{ height: '100%', minHeight: '220px' }}>
-      {/* Header */}
-      <div className="absolute top-2 left-3 right-3 flex items-center justify-between z-[1000] pointer-events-none">
-        <div className="flex items-center gap-2 bg-black/70 px-2 py-1 rounded border border-[#cfb53b]/20">
-          <Map className="w-3.5 h-3.5 text-[#cfb53b]" />
-          <span className="text-[9px] font-mono uppercase tracking-widest text-[#cfb53b]">Planisfério Político</span>
-        </div>
-        <div className="flex items-center gap-1 pointer-events-auto">
-          {MAP_STYLES.map(s => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setMapStyle(s.id)}
-              className={`px-1.5 py-0.5 rounded text-[8px] font-mono uppercase tracking-wider border transition-all cursor-pointer ${
-                mapStyle === s.id
-                  ? 'bg-[#cfb53b] text-[#1e1a0c] border-[#cfb53b] font-bold'
-                  : 'bg-black/70 text-[#cfb53b]/50 border-[#cfb53b]/20 hover:text-[#cfb53b]'
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
+    <div className="w-full flex flex-col bg-[#0e0b04]" style={{ height: '100%', minHeight: '220px' }}>
+
+      {/* Toolbar — above map */}
+      <div className="shrink-0 flex items-center gap-1 px-2 py-1 bg-[#0a0802] border-b border-[#cfb53b]/15">
+        {MAP_STYLES.map(s => (
           <button
+            key={s.id}
             type="button"
-            className="p-1 rounded bg-black/70 border border-[#cfb53b]/20 text-[#cfb53b]/60 hover:text-[#cfb53b] transition-colors cursor-pointer ml-1"
-            onClick={() => setShowLabels(v => !v)}
-            title="Mostrar/ocultar contagem de fiéis"
+            onClick={() => setMapStyle(s.id)}
+            className={`px-1.5 py-0.5 rounded text-[8px] font-mono uppercase tracking-wider border transition-all cursor-pointer ${
+              mapStyle === s.id
+                ? 'bg-[#cfb53b] text-[#1e1a0c] border-[#cfb53b] font-bold'
+                : 'bg-transparent text-[#cfb53b]/50 border-[#cfb53b]/20 hover:text-[#cfb53b]'
+            }`}
           >
-            {showLabels ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+            {s.label}
           </button>
-        </div>
+        ))}
+        <button
+          type="button"
+          className="p-0.5 rounded border border-[#cfb53b]/20 text-[#cfb53b]/50 hover:text-[#cfb53b] transition-colors cursor-pointer ml-auto"
+          onClick={() => setShowLabels(v => !v)}
+          title="Mostrar/ocultar contagem de fiéis"
+        >
+          {showLabels ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+        </button>
       </div>
 
-      {/* Leaflet map container */}
-      <div ref={mapContainerRef} className="w-full h-full" />
+      {/* Leaflet map — fills remaining space */}
+      <div ref={mapContainerRef} className="flex-1 min-h-0 w-full" />
 
-      {/* Legend */}
-      <div className="absolute bottom-2 left-3 right-3 flex justify-between bg-black/70 border border-[#cfb53b]/10 px-3 py-1 rounded text-[8px] font-mono text-[#dfcfa0]/50 select-none z-[1000] pointer-events-none">
+      {/* Legend — below map */}
+      <div className="shrink-0 flex justify-between items-center bg-[#0a0802] border-t border-[#cfb53b]/15 px-3 py-1 text-[8px] font-mono text-[#dfcfa0]/50 select-none">
         <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-[#3a2e12] border border-[#cfb53b]/50 inline-block" /> Inativo</span>
         <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-[#b46f1f] border border-[#cfb53b] inline-block" /> Semeado</span>
         <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-[#cfb53b] border border-white inline-block" /> Dominante</span>
-        <span className="flex items-center gap-1">⛪ Templo &nbsp; ✦ Líder</span>
+        <span className="flex items-center gap-1">⛪ Templo</span>
+        <span className="flex items-center gap-1">✦ Líder</span>
       </div>
     </div>
   );
