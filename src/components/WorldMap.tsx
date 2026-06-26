@@ -4,8 +4,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { Country, ReligionTrait } from '../types';
-import { Crosshair, ShieldAlert, HeartHandshake, Skull, Crown, Star, Network, Building2, X, ChevronDown } from 'lucide-react';
+import { Crosshair, ShieldAlert, HeartHandshake, Skull, Crown, Star, Network, Building2, X } from 'lucide-react';
 import { calcPeaceEffectiveness } from '../utils/peaceEffectiveness';
 import WorldMapFlat from './WorldMapFlat';
 
@@ -148,24 +149,27 @@ export default function WorldMap({
         <span>Global: <span className="text-[#cfb53b] font-bold">{((countries.reduce((a, c) => a + c.converts, 0) / countries.reduce((a, c) => a + c.population, 0)) * 100).toFixed(2)}%</span></span>
       </div>
 
-      {/* Backdrop */}
-      {sheetOpen && selectedCountry && (
-        <div
-          className="fixed inset-0 z-40 bg-black/40"
-          style={{ bottom: '56px' }}
-          onClick={closeSheet}
-        />
-      )}
+      {/* Bottom Sheet + Backdrop — rendered in body via portal to escape Leaflet transforms */}
+      {ReactDOM.createPortal(
+        <>
+          {/* Backdrop */}
+          {sheetOpen && selectedCountry && (
+            <div
+              className="fixed inset-0 z-40 bg-black/40"
+              style={{ bottom: '56px' }}
+              onClick={closeSheet}
+            />
+          )}
 
-      {/* Bottom Sheet */}
-      <div
-        className="fixed left-0 right-0 z-50 flex flex-col bg-[#181208] border-t-2 border-[#cfb53b]/60 rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out"
-        style={{
-          bottom: '56px',
-          height: '68dvh',
-          transform: sheetOpen && selectedCountry ? 'translateY(0)' : 'translateY(110%)',
-        }}
-      >
+          {/* Sheet */}
+          <div
+            className="fixed left-0 right-0 z-50 flex flex-col bg-[#181208] border-t-2 border-[#cfb53b]/60 rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out"
+            style={{
+              bottom: '56px',
+              height: '68dvh',
+              transform: sheetOpen && selectedCountry ? 'translateY(0)' : 'translateY(110%)',
+            }}
+          >
         {selectedCountry && (
           <>
             {/* Sheet handle + header */}
@@ -555,7 +559,10 @@ export default function WorldMap({
             </div>
           </>
         )}
-      </div>
+          </div>
+        </>,
+        document.body
+      )}
 
       {/* Hint when nothing is selected */}
       {!selectedCountry && (
