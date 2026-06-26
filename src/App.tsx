@@ -12,7 +12,7 @@ import DogmasPanel from './components/DogmasPanel';
 import VictoryScreen from './components/VictoryScreen';
 import LeadersPanel from './components/LeadersPanel';
 import RivalPanel from './components/RivalPanel';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Gamepad2, Info, BookOpen, AlertTriangle } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Gamepad2, Info, BookOpen, AlertTriangle, Map, ScrollText, Crown, Skull, Sparkles } from 'lucide-react';
 import { calcPeaceEffectiveness } from './utils/peaceEffectiveness';
 import { playFileSound } from './utils/sound';
 
@@ -115,7 +115,7 @@ export default function App() {
     };
   });
 
-  const [activeTab, setActiveTab] = useState<'map' | 'dogmas' | 'leaders' | 'rival' | 'faith'>('map');
+  const [activeTab, setActiveTab] = useState<'map' | 'dogmas' | 'leaders' | 'rival' | 'faith' | 'guide'>('map');
   const [showTutorial, setShowTutorial] = useState(() => localStorage.getItem('tutorial_seen') !== 'true');
   const [tutorialStep, setTutorialStep] = useState(0); // #5: interactive tutorial step
   const [logFilter, setLogFilter] = useState<'all' | 'acao' | 'evento' | 'alerta'>('all'); // #3: log filter
@@ -1710,7 +1710,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1e1a0c] text-[#dfcfa0] font-sans flex flex-col justify-between" id="game-app-instance">
+    <div className="h-screen bg-[#1e1a0c] text-[#dfcfa0] font-sans flex flex-col overflow-hidden" id="game-app-instance">
       
       {/* 1. STATUS HEADER */}
       <header className={`bg-[#171308] border-b-2 px-4 py-3 md:px-6 relative z-20 ${(state.faithPhase ?? 1) === 3 ? 'border-[#8b1a1a]' : (state.faithPhase ?? 1) === 2 ? 'border-[#e07820]' : 'border-[#cfb53b]'}`}>
@@ -1913,149 +1913,93 @@ export default function App() {
         </div>
       </div>
 
-      {/* 2. MAIN HUB WINDOWS AND NAVIGATION */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col gap-6 relative z-10 overflow-y-auto">
-        
-        {/* Navigation Tabs */}
-        <div className="flex border-b border-[#cfb53b]/30 gap-1 overflow-x-auto select-none">
+      {/* Global Pause Alert */}
+      {state.paused && !state.isGameOver && (
+        <div className="shrink-0 bg-[#cfb53b]/10 border-b border-[#cfb53b]/30 text-[#cfb53b] px-4 py-2 text-xs flex items-center justify-between z-10">
+          <span className="flex items-center gap-1.5 font-medium">
+            <AlertTriangle className="w-4 h-4 text-[#cfb53b]" /> Tempo pausado. Clique em ▶ para continuar.
+          </span>
           <button
-            onClick={() => { playSound('click'); setActiveTab('map'); }}
-            className={`px-4 py-2.5 font-serif font-bold text-sm uppercase tracking-wider rounded-t-lg border-t-2 border-x transition-all shrink-0 cursor-pointer ${
-              activeTab === 'map'
-                ? 'bg-[#211a0a] border-t-[#cfb53b] border-x-[#cfb53b]/40 text-[#cfb53b]'
-                : 'bg-[#141108]/60 border-t-transparent border-x-transparent text-[#dfcfa0]/60 hover:text-white'
-            }`}
+            onClick={() => setState(p => ({ ...p, paused: false }))}
+            className="px-2 py-0.5 bg-[#cfb53b] text-[#1e1a0c] font-bold uppercase text-[10px] rounded cursor-pointer shrink-0"
           >
-            🗺 Mapa-Múndi
-          </button>
-          
-          <button
-            onClick={() => { playSound('click'); setActiveTab('dogmas'); }}
-            className={`px-4 py-2.5 font-serif font-bold text-sm uppercase tracking-wider rounded-t-lg border-t-2 border-x transition-all shrink-0 cursor-pointer ${
-              activeTab === 'dogmas'
-                ? 'bg-[#211a0a] border-t-[#cfb53b] border-x-[#cfb53b]/40 text-[#cfb53b]'
-                : 'bg-[#141108]/60 border-t-transparent border-x-transparent text-[#dfcfa0]/60 hover:text-white'
-            }`}
-          >
-            📜 Evolução de Dogmas
-          </button>
-
-          <button
-            onClick={() => { playSound('click'); setActiveTab('leaders'); }}
-            className={`px-4 py-2.5 font-serif font-bold text-sm uppercase tracking-wider rounded-t-lg border-t-2 border-x transition-all shrink-0 cursor-pointer ${
-              activeTab === 'leaders'
-                ? 'bg-[#211a0a] border-t-[#cfb53b] border-x-[#cfb53b]/40 text-[#cfb53b]'
-                : 'bg-[#141108]/60 border-t-transparent border-x-transparent text-[#dfcfa0]/60 hover:text-white'
-            }`}
-          >
-            👑 Círculos de Poder
-          </button>
-
-          <button
-            onClick={() => { playSound('click'); setActiveTab('rival'); }}
-            className={`px-4 py-2.5 font-serif font-bold text-sm uppercase tracking-wider rounded-t-lg border-t-2 border-x transition-all shrink-0 cursor-pointer relative ${
-              activeTab === 'rival'
-                ? 'bg-[#211a0a] border-t-[#cfb53b] border-x-[#cfb53b]/40 text-[#cfb53b]'
-                : 'bg-[#141108]/60 border-t-transparent border-x-transparent text-[#dfcfa0]/60 hover:text-white'
-            }`}
-          >
-            👹 Adversário e Métricas
-            {state.rivalProgress > 75 && (
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-600 rounded-full animate-ping" />
-            )}
-          </button>
-
-          <button
-            onClick={() => { playSound('click'); setActiveTab('faith'); }}
-            className={`px-4 py-2.5 font-serif font-bold text-sm uppercase tracking-wider rounded-t-lg border-t-2 border-x transition-all shrink-0 cursor-pointer ${
-              activeTab === 'faith'
-                ? 'bg-[#211a0a] border-t-[#cfb53b] border-x-[#cfb53b]/40 text-[#cfb53b]'
-                : 'bg-[#141108]/60 border-t-transparent border-x-transparent text-[#dfcfa0]/60 hover:text-white'
-            }`}
-          >
-            ✨ Sua Fé
-          </button>
-
-          <button
-            onClick={() => { if (!showTutorial) setTutorialStep(0); setShowTutorial(!showTutorial); }}
-            className="ml-auto px-3 py-1 bg-amber-950/30 hover:bg-amber-950 border border-[#cfb53b]/30 text-xs font-serif text-amber-200 uppercase tracking-widest rounded transition-all cursor-pointer flex items-center gap-1 shrink-0"
-          >
-            <BookOpen className="w-3.5 h-3.5 text-[#cfb53b]" /> {showTutorial ? 'Fechar Guia' : 'Guia de Jogo'}
+            Continuar
           </button>
         </div>
+      )}
 
-        {/* Global Pause Alert */}
-        {state.paused && !state.isGameOver && (
-          <div className="bg-[#cfb53b]/10 border border-[#cfb53b]/30 text-[#cfb53b] px-4 py-2 rounded text-xs flex items-center justify-between">
-            <span className="flex items-center gap-1.5 font-medium">
-              <AlertTriangle className="w-4 h-4 text-[#cfb53b]" /> O tempo está pausado. Seus crentes pararam o proselitismo temporariamente. Clique no botão de play no cabeçalho para continuar!
-            </span>
-            <button
-              onClick={() => setState(p => ({ ...p, paused: false }))}
-              className="px-2 py-0.5 bg-[#cfb53b] text-[#1e1a0c] font-bold uppercase text-[10px] rounded cursor-pointer"
-            >
-              Continuar tempo
-            </button>
-          </div>
-        )}
+      {/* 2. MAIN PANEL — fills remaining height, scrolls internally */}
+      <main className="flex-1 min-h-0 overflow-y-auto relative z-10">
 
-        {/* Game Tutorial Manual Box */}
-        {showTutorial && (
-          <div className="bg-[#1c1809] border-2 border-[#cfb53b]/40 rounded-lg p-5 relative overflow-hidden text-xs leading-relaxed">
-            <button
-              onClick={() => setShowTutorial(false)}
-              className="absolute top-3 right-3 text-[#cfb53b] hover:text-white cursor-pointer transition-colors p-1 rounded"
-              title="Fechar"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
+        <div className="max-w-7xl mx-auto p-3 md:p-4">
+
+        {/* Guide tab — static manual */}
+        {activeTab === 'guide' && (
+          <div className="bg-[#1c1809] border border-[#cfb53b]/30 rounded-lg p-5 text-xs leading-relaxed">
             <h3 className="text-base font-bold font-serif text-[#cfb53b] uppercase tracking-wider mb-2">
-              Manual Prático Teológico de Credo Inc.
+              Manual Prático — Teológico
             </h3>
-            <p className="text-[#dfcfa0]/80 mb-3">
-              Como criador do credo religioso original, você luta por mentes e corações antes que a hostilidade global feche suas linhas teológicas ou a Ordem Tecnocrática convença o planeta de que tudo é matéria inorgânica.
+            <p className="text-[#dfcfa0]/80 mb-4">
+              Você fundou uma nova religião. Lute por mentes e corações antes que a Ordem Tecnocrática convença o planeta de que tudo é matéria inorgânica.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mt-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
               <div className="bg-[#120f05] border border-[#cfb53b]/15 p-3 rounded">
-                <h4 className="font-bold text-[#cfb53b] uppercase tracking-wide">Moedas e Fontes</h4>
-                <p className="text-[11px] text-[#dfcfa0]/75 mt-1 leading-normal">
-                  - <strong>Fé</strong>: Moeda ativa primária. Gasta enviando missionários, ajudas de pacificação social e conversões políticas.<br />
-                  - <strong>Fervor</strong>: Moeda base militar/defensiva. Gasta em dogmas avançados de combate político e infiltração mental. Gerada quando governos hostis colocam barreiras.
+                <h4 className="font-bold text-[#cfb53b] uppercase tracking-wide mb-1">Recursos</h4>
+                <p className="text-[11px] text-[#dfcfa0]/75 leading-normal">
+                  — <strong>Fé</strong>: moeda principal. Gasta em missões, pacificações e dogmas.<br />
+                  — <strong>Fervor</strong>: moeda de resistência. Gerada quando governos hostis bloqueiam sua expansão.<br />
+                  — <strong>Dízimo</strong>: renda passiva dos fiéis. Financia templos.
                 </p>
               </div>
+              <div className="bg-[#120f05] border border-[#cfb53b]/15 p-3 rounded">
+                <h4 className="font-bold text-[#cfb53b] uppercase tracking-wide mb-1">Doutrinas</h4>
+                <p className="text-[11px] text-[#dfcfa0]/75 leading-normal">
+                  — <strong>Mística</strong>: bônus em eventos. Libera Êxtase Coletivo.<br />
+                  — <strong>Profética</strong>: +50% conversão em crises.<br />
+                  — <strong>Ativista</strong>: domina regimes opressores, sofre em democracias.<br />
+                  — <strong>Sincretista</strong>: resistência nunca ultrapassa 60%.
+                </p>
+              </div>
+              <div className="bg-[#120f05] border border-[#cfb53b]/15 p-3 rounded">
+                <h4 className="font-bold text-[#cfb53b] uppercase tracking-wide mb-1">Ações</h4>
+                <p className="text-[11px] text-[#dfcfa0]/75 leading-normal">
+                  — <strong>Missionar</strong>: semeia fiéis iniciais.<br />
+                  — <strong>Pacificar</strong>: reduz violência (vital para Paz Perpétua).<br />
+                  — <strong>Líderes</strong>: converte governantes para bônus permanentes.<br />
+                  — <strong>Templos</strong>: aceleram conversão e geram dízimo.
+                </p>
+              </div>
+              <div className="bg-[#120f05] border border-[#cfb53b]/15 p-3 rounded">
+                <h4 className="font-bold text-[#cfb53b] uppercase tracking-wide mb-1">Vitória e Derrota</h4>
+                <p className="text-[11px] text-[#dfcfa0]/75 leading-normal">
+                  — <strong>Vitória</strong>: complete os critérios do seu objetivo.<br />
+                  — <strong>Derrota</strong>: resistência global &gt; 85% por 3+ ciclos, rival a 100%, ou sem fiéis e fundos.
+                </p>
+              </div>
+            </div>
 
-              <div className="bg-[#120f05] border border-[#cfb53b]/15 p-3 rounded">
-                <h4 className="font-bold text-[#cfb53b] uppercase tracking-wide">Tipos de Doutrina</h4>
-                <p className="text-[11px] text-[#dfcfa0]/75 mt-1 leading-normal">
-                  - <strong>Mística</strong>: Perfeita para eventos. Libera o Ritual de Êxtase Coletivo.<br />
-                  - <strong>Profética</strong>: Seitas ganham bônus maciços silenciosos (+50%) de conversão em eventos catastróficos e crises mundiais.<br />
-                  - <strong>Ativista</strong>: Domina regimes opressores rapidamente, porém sofre nas democracias consolidadas.<br />
-                  - <strong>Sincretista</strong>: Evolução lenta adaptável. Nenhum país conseguirá ultrapassar 60% de resistência.
-                </p>
-              </div>
-
-              <div className="bg-[#120f05] border border-[#cfb53b]/15 p-3 rounded">
-                <h4 className="font-bold text-[#cfb53b] uppercase tracking-wide">Ações de Conversão</h4>
-                <p className="text-[11px] text-[#dfcfa0]/75 mt-1 leading-normal">
-                  - <strong>Missões</strong>: Semeia seguidores iniciais e reconforta os já devotos.<br />
-                  - <strong>Pacificar</strong>: Essencial para o objetivo "Paz Perpétua" ao reduzir a agressividade comunitária.<br />
-                  - <strong>Líderes</strong>: Dá vantagens massivas permanentes do país inteiro se iluminar o seu governante.
-                </p>
-              </div>
-
-              <div className="bg-[#120f05] border border-[#cfb53b]/15 p-3 rounded">
-                <h4 className="font-bold text-[#cfb53b] uppercase tracking-wide">Como Vencer e Perder</h4>
-                <p className="text-[11px] text-[#dfcfa0]/75 mt-1 leading-normal">
-                  - <strong>Vitória</strong>: Conclua os critérios exatos descritos no seu objetivo principal.<br />
-                  - <strong>Derrota</strong>: Resistência Média Global persistir acima de 85% por mais de 3 ciclos, frentes concorrentes dominarem o planeta (Rival 100%), ou se você ficar sem fundos e seguidores ativos completamente.
-                </p>
-              </div>
+            {/* Interactive tutorial steps */}
+            <div className="mt-5 border-t border-[#cfb53b]/15 pt-4">
+              <h4 className="text-[10px] font-mono uppercase tracking-widest text-[#cfb53b]/60 mb-3">Tutorial Interativo</h4>
+              {[
+                `Seu objetivo: ${state.victoryGoal === 'GlobalEcstasy' ? 'converter 80% da humanidade' : state.victoryGoal === 'PerpetualPeace' ? 'reduzir violência abaixo de 20 em todas as nações' : state.victoryGoal === 'OneFlock' ? 'controlar as 4 superpotências' : 'converter todos os 12 líderes'}. Toque em um país no mapa para começar.`,
+                'Use "Missionar" para enviar missionários e aumentar seus Fiéis.',
+                'Acumule Fé realizando ações. Use Fé para comprar Dogmas.',
+                'Construa Templos para acelerar a conversão e gerar Dízimos.',
+                'Converta o Líder do país para ganhar bônus poderosos.',
+              ].map((step, i) => (
+                <div key={i} className="flex gap-2 mb-2">
+                  <span className="w-5 h-5 rounded-full bg-[#cfb53b]/20 border border-[#cfb53b]/40 text-[#cfb53b] text-[10px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                  <p className="text-[11px] text-[#dfcfa0]/70 leading-relaxed">{step}</p>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
         {/* Tab content rendering */}
-        <div className="bg-[#211a0a] border border-[#cfb53b]/30 p-4 md:p-6 rounded-lg relative overflow-hidden">
+        {activeTab !== 'guide' && (
+        <div className="bg-[#211a0a] border border-[#cfb53b]/30 rounded-lg relative overflow-hidden">
           
           {activeTab === 'map' && (
             <WorldMap
@@ -2321,42 +2265,35 @@ export default function App() {
           })()}
 
         </div>
+        )}
+        </div>
 
       </main>
 
-      {/* 3. CONSOLE LOG EVENTS DISPLAY PANEL (Bottom scrolling ledger) */}
-      <footer className="bg-[#120f05] border-t-2 border-[#cfb53b]/30 p-4 min-h-[120px] relative z-10">
-        <div className="max-w-7xl mx-auto flex flex-col gap-2">
-          <div className="flex justify-between items-center text-[10px] uppercase tracking-wider text-[#cfb53b]/60 font-mono">
-            <span>Pergaminho de Eventos Globais e Despachos</span>
-            {/* #10: Copy log button */}
-            <button
-              onClick={() => navigator.clipboard?.writeText(state.logs.join('\n'))}
-              className="text-[#cfb53b]/40 hover:text-[#cfb53b] transition-colors cursor-pointer"
-              title="Copiar log completo"
-            >
-              [Copiar log]
+      {/* 3. COMPACT EVENT LOG STRIP */}
+      <div className="shrink-0 bg-[#0d0a03] border-t border-[#cfb53b]/20 px-3 py-2 z-10">
+        <div className="max-w-7xl mx-auto flex flex-col gap-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9px] font-mono uppercase tracking-wider text-[#cfb53b]/50">Crônica</span>
+              <div className="flex gap-1">
+                {(['all', 'acao', 'evento', 'alerta'] as const).map((f) => {
+                  const labels: Record<string, string> = { all: 'Todos', acao: 'Ações', evento: 'Eventos', alerta: 'Alertas' };
+                  return (
+                    <button key={f} onClick={() => setLogFilter(f)}
+                      className={`px-1.5 py-0.5 text-[8px] font-mono uppercase rounded border cursor-pointer transition-colors ${logFilter === f ? 'bg-[#cfb53b]/20 border-[#cfb53b]/50 text-[#cfb53b]' : 'border-[#cfb53b]/10 text-[#dfcfa0]/30 hover:text-[#dfcfa0]/60'}`}>
+                      {labels[f]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <button onClick={() => navigator.clipboard?.writeText(state.logs.join('\n'))}
+              className="text-[#cfb53b]/30 hover:text-[#cfb53b] transition-colors cursor-pointer text-[8px] font-mono">
+              [copiar]
             </button>
           </div>
-
-          {/* Log filter buttons */}
-          <div className="flex gap-1">
-            {(['all', 'acao', 'evento', 'alerta'] as const).map((f) => {
-              const labels: Record<string, string> = { all: 'Todos', acao: 'Ações', evento: 'Eventos', alerta: 'Alertas' };
-              return (
-                <button
-                  key={f}
-                  onClick={() => setLogFilter(f)}
-                  className={`px-2 py-0.5 text-[9px] font-mono uppercase rounded border cursor-pointer transition-colors ${logFilter === f ? 'bg-[#cfb53b]/20 border-[#cfb53b]/50 text-[#cfb53b]' : 'border-[#cfb53b]/15 text-[#dfcfa0]/40 hover:text-[#dfcfa0]/70'}`}
-                >
-                  {labels[f]}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Scrollable event listings items */}
-          <div ref={logScrollRef} className="bg-black/40 rounded border border-[#cfb53b]/10 p-3 h-24 overflow-y-auto flex flex-col gap-1 text-xs font-mono">
+          <div ref={logScrollRef} className="bg-black/40 rounded border border-[#cfb53b]/10 px-2 py-1.5 h-16 overflow-y-auto flex flex-col gap-0.5 text-[10px] font-mono">
             {(() => {
               const countryNames: Record<string, string> = {
                 'Brasil': 'brazil', 'EUA': 'usa', 'China': 'china', 'Índia': 'india',
@@ -2394,7 +2331,41 @@ export default function App() {
             })()}
           </div>
         </div>
-      </footer>
+      </div>
+
+      {/* 4. BOTTOM NAVIGATION BAR */}
+      <nav className="shrink-0 bg-[#0e0b04] border-t-2 border-[#cfb53b]/30 z-20">
+        <div className="max-w-7xl mx-auto flex">
+          {([
+            { id: 'map',     icon: <Map className="w-5 h-5" />,       label: 'Mapa' },
+            { id: 'dogmas',  icon: <ScrollText className="w-5 h-5" />, label: 'Dogmas' },
+            { id: 'leaders', icon: <Crown className="w-5 h-5" />,      label: 'Poder' },
+            { id: 'rival',   icon: <Skull className="w-5 h-5" />,      label: 'Rival' },
+            { id: 'faith',   icon: <Sparkles className="w-5 h-5" />,   label: 'Fé' },
+            { id: 'guide',   icon: <BookOpen className="w-5 h-5" />,   label: 'Guia' },
+          ] as const).map(({ id, icon, label }) => {
+            const isActive = activeTab === id;
+            const hasDanger = id === 'rival' && state.rivalProgress > 75;
+            return (
+              <button
+                key={id}
+                onClick={() => { playSound('click'); setActiveTab(id); }}
+                className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 transition-all cursor-pointer border-t-2 ${
+                  isActive
+                    ? 'border-t-[#cfb53b] text-[#cfb53b] bg-[#1a1508]'
+                    : 'border-t-transparent text-[#dfcfa0]/40 hover:text-[#dfcfa0]/70 hover:bg-[#141108]/60'
+                }`}
+              >
+                {hasDanger && (
+                  <span className="absolute top-1.5 right-2.5 w-2 h-2 bg-red-500 rounded-full animate-ping" />
+                )}
+                <span className={isActive ? 'text-[#cfb53b]' : 'text-[#dfcfa0]/40'}>{icon}</span>
+                <span className="text-[9px] font-mono uppercase tracking-wider">{label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
 
       {/* INTERACTIVE TUTORIAL OVERLAY */}
       {showTutorial && !state.isGameOver && (() => {
