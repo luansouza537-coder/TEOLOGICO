@@ -2112,22 +2112,6 @@ export default function App() {
                     const cost = costMap[doc.tier];
                     const canAfford = state.faith >= cost.faith && state.fervor >= cost.fervor;
                     const chosen = doc.chosen;
-                    const requiredPhase = tierPhase[doc.tier] ?? 1;
-                    const isLocked = requiredPhase > (state.faithPhase ?? 1);
-
-                    if (isLocked) {
-                      return (
-                        <div key={doc.id} className="rounded-lg border border-zinc-800/40 bg-zinc-900/20 p-3 opacity-55">
-                          <div className="flex justify-between items-start mb-1 gap-1">
-                            <span className="text-[10px] font-bold uppercase tracking-wide text-zinc-500 font-serif leading-tight">{doc.topic}</span>
-                            <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded border shrink-0 ${tierTag[doc.tier]}`}>
-                              🔒 {phaseReqLabel[requiredPhase]}
-                            </span>
-                          </div>
-                          <p className="text-[9px] text-zinc-600 italic">Desbloqueie a fase "{phaseReqLabel[requiredPhase]}" para revelar esta posição doutrinária.</p>
-                        </div>
-                      );
-                    }
 
                     return (
                       <div key={doc.id} className={`rounded-lg border p-3 ${chosen ? 'border-[#cfb53b]/35 bg-[#1a1508]' : tierBg[doc.tier]}`}>
@@ -2161,22 +2145,55 @@ export default function App() {
                     );
                   };
 
-                  const chosen = doctrines.filter(d => d.chosen !== null).length;
+                  // Separate locked from unlocked per section
+                  const renderSection = (docs: DoctrineChoice[], sectionLabel: string) => {
+                    const unlocked = docs.filter(d => (tierPhase[d.tier] ?? 1) <= (state.faithPhase ?? 1));
+                    const lockedByPhase: Record<number, DoctrineChoice[]> = {};
+                    docs.filter(d => (tierPhase[d.tier] ?? 1) > (state.faithPhase ?? 1)).forEach(d => {
+                      const ph = tierPhase[d.tier] ?? 2;
+                      if (!lockedByPhase[ph]) lockedByPhase[ph] = [];
+                      lockedByPhase[ph].push(d);
+                    });
+                    return (
+                      <>
+                        <p className="text-[9px] font-mono uppercase text-[#dfcfa0]/35 tracking-widest mb-2">{sectionLabel}</p>
+                        {unlocked.length > 0 && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                            {unlocked.map(renderDoc)}
+                          </div>
+                        )}
+                        {Object.entries(lockedByPhase).map(([ph, locked]) => (
+                          <div key={ph} className="mb-2 border border-zinc-800/40 rounded-lg px-3 py-2 bg-zinc-900/10">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider">
+                                🔒 {phaseReqLabel[Number(ph)]}
+                              </span>
+                              <span className="text-[9px] font-mono text-zinc-700">{locked.length} posições bloqueadas</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                              {locked.map(d => (
+                                <span key={d.id} className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-zinc-800/50 text-zinc-600 border border-zinc-700/30">
+                                  {d.topic}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    );
+                  };
+
+                  const chosenCount = doctrines.filter(d => d.chosen !== null).length;
                   return (
                     <div className="bg-[#171308] border border-[#cfb53b]/15 rounded-lg p-4">
                       <div className="flex justify-between items-center mb-1">
                         <h4 className="text-xs font-bold uppercase tracking-wider text-[#cfb53b] font-serif">⚖️ Posições Doutrinárias</h4>
-                        <span className="text-[9px] font-mono text-[#dfcfa0]/40">{chosen} / {doctrines.length} definidas</span>
+                        <span className="text-[9px] font-mono text-[#dfcfa0]/40">{chosenCount} / {doctrines.length} definidas</span>
                       </div>
-                      <p className="text-[10px] text-[#dfcfa0]/45 mb-4 leading-relaxed">Cada decisão é <strong className="text-[#cfb53b]/70">permanente e irreversível</strong>. Define a identidade teológica do seu credo para sempre.</p>
-                      <p className="text-[9px] font-mono uppercase text-[#dfcfa0]/35 tracking-widest mb-2">Posições Universais (1–20)</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
-                        {universalDocs.map(renderDoc)}
-                      </div>
-                      <p className="text-[9px] font-mono uppercase text-[#dfcfa0]/35 tracking-widest mb-2">Estrutura Social (21–30)</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {socialDocs.map(renderDoc)}
-                      </div>
+                      <p className="text-[10px] text-[#dfcfa0]/45 mb-4 leading-relaxed">Cada decisão é <strong className="text-[#cfb53b]/70">permanente e irreversível</strong>.</p>
+                      {renderSection(universalDocs, 'Posições Universais (1–20)')}
+                      <div className="mb-2" />
+                      {renderSection(socialDocs, 'Estrutura Social (21–30)')}
                     </div>
                   );
                 })()}
