@@ -14,10 +14,12 @@ interface LeadersPanelProps {
   hasGrandeJulgamento: boolean;
   hasVidenteNacoes: boolean;
   russiaConverted: boolean;
+  totalTemples: number;
+  getLeaderCost: (countryId: string) => { faith: number; fervor: number; canAct: boolean };
   onInfiltrateLeader: (countryId: string) => void;
 }
 
-export default function LeadersPanel({ countries, faith, fervor, hasGrandeJulgamento, hasVidenteNacoes, russiaConverted, onInfiltrateLeader }: LeadersPanelProps) {
+export default function LeadersPanel({ countries, faith, fervor, totalTemples, getLeaderCost, onInfiltrateLeader }: LeadersPanelProps) {
 
   const getLeaderPassiveBuff = (c: Country) => {
     switch (c.id) {
@@ -43,24 +45,6 @@ export default function LeadersPanel({ countries, faith, fervor, hasGrandeJulgam
     return { label: 'Baixo risco', color: 'text-green-400' };
   };
 
-  const getInfiltrationCost = (c: Country) => {
-    let baseFaith = Math.round(30 + Math.max(0, c.resistance - 30) * 0.8);
-    let baseFervor = Math.round(10 + Math.max(0, c.resistance - 30) * 0.3);
-    if (['opressor', 'teocracia'].includes(c.regimeType)) {
-      baseFaith = Math.round(baseFaith * 1.5);
-      baseFervor = Math.round(baseFervor * 1.5);
-    }
-    if (c.leaderInfiltration > 50) {
-      baseFaith = Math.round(baseFaith * 0.7);
-      baseFervor = Math.round(baseFervor * 0.7);
-    }
-    if (russiaConverted) { baseFaith = Math.round(baseFaith * 0.8); baseFervor = Math.round(baseFervor * 0.8); }
-    if (hasGrandeJulgamento) { baseFaith = Math.floor(baseFaith * 0.5); baseFervor = Math.floor(baseFervor * 0.5); }
-    if (hasVidenteNacoes && ['opressor', 'autoritario'].includes(c.regimeType)) {
-      baseFaith = Math.floor(baseFaith * 0.75);
-    }
-    return { faith: Math.max(5, baseFaith), fervor: Math.max(2, baseFervor) };
-  };
 
   const convertedCount = countries.filter(c => c.leaderInfiltration >= 100).length;
 
@@ -77,8 +61,8 @@ export default function LeadersPanel({ countries, faith, fervor, hasGrandeJulgam
       <div className="grid grid-cols-2 gap-2">
         {countries.map((c) => {
           const isConverted = c.leaderInfiltration >= 100;
-          const costs = getInfiltrationCost(c);
-          const canAfford = faith >= costs.faith && fervor >= costs.fervor;
+          const costs = getLeaderCost(c.id);
+          const canAfford = faith >= costs.faith && fervor >= costs.fervor && costs.canAct;
           const progressColor = isConverted ? 'bg-sky-500' : c.leaderInfiltration > 50 ? 'bg-amber-400' : 'bg-sky-400';
           const convertPct = c.population > 0 ? ((c.converts / c.population) * 100).toFixed(1) : '0.0';
           const risk = getCounterIntelRisk(c.resistance);

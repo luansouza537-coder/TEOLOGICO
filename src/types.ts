@@ -103,4 +103,6 @@ export interface GameState {
   faithPhase: 1 | 2 | 3; // progression phase: 1=Centelha, 2=Credo, 3=Transcendência
   firstCountryConverted: string | null; // country name of first country to reach meaningful presence
   peakFervor: number; // highest fervor reached this run
+  lastEcstasyRitual: number; // cycle of last ecstasy ritual (cooldown tracking)
+  faithBankruptStreak: number; // consecutive cycles with faith <= 5 (bankruptcy detection)
 }

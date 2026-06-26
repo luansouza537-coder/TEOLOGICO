@@ -18,6 +18,22 @@ import { Play, Pause, RotateCcw, Volume2, VolumeX, Gamepad2, Info, BookOpen, Ale
 import { calcPeaceEffectiveness } from './utils/peaceEffectiveness';
 import { playFileSound } from './utils/sound';
 
+// Geographic neighbors for aura_iluminada dogma effect
+const COUNTRY_NEIGHBORS: Record<string, string[]> = {
+  usa:          ['mexico', 'brazil'],
+  mexico:       ['usa', 'brazil'],
+  brazil:       ['usa', 'mexico', 'south_africa'],
+  germany:      ['russia', 'egypt'],
+  russia:       ['germany', 'china', 'india'],
+  china:        ['russia', 'india', 'japan'],
+  india:        ['russia', 'china', 'egypt', 'south_africa'],
+  japan:        ['china', 'australia'],
+  egypt:        ['germany', 'india', 'saudi_arabia', 'south_africa'],
+  saudi_arabia: ['egypt'],
+  south_africa: ['brazil', 'india', 'egypt'],
+  australia:    ['japan'],
+};
+
 const TEMPLE_NAMES: Record<string, string[]> = {
   Mistical:   ['Gruta do Véu', 'Santuário dos Arcanos', 'Torre dos Mistérios', 'Abismo Sagrado'],
   Prophetic:  ['Posto da Palavra', 'Casa da Revelação', 'Tabernáculo do Oráculo', 'Trono da Profecia'],
@@ -80,6 +96,8 @@ export default function App() {
         if (parsed.lastEventTimestamp === undefined) parsed.lastEventTimestamp = 0;
         if (parsed.eventCooldowns === undefined) parsed.eventCooldowns = {};
         if (parsed.rivalName === undefined) parsed.rivalName = 'A Ordem Tecnocrática';
+        if (parsed.lastEcstasyRitual === undefined) parsed.lastEcstasyRitual = -99;
+        if (parsed.faithBankruptStreak === undefined) parsed.faithBankruptStreak = 0;
         return parsed;
       } catch (e) {
         console.error('Falha ao restaurar dados de localStorage:', e);
@@ -113,6 +131,8 @@ export default function App() {
       faithPhase: 1,
       firstCountryConverted: null,
       peakFervor: 5,
+      lastEcstasyRitual: -99,
+      faithBankruptStreak: 0,
     };
   });
 
@@ -228,7 +248,9 @@ export default function App() {
 
   // Turn state preservation
   useEffect(() => {
-    localStorage.setItem('religion_simulator_state_v2', JSON.stringify(state));
+    if (!state.isGameOver) {
+      localStorage.setItem('religion_simulator_state_v2', JSON.stringify(state));
+    }
   }, [state]);
 
   // Main Loop Manager
@@ -332,7 +354,7 @@ export default function App() {
 
             // OBSTÁCULO 1 — BARREIRAS LINGUÍSTICAS E CULTURAIS
             const linguisticLen = (getDoc('doc_tradition') === 'B' || getDoc('doc_education') === 'A') ? 10 : 15;
-            const barrierMod = getDoc('doc_cultures') === 'A' ? 0.7 : getDoc('doc_cultures') === 'B' ? 1.2 : 1.0;
+            const barrierMod = getDoc('doc_culture') === 'A' ? 0.7 : getDoc('doc_culture') === 'B' ? 1.2 : 1.0;
             if (cyclesPresent < linguisticLen) {
               const barrierStrength = (prev.religionTrait === 'Syncretist' ? 0.25 : 0.5) * barrierMod;
               const barrier = Math.max(0, (linguisticLen - cyclesPresent) / linguisticLen) * barrierStrength;
@@ -341,7 +363,7 @@ export default function App() {
 
             // OBSTÁCULO 2 — APEGO ÀS TRADIÇÕES LOCAIS
             const traditionModRaw = TRADITION_MODIFIER[prev.religionTrait]?.[c.regimeType] ?? 1.0;
-            const traditionMod = getDoc('doc_cultures') === 'A' ? 1 + (traditionModRaw - 1) * 0.5 : traditionModRaw;
+            const traditionMod = getDoc('doc_culture') === 'A' ? 1 + (traditionModRaw - 1) * 0.5 : traditionModRaw;
             growthFactor *= traditionMod;
 
             // FASE 2 — NUCLEAÇÃO: crescimento lento até atingir massa crítica mínima
@@ -417,7 +439,7 @@ export default function App() {
             if (getDoc('doc_violence') === 'A') violence = Math.max(0, violence - 0.3);
             if (getDoc('doc_violence') === 'B' && ['opressor', 'autoritario'].includes(c.regimeType)) growthFactor *= 1.15;
             if (getDoc('doc_tradition') === 'A' && ['estavel', 'teocracia'].includes(c.regimeType)) growthFactor *= 1.05;
-            if (getDoc('doc_cultures') === 'B') growthFactor *= 1.12;
+            if (getDoc('doc_culture') === 'B') growthFactor *= 1.12;
             if (getDoc('doc_destiny') === 'A' && ['liberal', 'democracia'].includes(c.regimeType)) growthFactor *= 1.10;
             if (getDoc('doc_leadership') === 'A' && leaderInfiltration < 100 && (converts / pop) > 0.05) leaderInfiltration = Math.min(100, leaderInfiltration + 0.15);
             if (getDoc('doc_gender') === 'A' && ['autoritario', 'teocracia'].includes(c.regimeType)) growthFactor *= 1.15;
@@ -469,6 +491,10 @@ export default function App() {
 
             // FASE 6 — MASSA CRÍTICA: efeito de rede social quando credo é dominante
             if (convertPctLocal > 0.25 && !isLeaderConverted(c.id)) growthFactor *= 1.20;
+
+            // Country special traits
+            if (c.id === 'brazil') growthFactor *= 1.4; // Brasil: conversão orgânica 40% mais rápida
+            if (c.id === 'south_africa' && activeDogmaIds.some(id => ['caridade_global', 'assistencia_medica', 'rede_ajuda_mutua'].includes(id))) growthFactor *= 1.5; // África do Sul: ações humanitárias triplicam impacto
 
             // Temple growth bonus (only when tithe is sufficient) — must be before addedConverts
             if (c.templeLevel > 0 && hasTithe) {
@@ -531,7 +557,7 @@ export default function App() {
             const convertFrac = converts / pop;
             // TAG: Devoto — nationalism is 30% stronger (grows faster / decays slower)
             const devotoBonusMult = (c.tags ?? []).includes('Devoto') ? 1.3 : 1.0;
-            if (convertFrac < 0.05 && c.templeLevel === 0) {
+            if (convertFrac < 0.05 && c.templeLevel === 0 && converts === 0) {
               localReligionStrength = Math.min(95, localReligionStrength + 0.3 * devotoBonusMult);
             } else if (convertFrac > 0.30 && c.templeLevel > 0) {
               localReligionStrength = Math.max(5, localReligionStrength - 0.5 / devotoBonusMult);
@@ -658,6 +684,57 @@ export default function App() {
         });
 
         // Post-map passive dogma effects
+
+        // caridade_global: reduce violence -2 in the 3 most violent countries with converts
+        if (hasGlobalCharity) {
+          const withPresence = updatedCountries.filter(c => c.converts > 0).sort((a, b) => b.violence - a.violence);
+          withPresence.slice(0, 3).forEach(topV => {
+            const idx = updatedCountries.findIndex(x => x.id === topV.id);
+            if (idx !== -1) updatedCountries[idx] = { ...updatedCountries[idx], violence: Math.max(0, updatedCountries[idx].violence - 2) };
+          });
+        }
+
+        // combate_corrupcao: reduce resistance -0.4/cycle in liberal/democracia countries with converts
+        if (activeDogmaIds.includes('combate_corrupcao')) {
+          updatedCountries = updatedCountries.map(c =>
+            c.converts > 0 && ['liberal', 'democracia'].includes(c.regimeType)
+              ? { ...c, resistance: Math.max(0, c.resistance - 0.4) }
+              : c
+          );
+        }
+
+        // comparatismo_teologico: remove linguistic barrier for Syncretist (handled inline via hasSyncretizerHistory)
+        // (barrierStrength already set to 0.25 for Syncretist; with this dogma it's fully zeroed)
+        if (hasSyncretizerHistory) {
+          updatedCountries = updatedCountries.map(c =>
+            c.cyclesPresent < 15 && c.converts > 0
+              ? { ...c, resistance: Math.max(0, c.resistance - 0.5) }
+              : c
+          );
+        }
+
+        // livro_revelacoes (Prophetic): slow resistance growth by -0.5/cycle in all active countries
+        if (hasProphecyRevelations && prev.religionTrait === 'Prophetic') {
+          updatedCountries = updatedCountries.map(c =>
+            c.converts > 0 ? { ...c, resistance: Math.max(0, c.resistance - 0.5) } : c
+          );
+        }
+
+        // aura_iluminada (Mystical): leader conversion generates 3% convert surge in neighbors each cycle
+        if (activeDogmaIds.includes('aura_iluminada') && prev.religionTrait === 'Mistical') {
+          const convertedLeaderIds = updatedCountries.filter(c => c.leaderInfiltration >= 100 && c.converts > 0).map(c => c.id);
+          if (convertedLeaderIds.length > 0) {
+            const neighborIds = new Set(convertedLeaderIds.flatMap(id => COUNTRY_NEIGHBORS[id] ?? []));
+            updatedCountries = updatedCountries.map(c => {
+              if (neighborIds.has(c.id) && c.converts > 0) {
+                const surge = Math.floor(c.converts * 0.03);
+                return { ...c, converts: Math.min(c.population, c.converts + surge) };
+              }
+              return c;
+            });
+          }
+        }
+
         if (hasAssistenciaMedica) {
           const sorted = [...updatedCountries].sort((a, b) => b.violence - a.violence);
           sorted.slice(0, 2).forEach(topViolent => {
@@ -786,6 +863,11 @@ export default function App() {
 
         // Fervor gained: baseline + persecution pressure
         const avgResistance = totalResistanceSum / updatedCountries.length;
+        // For streak/defeat check: only count countries where player has presence (avoids early-game insta-loss)
+        const activePresenceCountries = updatedCountries.filter(c => c.converts > 0);
+        const avgResistanceActive = activePresenceCountries.length > 0
+          ? activePresenceCountries.reduce((s, c) => s + c.resistance, 0) / activePresenceCountries.length
+          : 0;
         // Small baseline so players can always progress doctrines (was 0 if resistance < 50%)
         fervorGained += 1;
         if (avgResistance > 50) {
@@ -806,6 +888,12 @@ export default function App() {
           fervorGained += 3;
         }
         if (hasRelogioJuizo) fervorGained += 5;
+
+        // China special trait: fervor doubled from high-resistance countries (capped at +5/cycle to avoid exploit)
+        const chinaObj = updatedCountries.find(c => c.id === 'china');
+        if (chinaObj && chinaObj.converts > 0 && chinaObj.resistance > 40) {
+          fervorGained += Math.min(5, Math.floor((chinaObj.resistance - 40) / 10));
+        }
 
         // 4. Adversary Rival Artificial Intelligence Progression (reactive model)
         const activeCountriesCount = updatedCountries.filter(c => c.converts > 0).length;
@@ -853,9 +941,9 @@ export default function App() {
         }
         const phaseAdvanced = newFaithPhase > prev.faithPhase;
 
-        // 5. Evaluate Warning Streak (governos contra você se resistência > 85%)
+        // 5. Evaluate Warning Streak — only counts countries with active presence to avoid early-game insta-loss
         let newStreak = prev.resistanceStreak;
-        if (avgResistance > 85) {
+        if (activePresenceCountries.length > 0 && avgResistanceActive > 85) {
           newStreak += 1;
         } else {
           newStreak = 0;
@@ -893,7 +981,12 @@ export default function App() {
         } else if (!isGameOver && updatedRivalProgress >= 100) {
           isGameOver = true;
           gameOverReason = 'rival';
-        } else if (!isGameOver && (prev.faith + faithGained) <= 0 && (prev.fervor + fervorGained) <= 0 && totalConvertsCount === 0) {
+        }
+        // Bankruptcy: faith stays at or below 5 for 3 consecutive cycles with no converts
+        const newFaithBankruptStreak = (prev.faith + faithGained) <= 5 && totalConvertsCount === 0
+          ? (prev.faithBankruptStreak ?? 0) + 1
+          : 0;
+        if (!isGameOver && newFaithBankruptStreak >= 3) {
           isGameOver = true;
           gameOverReason = 'bankrupt';
         }
@@ -1044,6 +1137,7 @@ export default function App() {
           eventCooldowns: updatedEventCooldowns,
           peakFervor: newPeakFervor,
           firstCountryConverted: newFirstCountry,
+          faithBankruptStreak: newFaithBankruptStreak,
         };
       });
     }, intervalTime);
@@ -1221,7 +1315,7 @@ export default function App() {
         if (choice === 'A') updatedCountries = updatedCountries.map(c => ({ ...c, violence: Math.max(0, c.violence - 8) }));
         if (choice === 'B') updatedCountries = updatedCountries.map(c => ({ ...c, violence: Math.min(100, c.violence + 15) }));
       }
-      if (docId === 'doc_cultures' && choice === 'B') {
+      if (docId === 'doc_culture' && choice === 'B') {
         updatedCountries = updatedCountries.map(c => ({ ...c, resistance: Math.max(0, c.resistance - 10) }));
       }
       if (docId === 'doc_state' && choice === 'A') {
@@ -1255,8 +1349,8 @@ export default function App() {
     if (!countryObj) return;
 
     let cost = 30;
-    if (countryObj.id === 'japan') cost += 15;
-    if (countryObj.id === 'china') cost += 20;
+    if (countryObj.id === 'japan') cost = Math.round(cost * 1.4); // Japão: ceticismo cultural +40% custo
+    if (countryObj.id === 'china') cost = Math.round(cost * 1.5); // China: censura +50% custo
     if (countryObj.id === 'saudi_arabia') cost += 25;
     // Escalating cost per missionary already sent (each costs 15 more than the last)
     cost += (countryObj.missionariesSent ?? 0) * 15;
@@ -1376,6 +1470,30 @@ export default function App() {
     estavel:     [0.85, 0.70, 0.55, 0.40],
   };
 
+  // Returns the real cost and eligibility for infiltrating a leader — used by LeadersPanel for display
+  const getLeaderCost = (countryId: string): { faith: number; fervor: number; canAct: boolean } => {
+    const countryObj = state.countries.find(c => c.id === countryId);
+    if (!countryObj || countryObj.leaderInfiltration >= 100) return { faith: 0, fervor: 0, canAct: false };
+    const inf = countryObj.leaderInfiltration;
+    const stageIdx = LEADER_STAGES.findIndex(s => inf >= s.min && inf < s.max);
+    if (stageIdx === -1) return { faith: 0, fervor: 0, canAct: false };
+    const stage = LEADER_STAGES[stageIdx];
+    const isSuperpower = SUPERPOWER_IDS.includes(countryId);
+    const requiredConvertPct = isSuperpower ? stage.convertPct * 2 : stage.convertPct;
+    const requiredTemples = isSuperpower ? stage.globalTemples + 8 : stage.globalTemples;
+    const actualConvertPct = countryObj.population > 0 ? countryObj.converts / countryObj.population : 0;
+    const canAct = actualConvertPct >= requiredConvertPct && state.totalTemples >= requiredTemples && countryObj.cyclesPresent >= stage.cyclesPresent && countryObj.templeLevel >= stage.templeLevel;
+    let baseFaith = stage.faith;
+    let baseFervor = stage.fervor;
+    const hasGJ = state.dogmas.some(d => d.id === 'reforma_escatologica' && d.purchased);
+    if (hasGJ) { baseFaith = Math.floor(baseFaith * 0.5); baseFervor = Math.floor(baseFervor * 0.5); }
+    const hasVN = state.dogmas.some(d => d.id === 'vidente_nacoes' && d.purchased);
+    if (hasVN && ['opressor', 'autoritario'].includes(countryObj.regimeType)) baseFaith = Math.floor(baseFaith * 0.75);
+    const russiaConv = (state.countries.find(c => c.id === 'russia')?.leaderInfiltration ?? 0) >= 100;
+    if (russiaConv) { baseFaith = Math.round(baseFaith * 0.8); baseFervor = Math.round(baseFervor * 0.8); }
+    return { faith: baseFaith, fervor: baseFervor, canAct };
+  };
+
   const infiltrateLeader = (countryId: string) => {
     const countryObj = state.countries.find((c) => c.id === countryId);
     if (!countryObj) return;
@@ -1428,7 +1546,9 @@ export default function App() {
 
     if (isSuccess) {
       const isLobbyActive = state.dogmas.some((d) => d.id === 'lobby_politico' && d.purchased);
-      const gain = isLobbyActive ? 30 : 25;
+      const russiaConvertedBonus = state.countries.find(c => c.id === 'russia')?.leaderInfiltration >= 100;
+      let gain = isLobbyActive ? 30 : 25;
+      if (russiaConvertedBonus) gain = Math.round(gain * 1.25); // Rússia: infiltrações globais 25% mais eficazes
       addFloatingText('+Infiltração', countryObj.coordinates.x, countryObj.coordinates.y - 5, 'text-sky-400 font-bold font-mono', countryObj.id);
       setState((prev) => {
         const country = prev.countries.find((c) => c.id === countryId);
@@ -1465,10 +1585,13 @@ export default function App() {
     }
   };
 
-  // Action callback 4: Perform Ecstasy Ritual (Unique to Mística)
+  // Action callback 4: Perform Ecstasy Ritual (Unique to Mística — requires transcendencia_fisica dogma)
+  const ECSTASY_COOLDOWN_CYCLES = 8;
   const performEcstasyRitual = (countryId: string) => {
     const countryObj = state.countries.find((c) => c.id === countryId);
-    if (!countryObj || state.faith < 50 || state.fervor < 10) return;
+    const hasTranscendencia = state.dogmas.some(d => d.id === 'transcendencia_fisica' && d.purchased);
+    const onCooldown = (state.cycle - (state.lastEcstasyRitual ?? -99)) < ECSTASY_COOLDOWN_CYCLES;
+    if (!countryObj || state.faith < 50 || state.fervor < 10 || !hasTranscendencia || onCooldown) return;
 
     // Trigger visual floating text feedback on country coordinates
     addFloatingText("-50 Fé", countryObj.coordinates.x, countryObj.coordinates.y, "text-red-500 font-bold font-mono", countryObj.id);
@@ -1483,7 +1606,7 @@ export default function App() {
       const updated = prev.countries.map((c) => {
         if (c.id === countryId) {
           // instant converts
-          const addedConverts = Math.floor(c.population * 0.12);
+          const addedConverts = Math.floor(c.population * 0.08);
           return {
             ...c,
             converts: Math.min(c.population, c.converts + addedConverts),
@@ -1498,8 +1621,9 @@ export default function App() {
       return {
         ...prev,
         faith: prev.faith - 50,
-        fervor: prev.fervor - 10 + 15, // generates fervor
+        fervor: prev.fervor - 10 + 15,
         countries: updated,
+        lastEcstasyRitual: prev.cycle,
       };
     });
   };
@@ -2000,6 +2124,8 @@ export default function App() {
               hasGrandeJulgamento={state.dogmas.some(d => d.id === 'reforma_escatologica' && d.purchased)}
               hasVidenteNacoes={state.dogmas.some(d => d.id === 'vidente_nacoes' && d.purchased)}
               russiaConverted={(state.countries.find(c => c.id === 'russia')?.leaderInfiltration ?? 0) >= 100}
+              totalTemples={state.totalTemples}
+              getLeaderCost={getLeaderCost}
               onInfiltrateLeader={infiltrateLeader}
             />
           )}

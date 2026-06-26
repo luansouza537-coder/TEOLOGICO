@@ -1439,7 +1439,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     actionEffects: {
       globalFaithCostMod: -20,
       globalConvertsModPct: -10,
-      countryResistanceMod: { usa: -5, germany: -5, australia: -5 }
+      countryResistanceMod: { usa: 8, germany: 8, australia: 6 }
     }
   },
   {
