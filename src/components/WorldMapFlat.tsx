@@ -6,6 +6,45 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Country } from '../types';
 import { Eye, EyeOff, Map } from 'lucide-react';
+
+type MapStyle = 'voyager' | 'claro' | 'escuro' | 'satelite' | 'relevo';
+
+const MAP_STYLES: { id: MapStyle; label: string; url: string; subdomains?: string; attribution: string }[] = [
+  {
+    id: 'escuro',
+    label: 'ESC',
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    subdomains: 'abcd',
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+  },
+  {
+    id: 'voyager',
+    label: 'VOY',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    subdomains: 'abcd',
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+  },
+  {
+    id: 'claro',
+    label: 'CLA',
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    subdomains: 'abcd',
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+  },
+  {
+    id: 'satelite',
+    label: 'SAT',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; Esri &copy; Earthstar Geographics',
+  },
+  {
+    id: 'relevo',
+    label: 'REL',
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    subdomains: 'abc',
+    attribution: '&copy; OpenTopoMap &copy; OpenStreetMap',
+  },
+];
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -84,7 +123,9 @@ export default function WorldMapFlat({ countries, selectedCountryId, onSelectCou
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Record<string, L.Marker>>({});
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
   const [showLabels, setShowLabels] = useState(true);
+  const [mapStyle, setMapStyle] = useState<MapStyle>('escuro');
 
   // Initialize Leaflet map once
   useEffect(() => {
@@ -99,12 +140,14 @@ export default function WorldMapFlat({ countries, selectedCountryId, onSelectCou
       maxZoom: 6,
     });
 
-    // CartoDB Dark Matter tiles (free, no API key needed)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap &copy; CARTO',
-      subdomains: 'abcd',
+    // Default tile layer (escuro)
+    const defaultStyle = MAP_STYLES.find(s => s.id === 'escuro')!;
+    const tile = L.tileLayer(defaultStyle.url, {
+      attribution: defaultStyle.attribution,
+      subdomains: defaultStyle.subdomains ?? '',
       maxZoom: 20,
     }).addTo(map);
+    tileLayerRef.current = tile;
 
     // Attribution control (small, bottom right)
     L.control.attribution({ position: 'bottomright', prefix: false }).addTo(map);
@@ -139,6 +182,24 @@ export default function WorldMapFlat({ countries, selectedCountryId, onSelectCou
     });
   }, [countries, selectedCountryId, onSelectCountry, showLabels]);
 
+  // Swap tile layer when mapStyle changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (tileLayerRef.current) {
+      map.removeLayer(tileLayerRef.current);
+    }
+    const style = MAP_STYLES.find(s => s.id === mapStyle)!;
+    const tile = L.tileLayer(style.url, {
+      attribution: style.attribution,
+      subdomains: style.subdomains ?? '',
+      maxZoom: 20,
+    }).addTo(map);
+    tileLayerRef.current = tile;
+    // Ensure markers stay on top
+    Object.values(markersRef.current).forEach(m => m.bringToFront());
+  }, [mapStyle]);
+
   // Pan to selected country
   useEffect(() => {
     const map = mapRef.current;
@@ -155,14 +216,30 @@ export default function WorldMapFlat({ countries, selectedCountryId, onSelectCou
           <Map className="w-3.5 h-3.5 text-[#cfb53b]" />
           <span className="text-[9px] font-mono uppercase tracking-widest text-[#cfb53b]">Planisfério Político</span>
         </div>
-        <button
-          type="button"
-          className="pointer-events-auto p-1 rounded bg-black/70 border border-[#cfb53b]/20 text-[#cfb53b]/60 hover:text-[#cfb53b] transition-colors cursor-pointer"
-          onClick={() => setShowLabels(v => !v)}
-          title="Mostrar/ocultar contagem de fiéis"
-        >
-          {showLabels ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-        </button>
+        <div className="flex items-center gap-1 pointer-events-auto">
+          {MAP_STYLES.map(s => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setMapStyle(s.id)}
+              className={`px-1.5 py-0.5 rounded text-[8px] font-mono uppercase tracking-wider border transition-all cursor-pointer ${
+                mapStyle === s.id
+                  ? 'bg-[#cfb53b] text-[#1e1a0c] border-[#cfb53b] font-bold'
+                  : 'bg-black/70 text-[#cfb53b]/50 border-[#cfb53b]/20 hover:text-[#cfb53b]'
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+          <button
+            type="button"
+            className="p-1 rounded bg-black/70 border border-[#cfb53b]/20 text-[#cfb53b]/60 hover:text-[#cfb53b] transition-colors cursor-pointer ml-1"
+            onClick={() => setShowLabels(v => !v)}
+            title="Mostrar/ocultar contagem de fiéis"
+          >
+            {showLabels ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+          </button>
+        </div>
       </div>
 
       {/* Leaflet map container */}
