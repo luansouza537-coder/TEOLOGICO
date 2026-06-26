@@ -2194,69 +2194,6 @@ export default function App() {
 
       </main>
 
-      {/* 3. COMPACT EVENT LOG STRIP */}
-      <div className="shrink-0 bg-[#0d0a03] border-t border-[#cfb53b]/20 px-3 py-2 z-10">
-        <div className="max-w-7xl mx-auto flex flex-col gap-1.5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[9px] font-mono uppercase tracking-wider text-[#cfb53b]/50">Crônica</span>
-              <div className="flex gap-1">
-                {(['all', 'acao', 'evento', 'alerta'] as const).map((f) => {
-                  const labels: Record<string, string> = { all: 'Todos', acao: 'Ações', evento: 'Eventos', alerta: 'Alertas' };
-                  return (
-                    <button key={f} onClick={() => setLogFilter(f)}
-                      className={`px-1.5 py-0.5 text-[8px] font-mono uppercase rounded border cursor-pointer transition-colors ${logFilter === f ? 'bg-[#cfb53b]/20 border-[#cfb53b]/50 text-[#cfb53b]' : 'border-[#cfb53b]/10 text-[#dfcfa0]/30 hover:text-[#dfcfa0]/60'}`}>
-                      {labels[f]}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <button onClick={() => navigator.clipboard?.writeText(state.logs.join('\n'))}
-              className="text-[#cfb53b]/30 hover:text-[#cfb53b] transition-colors cursor-pointer text-[8px] font-mono">
-              [copiar]
-            </button>
-          </div>
-          <div ref={logScrollRef} className="bg-black/40 rounded border border-[#cfb53b]/10 px-2 py-1.5 h-16 overflow-y-auto flex flex-col gap-0.5 text-[10px] font-mono">
-            {(() => {
-              const countryNames: Record<string, string> = {
-                'Brasil': 'brazil', 'EUA': 'usa', 'China': 'china', 'Índia': 'india',
-                'Alemanha': 'germany', 'Rússia': 'russia', 'Egito': 'egypt',
-                'África do Sul': 'south_africa', 'Japão': 'japan', 'México': 'mexico',
-                'Arábia Saudita': 'saudi_arabia', 'Austrália': 'australia'
-              };
-              return state.logs.slice(0, 60).filter((log) => {
-                if (logFilter === 'all') return true;
-                if (logFilter === 'acao') return log.includes('AÇÃO:') || log.includes('[AÇÃO]') || log.includes('[INFILTRAÇÃO]') || log.includes('[RITUAL]') || log.includes('[INTERVENÇÃO]') || log.includes('[TEMPLO]') || log.includes('[DOUTRINA]') || log.includes('[DOGMA');
-                if (logFilter === 'evento') return log.includes('EVENTO:') || log.includes('[EVENTO NARRATIVO]') || log.includes('[MARCO');
-                if (logFilter === 'alerta') return log.includes('ALERTA:') || log.includes('[APOSTASIA]') || log.includes('[REAÇÃO ESTATAL]') || log.includes('[FALHA]') || log.includes('[LÍDER CONVERTIDO]');
-                return true;
-              }).map((log, index) => {
-                let cl = 'text-[#dfcfa0]';
-                if (log.startsWith('[EVENTO NARRATIVO]')) cl = 'text-[#cfb53b] font-bold';
-                else if (log.startsWith('[AÇÃO]')) cl = 'text-green-400';
-                else if (log.startsWith('[LÍDER CONVERTIDO]')) cl = 'text-sky-300 font-bold';
-                else if (log.startsWith('Dispersão:')) cl = 'text-amber-500 italic';
-                const cycleTag = log.match(/^#(\d+)/);
-                const foundCountryId = Object.entries(countryNames).find(([name]) => log.includes(name))?.[1];
-                const inner = cycleTag
-                  ? <><span className="text-zinc-600 mr-1">{cycleTag[0]}</span>• {log.replace(/^#\d+\s*/, '')}</>
-                  : <>• {log}</>;
-                return (
-                  <div
-                    key={index}
-                    className={`border-b border-[#cfb53b]/5 pb-1 leading-relaxed ${cl} ${foundCountryId ? 'cursor-pointer hover:text-[#cfb53b]' : ''}`}
-                    onClick={foundCountryId ? () => { setState(p => ({ ...p, selectedCountryId: foundCountryId })); setActiveTab('map'); } : undefined}
-                  >
-                    {inner}
-                  </div>
-                );
-              });
-            })()}
-          </div>
-        </div>
-      </div>
-
       {/* 4. BOTTOM NAVIGATION BAR */}
       <nav className="shrink-0 bg-[#0e0b04] border-t-2 border-[#cfb53b]/30 z-20">
         <div className="max-w-7xl mx-auto flex">
