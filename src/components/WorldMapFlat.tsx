@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
+import L from 'leaflet';
 import { Country } from '../types';
 import { Eye, EyeOff, Map } from 'lucide-react';
 
@@ -45,8 +46,6 @@ const MAP_STYLES: { id: MapStyle; label: string; url: string; subdomains?: strin
     attribution: '&copy; OpenTopoMap &copy; OpenStreetMap',
   },
 ];
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 
 interface WorldMapFlatProps {
   countries: Country[];
@@ -196,8 +195,6 @@ export default function WorldMapFlat({ countries, selectedCountryId, onSelectCou
       maxZoom: 20,
     }).addTo(map);
     tileLayerRef.current = tile;
-    // Ensure markers stay on top
-    Object.values(markersRef.current).forEach(m => m.bringToFront());
   }, [mapStyle]);
 
   // Pan to selected country
