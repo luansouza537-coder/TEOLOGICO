@@ -172,16 +172,7 @@ export default function WorldMap({
         {/* Parchment background detail */}
         <div className="absolute inset-0 bg-[radial-gradient(#cfb53b_1px,transparent_1px)] [background-size:24px_24px] opacity-5 pointer-events-none" />
         
-        <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center pb-3 border-b border-[#cfb53b]/20 z-10 relative">
-          <div className="flex items-center gap-2">
-            <Network className="w-5 h-5 text-[#cfb53b]" />
-            <h3 className="uppercase tracking-widest text-[#cfb53b] font-bold font-serif text-sm">
-              Tabuleiro Tático de Semeação (Planisfério Plano)
-            </h3>
-          </div>
-        </div>
-
-        {/* The Graphic Node Grid */}
+        {/* Map */}
         <div className="flex-1 my-4 flex flex-col justify-center">
           <WorldMapFlat
             countries={countries}

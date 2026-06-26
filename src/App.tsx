@@ -1293,7 +1293,6 @@ export default function App() {
         ...prev,
         faith: prev.faith - cost,
         countries: updated,
-        logs: [`[AÇÃO] Missionários desembarcam em ${country.name}. Semeação espiritual intensificada!`, ...prev.logs]
       };
     });
   };
@@ -1340,17 +1339,12 @@ export default function App() {
         return c;
       });
 
-      const logMsg = tier === 3
-        ? `[INTERVENÇÃO] ${labels[tier]} em ${country.name} (eficácia ${effPct}%) — violência cede, mas o governo observa com desconfiança.`
-        : `[AÇÃO] ${labels[tier]} em ${country.name} (eficácia ${effPct}%) — comunidades respondem ao chamado de paz.`;
-
       playSound('click');
       return {
         ...prev,
         faith: prev.faith - cost.faith,
         fervor: prev.fervor - cost.fervor,
         countries: updated,
-        logs: [logMsg, ...prev.logs]
       };
     });
   };
@@ -1437,16 +1431,13 @@ export default function App() {
           return { ...c, leaderInfiltration: nextVal, lastActionCycle: prev.cycle };
         });
         const leaderConverted = (updated.find(c => c.id === countryId)?.leaderInfiltration ?? 0) >= 100;
-        const messages = [...prev.logs];
-        messages.unshift(`[INFILTRAÇÃO] Estágio ${stage.label}: encontros secretos avançam no círculo interno de ${country.name}.`);
         if (leaderConverted) {
           playSound('success');
           playFileSound('leader', isMutedRef.current);
-          messages.unshift(`[LÍDER CONVERTIDO] ${country.leaderName} foi completamente ILUMINADO! Bônus passivo permanente ativado.`);
         } else {
           playSound('click');
         }
-        return { ...prev, faith: prev.faith - baseFaith, fervor: prev.fervor - baseFervor, countries: updated, logs: messages };
+        return { ...prev, faith: prev.faith - baseFaith, fervor: prev.fervor - baseFervor, countries: updated };
       });
     } else {
       // Failure: lose cost AND lose 20 infiltration progress
@@ -1461,11 +1452,7 @@ export default function App() {
           if (c.id !== countryId) return c;
           return { ...c, leaderInfiltration: newInf, violence: Math.min(100, c.violence + violenceIncrease), lastActionCycle: prev.cycle };
         });
-        const messages = [...prev.logs];
-        messages.unshift(
-          `[FALHA] Operação em ${country.name} recuou — infiltração cai de ${inf}% para ${newInf}%.${violenceIncrease > 0 ? ` Regime reage: violência +${violenceIncrease}.` : ''}`
-        );
-        return { ...prev, faith: prev.faith - baseFaith, fervor: prev.fervor - baseFervor, countries: updated, logs: messages };
+        return { ...prev, faith: prev.faith - baseFaith, fervor: prev.fervor - baseFervor, countries: updated };
       });
     }
   };
@@ -1505,7 +1492,6 @@ export default function App() {
         faith: prev.faith - 50,
         fervor: prev.fervor - 10 + 15, // generates fervor
         countries: updated,
-        logs: [`[RITUAL] Cânticos transcendentais atraem arrebatamento massivo em ${country.name}! +15 Fervor extra gerado!`, ...prev.logs]
       };
     });
   };
@@ -1549,8 +1535,6 @@ export default function App() {
         c.id === countryId ? { ...c, templePending: nextLevel, templeBuildCyclesLeft: buildCycles, lastActionCycle: prev.cycle } : c
       );
 
-      const logs = [...prev.logs];
-      logs.unshift(`[TEMPLO] Construção de ${templeName} iniciada em ${countryObj.name}! Estará pronta em ${buildCycles} ciclos.`);
       playSound('click');
 
       return {
@@ -1559,7 +1543,6 @@ export default function App() {
         fervor: prev.fervor - cost.fervor,
         tithe: prev.tithe - cost.tithe,
         countries: updatedCountries,
-        logs: logs.slice(0, 20),
       };
     });
   };
@@ -1611,7 +1594,6 @@ export default function App() {
         fervor: prev.fervor - targetDogma.costFervor,
         dogmas: updatedDogmas,
         countries: updatedCountries,
-        logs: [`[DOGMA REVELADO] Consagrado dogma: "${targetDogma.name}". Novas bênçãos decretadas!`, ...prev.logs]
       };
     });
   };
@@ -1849,21 +1831,10 @@ export default function App() {
         </div>
       </header>
 
-      {/* Dynamic News Ticker Tape */}
-      <div className="bg-black/95 border-b border-[#cfb53b]/20 py-1.5 px-4 overflow-hidden select-none relative z-10">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 overflow-hidden truncate">
-            <span className="flex items-center gap-1 text-[9px] font-mono font-bold text-red-500 animate-pulse bg-red-950/40 px-2 py-0.5 border border-red-900/30 rounded shrink-0">
-              ● TRANSMISSÃO GLOBAL
-            </span>
-            <div className="text-[11px] font-mono text-[#dfcfa0]/95 font-semibold tracking-wide truncate">
-              {newsText}
-            </div>
-          </div>
-          <span className="text-[9px] font-mono text-[#cfb53b]/50 uppercase shrink-0 tracking-widest hidden sm:inline">
-            Status: Sincronizado
-          </span>
-        </div>
+      {/* Live transmission dot */}
+      <div className="shrink-0 bg-black/95 border-b border-[#cfb53b]/10 px-4 py-1 flex items-center gap-2 select-none z-10">
+        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
+        <span className="text-[9px] font-mono text-[#dfcfa0]/40 truncate">{newsText}</span>
       </div>
 
       {/* Global Pause Alert */}
