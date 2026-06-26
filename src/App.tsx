@@ -1647,195 +1647,117 @@ export default function App() {
   return (
     <div className="h-screen bg-[#1e1a0c] text-[#dfcfa0] font-sans flex flex-col overflow-hidden" id="game-app-instance">
       
-      {/* 1. STATUS HEADER */}
-      <header className={`bg-[#171308] border-b-2 px-4 py-3 md:px-6 relative z-20 ${(state.faithPhase ?? 1) === 3 ? 'border-[#8b1a1a]' : (state.faithPhase ?? 1) === 2 ? 'border-[#e07820]' : 'border-[#cfb53b]'}`}>
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-          
-          {/* Logo & Religion Identification */}
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#cfb53b] text-[#1e1a0c] rounded-lg">
-              <Gamepad2 className="w-6 h-6" />
+      {/* 1. STATUS HEADER — compact single bar */}
+      <header className={`bg-[#171308] border-b-2 px-3 py-2 relative z-20 ${state.faithPhase === 3 ? 'border-[#8b1a1a]' : state.faithPhase === 2 ? 'border-[#e07820]' : 'border-[#cfb53b]'}`}>
+        <div className="max-w-7xl mx-auto flex items-center gap-2">
+
+          {/* Religion name + trait */}
+          <div className="flex items-center gap-1.5 mr-1 shrink-0">
+            <div className="p-1 bg-[#cfb53b] text-[#1e1a0c] rounded">
+              <Gamepad2 className="w-4 h-4" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-bold font-serif text-[#cfb53b] uppercase tracking-wide">
-                  {state.religionName}
-                </span>
-                <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 bg-amber-950 text-[#cfb53b] font-bold border border-[#cfb53b]/30 rounded">
-                  {traitNames[state.religionTrait]}
-                </span>
+            <span className="text-sm font-bold font-serif text-[#cfb53b] uppercase tracking-wide leading-none">{state.religionName}</span>
+            <span className="text-[9px] uppercase px-1.5 py-0.5 bg-amber-950 text-[#cfb53b] font-bold border border-[#cfb53b]/30 rounded leading-none">{traitNames[state.religionTrait]}</span>
+          </div>
+
+          {/* Objective progress — compact badge */}
+          {victoryPaceText && (
+            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-green-700/40 bg-green-950/20 text-green-400 shrink-0">{victoryPaceText}</span>
+          )}
+
+          {/* 4 stats in one row */}
+          <div className="flex items-center gap-1.5 ml-auto">
+            <div title="Fiéis no mundo" className="flex items-center gap-1 bg-[#1a2010] border border-green-900/50 rounded px-2 py-1">
+              <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_6px_#22c55e] shrink-0" />
+              <div className="flex flex-col leading-none">
+                <span className="text-[8px] font-mono text-[#dfcfa0]/40 uppercase">Fiéis</span>
+                <span className="text-xs font-bold font-mono text-green-400">{totalConvertedWorld.toLocaleString()}</span>
               </div>
-              <p className="text-xs text-[#dfcfa0]/60 mt-0.5 flex items-center gap-2">
-                <Info className="w-3 h-3 text-[#cfb53b]" /> Objetivo: <strong className="text-amber-100">{goalNames[state.victoryGoal]}</strong>
-                {victoryPaceText && (
-                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-green-700/40 bg-green-950/20 text-green-400">
-                    {victoryPaceText}
-                  </span>
-                )}
-                {/* #6: Phase badge */}
-                <span className={`text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded border ${state.faithPhase === 3 ? 'border-red-700/50 bg-red-950/30 text-red-300' : state.faithPhase === 2 ? 'border-orange-700/50 bg-orange-950/30 text-orange-300' : 'border-amber-700/50 bg-amber-950/30 text-amber-400'}`}>
-                  {state.faithPhase === 1 ? '✦ Centelha' : state.faithPhase === 2 ? '✦ Credo' : '✦ Transcendência'}
-                </span>
-                {/* #10: Cycles until next phase */}
-                {(() => {
-                  const faithPerCycle = Math.max(1, 1 + state.countries.filter(c => c.converts > 0).length);
-                  const nextPhaseThreshold = state.faithPhase === 1 ? 150 : state.faithPhase === 2 ? 500 : null;
-                  if (!nextPhaseThreshold) return null;
-                  const remaining = nextPhaseThreshold - state.faith;
-                  if (remaining <= 0) return null;
-                  const cycles = Math.ceil(remaining / faithPerCycle);
-                  return (
-                    <span className="text-[8px] font-mono text-[#dfcfa0]/35">~{cycles} ciclos p/ próx. fase</span>
-                  );
-                })()}
-              </p>
+            </div>
+
+            <div title="Dízimo: gerado pelos fiéis. Usado para templos." className={`flex items-center gap-1 rounded px-2 py-1 border ${state.tithe <= 0 ? 'bg-red-950/30 border-red-900/60' : 'bg-[#0d1a12] border-emerald-900/50'}`}>
+              <span className={`w-2 h-2 rounded-full shrink-0 ${state.tithe <= 0 ? 'bg-red-500' : 'bg-emerald-500 shadow-[0_0_6px_#10b981]'}`} />
+              <div className="flex flex-col leading-none">
+                <span className="text-[8px] font-mono text-[#dfcfa0]/40 uppercase">Dízimo</span>
+                <span className={`text-xs font-bold font-mono ${state.tithe <= 0 ? 'text-red-400' : 'text-emerald-400'}`}>{state.tithe.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div title="Fé: moeda principal. Gasta em missões e dogmas." className={`flex items-center gap-1 bg-[#241e0d] border border-[#cfb53b]/40 rounded px-2 py-1${state.faith >= 800 ? ' faith-overflow' : ''}`}>
+              <span className="w-2 h-2 rounded-full bg-[#cfb53b] shadow-[0_0_6px_#cfb53b] shrink-0" />
+              <div className="flex flex-col leading-none">
+                <span className="text-[8px] font-mono text-[#dfcfa0]/40 uppercase">Fé</span>
+                <span className="text-xs font-bold font-mono text-[#cfb53b]">{state.faith.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div title="Fervor: gerado pela resistência global. Usado em dogmas avançados." className="flex items-center gap-1 bg-[#241a1a] border border-red-900/40 rounded px-2 py-1">
+              <span className="w-2 h-2 rounded-full bg-red-600 shadow-[0_0_6px_#8b0000] shrink-0" />
+              <div className="flex flex-col leading-none">
+                <span className="text-[8px] font-mono text-[#dfcfa0]/40 uppercase">Fervor</span>
+                <span className="text-xs font-bold font-mono text-red-400">{state.fervor.toLocaleString()}</span>
+              </div>
             </div>
           </div>
 
-          {/* Resources Status Display (Golden Faith, Crimson Fervor) */}
-          <div className="flex flex-wrap items-center gap-4 md:gap-6">
-            
-            {/* Faithful Counter */}
-            <div className="bg-[#1a2010] border border-green-900/50 rounded-lg py-1 px-3 flex items-center gap-2.5">
-              <span className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" />
-              <div>
-                <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Fiéis no Mundo</span>
-                <span className="text-base font-bold font-mono text-green-400">{totalConvertedWorld.toLocaleString()}</span>
-              </div>
+          {/* Controls */}
+          <div className="flex items-center gap-1.5 border-l border-[#cfb53b]/20 pl-2 ml-1 shrink-0">
+            <span className="text-[9px] font-mono text-zinc-500 hidden sm:inline">#{state.cycle}</span>
+
+            <button
+              onClick={() => { playSound('click'); setState(p => ({ ...p, paused: !p.paused })); }}
+              className={`p-1.5 rounded cursor-pointer border transition-colors ${state.paused ? 'bg-amber-950/40 border-[#cfb53b]/40 text-[#cfb53b]' : 'bg-[#cfb53b] border-amber-600 text-[#1e1a0c]'}`}
+              title={state.paused ? 'Despausar' : 'Pausar'}
+              id="play-pause-btn"
+            >
+              {state.paused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+            </button>
+
+            <div className="flex h-7 bg-[#120f05] rounded border border-[#cfb53b]/20 overflow-hidden text-[10px]">
+              {([1, 2, 3] as const).map((s) => (
+                <button key={s} onClick={() => { playSound('click'); setState(p => ({ ...p, gameSpeed: s })); }}
+                  className={`px-2 font-bold cursor-pointer transition-colors ${state.gameSpeed === s ? 'bg-[#cfb53b] text-[#1e1a0c]' : 'text-[#dfcfa0]/75 hover:bg-neutral-900'}`}>
+                  {s}x
+                </button>
+              ))}
             </div>
 
-            {/* Tithe Indicator — #2 tooltip */}
-            <div title="Dízimo: gerado pelos fiéis a cada ciclo. Usado para construir templos. Se zerar, templos param de funcionar." className={`rounded-lg py-1 px-3 flex items-center gap-2.5 border cursor-help ${state.tithe <= 0 ? 'bg-red-950/30 border-red-900/60' : 'bg-[#0d1a12] border-emerald-900/50'}`}>
-              <span className={`w-3 h-3 rounded-full ${state.tithe <= 0 ? 'bg-red-500 shadow-[0_0_8px_#ef4444]' : 'bg-emerald-500 shadow-[0_0_8px_#10b981]'}`} />
-              <div>
-                <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Dízimo</span>
-                <span className={`text-base font-bold font-mono ${state.tithe <= 0 ? 'text-red-400' : 'text-emerald-400'}`}>{state.tithe.toLocaleString()}</span>
-              </div>
-            </div>
+            <button onClick={handleResetGame}
+              className="p-1.5 rounded bg-red-950/20 hover:bg-red-950 border border-[#8b0000] text-red-400 cursor-pointer transition-all"
+              title="Reiniciar" id="reset-game-btn">
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
 
-            {/* Faith Indicator — #2 tooltip, #5 toLocaleString */}
-            <div title="Fé: recurso principal. Ganho a cada ciclo com base em países ativos. Gasto em dogmas, missionários e ações." className={`bg-[#241e0d] border border-[#cfb53b]/40 rounded-lg py-1 px-3 flex items-center gap-2.5 cursor-help${state.faith >= 800 ? ' faith-overflow' : ''}`}>
-              <span className="w-3 h-3 rounded-full bg-[#cfb53b] shadow-[0_0_8px_#cfb53b]" />
-              <div>
-                <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Poder de Fé</span>
-                <span className="text-base font-bold font-mono text-[#cfb53b]">{state.faith.toLocaleString()}</span>
-              </div>
-            </div>
+            <button
+              onClick={() => {
+                const targetMute = !isMuted;
+                setIsMuted(targetMute);
+                if (!targetMute) {
+                  setTimeout(() => {
+                    try {
+                      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                      const osc = audioCtx.createOscillator();
+                      const gain = audioCtx.createGain();
+                      osc.connect(gain); gain.connect(audioCtx.destination);
+                      osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                      gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+                      osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+                    } catch(_) {}
+                  }, 50);
+                }
+              }}
+              className={`p-1.5 rounded cursor-pointer border transition-colors ${isMuted ? 'bg-[#1a1308] border-neutral-700 text-[#8b6b15]' : 'bg-amber-950/20 border-[#cfb53b]/40 text-[#cfb53b]'}`}
+              title={isMuted ? 'Ativar som' : 'Mutar'} id="mute-toggle-btn">
+              {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+            </button>
 
-            {/* Fervor Indicator — #2 tooltip, #5 toLocaleString */}
-            <div title="Fervor: gerado pela resistência global. Quanto mais o mundo resiste, mais fervor você acumula. Usado em dogmas avançados e conversão de líderes." className="bg-[#241a1a] border border-red-900/40 rounded-lg py-1 px-3 flex items-center gap-2.5 cursor-help">
-              <span className="w-3 h-3 rounded-full bg-red-600 shadow-[0_0_8px_#8b0000]" />
-              <div>
-                <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Poder de Fervor</span>
-                <span className="text-base font-bold font-mono text-red-400">{state.fervor.toLocaleString()}</span>
-              </div>
-            </div>
-
-            {/* #1: Rival mini progress bar */}
-            <div title={`${state.rivalName}: ${state.rivalProgress.toFixed(0)}% do caminho para a vitória rival`} className="hidden md:flex flex-col gap-1 cursor-help">
-              <span className="text-[9px] font-mono uppercase text-red-400/70 tracking-wider">Rival</span>
-              <div className="w-20 h-2 bg-zinc-800 rounded-full overflow-hidden border border-red-900/40">
-                <div
-                  className={`h-full rounded-full transition-all ${state.rivalProgress > 75 ? 'bg-red-500' : state.rivalProgress > 40 ? 'bg-orange-600' : 'bg-red-900'}`}
-                  style={{ width: `${state.rivalProgress}%` }}
-                />
-              </div>
-              <span className={`text-[9px] font-mono text-right ${state.rivalProgress > 75 ? 'text-red-400 font-bold' : 'text-zinc-500'}`}>{state.rivalProgress.toFixed(0)}%</span>
-            </div>
-
-            {/* Time cycle controls & play buttons */}
-            <div className="flex items-center gap-2 border-l border-[#cfb53b]/20 pl-4 md:pl-6">
-              
-              <div className="flex flex-col text-right pr-2 mr-1">
-                <span className="text-[9px] uppercase font-mono text-zinc-500">Ciclo</span>
-                <span className="text-sm font-bold font-mono font-serif text-amber-100">#{state.cycle}</span>
-              </div>
-
-              {/* Pause/Play Toggle */}
-              <button
-                onClick={() => { playSound('click'); setState(p => ({ ...p, paused: !p.paused })); }}
-                className={`p-2 rounded cursor-pointer border transition-colors ${
-                  state.paused 
-                    ? 'bg-amber-950/40 border-[#cfb53b]/40 text-[#cfb53b] hover:bg-[#cfb53b]/10' 
-                    : 'bg-[#cfb53b] border-amber-600 text-[#1e1a0c] hover:bg-[#e6ca4a]'
-                }`}
-                title={state.paused ? 'Despausar jogo' : 'Pausar jogo'}
-                id="play-pause-btn"
-              >
-                {state.paused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-              </button>
-
-              {/* Speeds 1x, 2x, 3x */}
-              <div className="flex h-8 bg-[#120f05] rounded border border-[#cfb53b]/20 overflow-hidden text-xs">
-                {([1, 2, 3] as const).map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => { playSound('click'); setState(p => ({ ...p, gameSpeed: s })); }}
-                    className={`px-2.5 font-bold cursor-pointer transition-colors ${
-                      state.gameSpeed === s
-                        ? 'bg-[#cfb53b] text-[#1e1a0c]'
-                        : 'text-[#dfcfa0]/75 hover:bg-neutral-900'
-                    }`}
-                  >
-                    {s}x
-                  </button>
-                ))}
-              </div>
-
-              {/* Reset Game Button */}
-              <button
-                onClick={handleResetGame}
-                className="p-2 rounded bg-red-950/20 hover:bg-red-950 border border-[#8b0000] text-red-400 cursor-pointer transition-all ml-1"
-                title="Zerar e reiniciar criação"
-                id="reset-game-btn"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
-
-              {/* Sound preference Toggle button */}
-              <button
-                onClick={() => {
-                  const targetMute = !isMuted;
-                  setIsMuted(targetMute);
-                  if (!targetMute) {
-                    // Play a quick visual cue sound immediately so the user knows they unmuted!
-                    setTimeout(() => {
-                      try {
-                        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-                        const osc = audioCtx.createOscillator();
-                        const gain = audioCtx.createGain();
-                        osc.connect(gain);
-                        gain.connect(audioCtx.destination);
-                        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
-                        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
-                        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-                        osc.start();
-                        osc.stop(audioCtx.currentTime + 0.1);
-                      } catch(_) {}
-                    }, 50);
-                  }
-                }}
-                className={`p-2 rounded cursor-pointer border transition-colors ${
-                  isMuted 
-                    ? 'bg-[#1a1308] border-neutral-700 text-[#8b6b15] hover:text-[#cfb53b]' 
-                    : 'bg-amber-950/20 border-[#cfb53b]/40 text-[#cfb53b] hover:bg-[#cfb53b]/10'
-                }`}
-                title={isMuted ? 'Ativar Efeitos Sonoros' : 'Mutar Efeitos Sonoros'}
-                id="mute-toggle-btn"
-              >
-                {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-              </button>
-            </div>
-
+            {/* Live dot with news tooltip */}
+            <span title={newsText} className="w-2 h-2 rounded-full bg-red-500 animate-pulse cursor-help shrink-0" />
           </div>
+
         </div>
       </header>
-
-      {/* Live transmission dot */}
-      <div className="shrink-0 bg-black/95 border-b border-[#cfb53b]/10 px-4 py-1 flex items-center gap-2 select-none z-10">
-        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
-        <span className="text-[9px] font-mono text-[#dfcfa0]/40 truncate">{newsText}</span>
-      </div>
 
       {/* Global Pause Alert */}
       {state.paused && !state.isGameOver && (
