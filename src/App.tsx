@@ -12,7 +12,7 @@ import DogmasPanel from './components/DogmasPanel';
 import VictoryScreen from './components/VictoryScreen';
 import LeadersPanel from './components/LeadersPanel';
 import RivalPanel from './components/RivalPanel';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Gamepad2, Info, BookOpen, AlertTriangle, Map, ScrollText, Crown, Skull, Sparkles } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Gamepad2, Info, BookOpen, AlertTriangle, Map, ScrollText, Crown, Skull, Sparkles, Save, FolderOpen } from 'lucide-react';
 import { calcPeaceEffectiveness } from './utils/peaceEffectiveness';
 import { playFileSound } from './utils/sound';
 
@@ -1647,87 +1647,113 @@ export default function App() {
   return (
     <div className="h-screen bg-[#1e1a0c] text-[#dfcfa0] font-sans flex flex-col overflow-hidden" id="game-app-instance">
       
-      {/* 1. STATUS HEADER — compact single bar */}
-      <header className={`bg-[#171308] border-b-2 px-3 py-2 relative z-20 ${state.faithPhase === 3 ? 'border-[#8b1a1a]' : state.faithPhase === 2 ? 'border-[#e07820]' : 'border-[#cfb53b]'}`}>
-        <div className="max-w-7xl mx-auto flex items-center gap-2">
+      {/* 1. STATUS HEADER — 2 compact rows */}
+      <header className={`bg-[#171308] border-b-2 relative z-20 ${state.faithPhase === 3 ? 'border-[#8b1a1a]' : state.faithPhase === 2 ? 'border-[#e07820]' : 'border-[#cfb53b]'}`}>
 
-          {/* Religion name + trait */}
-          <div className="flex items-center gap-1.5 mr-1 shrink-0">
-            <div className="p-1 bg-[#cfb53b] text-[#1e1a0c] rounded">
-              <Gamepad2 className="w-4 h-4" />
+        {/* ROW 1 — identity + 4 stats */}
+        <div className="px-3 pt-2 pb-1.5 flex items-center gap-2">
+          {/* Icon + name + trait */}
+          <div className="flex items-center gap-1.5 shrink-0 min-w-0">
+            <div className="p-1 bg-[#cfb53b] text-[#1e1a0c] rounded shrink-0">
+              <Gamepad2 className="w-3.5 h-3.5" />
             </div>
-            <span className="text-sm font-bold font-serif text-[#cfb53b] uppercase tracking-wide leading-none">{state.religionName}</span>
-            <span className="text-[9px] uppercase px-1.5 py-0.5 bg-amber-950 text-[#cfb53b] font-bold border border-[#cfb53b]/30 rounded leading-none">{traitNames[state.religionTrait]}</span>
+            <span className="text-sm font-bold font-serif text-[#cfb53b] uppercase tracking-wide truncate max-w-[110px]">{state.religionName}</span>
+            <span className="text-[8px] uppercase px-1 py-0.5 bg-amber-950 text-[#cfb53b] font-bold border border-[#cfb53b]/30 rounded shrink-0">{traitNames[state.religionTrait]}</span>
           </div>
 
-          {/* Objective progress — compact badge */}
+          {/* Progress badge */}
           {victoryPaceText && (
-            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-green-700/40 bg-green-950/20 text-green-400 shrink-0">{victoryPaceText}</span>
+            <span className="text-[8px] font-mono px-1 py-0.5 rounded border border-green-700/40 bg-green-950/20 text-green-400 shrink-0">{victoryPaceText}</span>
           )}
 
-          {/* 4 stats in one row */}
-          <div className="flex items-center gap-1.5 ml-auto">
-            <div title="Fiéis no mundo" className="flex items-center gap-1 bg-[#1a2010] border border-green-900/50 rounded px-2 py-1">
-              <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_6px_#22c55e] shrink-0" />
-              <div className="flex flex-col leading-none">
-                <span className="text-[8px] font-mono text-[#dfcfa0]/40 uppercase">Fiéis</span>
-                <span className="text-xs font-bold font-mono text-green-400">{totalConvertedWorld.toLocaleString()}</span>
-              </div>
-            </div>
+          {/* Live dot */}
+          <span title={newsText} className="w-2 h-2 rounded-full bg-red-500 animate-pulse cursor-help shrink-0 ml-auto" />
+        </div>
 
-            <div title="Dízimo: gerado pelos fiéis. Usado para templos." className={`flex items-center gap-1 rounded px-2 py-1 border ${state.tithe <= 0 ? 'bg-red-950/30 border-red-900/60' : 'bg-[#0d1a12] border-emerald-900/50'}`}>
-              <span className={`w-2 h-2 rounded-full shrink-0 ${state.tithe <= 0 ? 'bg-red-500' : 'bg-emerald-500 shadow-[0_0_6px_#10b981]'}`} />
-              <div className="flex flex-col leading-none">
-                <span className="text-[8px] font-mono text-[#dfcfa0]/40 uppercase">Dízimo</span>
-                <span className={`text-xs font-bold font-mono ${state.tithe <= 0 ? 'text-red-400' : 'text-emerald-400'}`}>{state.tithe.toLocaleString()}</span>
-              </div>
-            </div>
-
-            <div title="Fé: moeda principal. Gasta em missões e dogmas." className={`flex items-center gap-1 bg-[#241e0d] border border-[#cfb53b]/40 rounded px-2 py-1${state.faith >= 800 ? ' faith-overflow' : ''}`}>
-              <span className="w-2 h-2 rounded-full bg-[#cfb53b] shadow-[0_0_6px_#cfb53b] shrink-0" />
-              <div className="flex flex-col leading-none">
-                <span className="text-[8px] font-mono text-[#dfcfa0]/40 uppercase">Fé</span>
-                <span className="text-xs font-bold font-mono text-[#cfb53b]">{state.faith.toLocaleString()}</span>
-              </div>
-            </div>
-
-            <div title="Fervor: gerado pela resistência global. Usado em dogmas avançados." className="flex items-center gap-1 bg-[#241a1a] border border-red-900/40 rounded px-2 py-1">
-              <span className="w-2 h-2 rounded-full bg-red-600 shadow-[0_0_6px_#8b0000] shrink-0" />
-              <div className="flex flex-col leading-none">
-                <span className="text-[8px] font-mono text-[#dfcfa0]/40 uppercase">Fervor</span>
-                <span className="text-xs font-bold font-mono text-red-400">{state.fervor.toLocaleString()}</span>
-              </div>
+        {/* ROW 2 — 4 stats */}
+        <div className="px-3 pb-2 grid grid-cols-4 gap-1.5">
+          <div title="Fiéis no mundo" className="flex items-center gap-1 bg-[#1a2010] border border-green-900/50 rounded px-2 py-1 min-w-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+            <div className="flex flex-col leading-none min-w-0">
+              <span className="text-[7px] font-mono text-[#dfcfa0]/40 uppercase">Fiéis</span>
+              <span className="text-[11px] font-bold font-mono text-green-400 truncate">{totalConvertedWorld.toLocaleString()}</span>
             </div>
           </div>
 
-          {/* Controls */}
-          <div className="flex items-center gap-1.5 border-l border-[#cfb53b]/20 pl-2 ml-1 shrink-0">
-            <span className="text-[9px] font-mono text-zinc-500 hidden sm:inline">#{state.cycle}</span>
-
-            <button
-              onClick={() => { playSound('click'); setState(p => ({ ...p, paused: !p.paused })); }}
-              className={`p-1.5 rounded cursor-pointer border transition-colors ${state.paused ? 'bg-amber-950/40 border-[#cfb53b]/40 text-[#cfb53b]' : 'bg-[#cfb53b] border-amber-600 text-[#1e1a0c]'}`}
-              title={state.paused ? 'Despausar' : 'Pausar'}
-              id="play-pause-btn"
-            >
-              {state.paused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-            </button>
-
-            <div className="flex h-7 bg-[#120f05] rounded border border-[#cfb53b]/20 overflow-hidden text-[10px]">
-              {([1, 2, 3] as const).map((s) => (
-                <button key={s} onClick={() => { playSound('click'); setState(p => ({ ...p, gameSpeed: s })); }}
-                  className={`px-2 font-bold cursor-pointer transition-colors ${state.gameSpeed === s ? 'bg-[#cfb53b] text-[#1e1a0c]' : 'text-[#dfcfa0]/75 hover:bg-neutral-900'}`}>
-                  {s}x
-                </button>
-              ))}
+          <div title="Dízimo: gerado pelos fiéis. Usado para templos." className={`flex items-center gap-1 rounded px-2 py-1 border min-w-0 ${state.tithe <= 0 ? 'bg-red-950/30 border-red-900/60' : 'bg-[#0d1a12] border-emerald-900/50'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${state.tithe <= 0 ? 'bg-red-500' : 'bg-emerald-500'}`} />
+            <div className="flex flex-col leading-none min-w-0">
+              <span className="text-[7px] font-mono text-[#dfcfa0]/40 uppercase">Dízimo</span>
+              <span className={`text-[11px] font-bold font-mono truncate ${state.tithe <= 0 ? 'text-red-400' : 'text-emerald-400'}`}>{state.tithe.toLocaleString()}</span>
             </div>
+          </div>
 
-            <button onClick={handleResetGame}
-              className="p-1.5 rounded bg-red-950/20 hover:bg-red-950 border border-[#8b0000] text-red-400 cursor-pointer transition-all"
-              title="Reiniciar" id="reset-game-btn">
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
+          <div title="Fé: moeda principal." className={`flex items-center gap-1 bg-[#241e0d] border border-[#cfb53b]/40 rounded px-2 py-1 min-w-0${state.faith >= 800 ? ' faith-overflow' : ''}`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#cfb53b] shrink-0" />
+            <div className="flex flex-col leading-none min-w-0">
+              <span className="text-[7px] font-mono text-[#dfcfa0]/40 uppercase">Fé</span>
+              <span className="text-[11px] font-bold font-mono text-[#cfb53b] truncate">{state.faith.toLocaleString()}</span>
+            </div>
+          </div>
 
+          <div title="Fervor: gerado pela resistência global." className="flex items-center gap-1 bg-[#241a1a] border border-red-900/40 rounded px-2 py-1 min-w-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-600 shrink-0" />
+            <div className="flex flex-col leading-none min-w-0">
+              <span className="text-[7px] font-mono text-[#dfcfa0]/40 uppercase">Fervor</span>
+              <span className="text-[11px] font-bold font-mono text-red-400 truncate">{state.fervor.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ROW 3 — controls toolbar */}
+        <div className="border-t border-[#cfb53b]/15 px-3 py-1.5 flex items-center gap-1.5 bg-[#130f04]">
+          {/* Save */}
+          <button
+            onClick={() => { localStorage.setItem('religion_simulator_state_v2', JSON.stringify(state)); playSound('click'); }}
+            className="flex items-center gap-1 px-2 py-1 rounded border border-[#cfb53b]/30 bg-[#1a1508] text-[#cfb53b]/70 hover:text-[#cfb53b] hover:bg-[#241e0a] transition-colors cursor-pointer text-[9px] font-mono uppercase tracking-wide"
+            title="Salvar jogo manualmente"
+          >
+            <Save className="w-3 h-3" /> Salvar
+          </button>
+
+          {/* Load */}
+          <button
+            onClick={() => {
+              const saved = localStorage.getItem('religion_simulator_state_v2');
+              if (saved) { try { setState(JSON.parse(saved)); playSound('click'); } catch(_) {} }
+            }}
+            className="flex items-center gap-1 px-2 py-1 rounded border border-[#cfb53b]/30 bg-[#1a1508] text-[#cfb53b]/70 hover:text-[#cfb53b] hover:bg-[#241e0a] transition-colors cursor-pointer text-[9px] font-mono uppercase tracking-wide"
+            title="Carregar último save"
+          >
+            <FolderOpen className="w-3 h-3" /> Carregar
+          </button>
+
+          <div className="w-px h-4 bg-[#cfb53b]/20 mx-0.5" />
+
+          {/* Speed */}
+          <div className="flex h-6 bg-[#0e0b04] rounded border border-[#cfb53b]/20 overflow-hidden text-[9px]">
+            {([1, 2, 3] as const).map((s) => (
+              <button key={s} onClick={() => { playSound('click'); setState(p => ({ ...p, gameSpeed: s })); }}
+                className={`px-2 font-bold cursor-pointer transition-colors ${state.gameSpeed === s ? 'bg-[#cfb53b] text-[#1e1a0c]' : 'text-[#dfcfa0]/60 hover:bg-neutral-900'}`}>
+                {s}x
+              </button>
+            ))}
+          </div>
+
+          {/* Play/Pause */}
+          <button
+            onClick={() => { playSound('click'); setState(p => ({ ...p, paused: !p.paused })); }}
+            className={`p-1 rounded cursor-pointer border transition-colors ${state.paused ? 'bg-amber-950/40 border-[#cfb53b]/40 text-[#cfb53b]' : 'bg-[#cfb53b] border-amber-600 text-[#1e1a0c]'}`}
+            title={state.paused ? 'Despausar' : 'Pausar'} id="play-pause-btn"
+          >
+            {state.paused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+          </button>
+
+          {/* Cycle */}
+          <span className="text-[9px] font-mono text-[#cfb53b]/50 px-1">#{state.cycle}</span>
+
+          <div className="flex items-center gap-1 ml-auto">
+            {/* Mute */}
             <button
               onClick={() => {
                 const targetMute = !isMuted;
@@ -1747,16 +1773,21 @@ export default function App() {
                   }, 50);
                 }
               }}
-              className={`p-1.5 rounded cursor-pointer border transition-colors ${isMuted ? 'bg-[#1a1308] border-neutral-700 text-[#8b6b15]' : 'bg-amber-950/20 border-[#cfb53b]/40 text-[#cfb53b]'}`}
-              title={isMuted ? 'Ativar som' : 'Mutar'} id="mute-toggle-btn">
+              className={`p-1 rounded cursor-pointer border transition-colors ${isMuted ? 'bg-[#1a1308] border-neutral-700 text-[#8b6b15]' : 'bg-amber-950/20 border-[#cfb53b]/40 text-[#cfb53b]'}`}
+              title={isMuted ? 'Ativar som' : 'Mutar'} id="mute-toggle-btn"
+            >
               {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
             </button>
 
-            {/* Live dot with news tooltip */}
-            <span title={newsText} className="w-2 h-2 rounded-full bg-red-500 animate-pulse cursor-help shrink-0" />
+            {/* Reset */}
+            <button onClick={handleResetGame}
+              className="p-1 rounded bg-red-950/20 hover:bg-red-950 border border-[#8b0000] text-red-400 cursor-pointer transition-all"
+              title="Reiniciar jogo" id="reset-game-btn">
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
           </div>
-
         </div>
+
       </header>
 
       {/* Global Pause Alert */}
