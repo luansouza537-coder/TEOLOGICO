@@ -92,6 +92,13 @@ export default function App() {
             lastActionCycle: c.lastActionCycle ?? 0,
             convertsHistory: c.convertsHistory ?? [],
           }));
+          // Migrate old saves: add new countries that didn't exist when the save was created
+          const existingIds = new Set(parsed.countries.map((c: any) => c.id));
+          INITIAL_COUNTRIES.forEach(initial => {
+            if (!existingIds.has(initial.id)) {
+              parsed.countries.push({ ...initial });
+            }
+          });
         }
         if (!parsed.doctrines) parsed.doctrines = INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null }));
         if (parsed.tithe === undefined) parsed.tithe = 50;
