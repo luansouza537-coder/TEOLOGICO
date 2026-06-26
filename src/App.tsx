@@ -1708,14 +1708,21 @@ export default function App() {
 
         {/* ROW 3 — controls toolbar */}
         <div className="border-t border-[#cfb53b]/15 px-3 py-1.5 flex items-center gap-1.5 bg-[#130f04]">
-          {/* Save */}
+          {/* Save — download file to device */}
           <button
             onClick={() => {
               try {
-                const saveData = { state, savedAt: Date.now() };
-                localStorage.setItem('religion_simulator_MANUAL_SAVE', JSON.stringify(saveData));
+                const saveData = JSON.stringify({ state, savedAt: Date.now() }, null, 2);
+                const blob = new Blob([saveData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const date = new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '-');
+                a.href = url;
+                a.download = `teologico_${state.religionName.replace(/\s+/g, '_')}_${date}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
                 playSound('click');
-                setSaveToast({ msg: 'Salvo!', ok: true });
+                setSaveToast({ msg: 'Download iniciado!', ok: true });
                 setTimeout(() => setSaveToast(null), 2000);
               } catch(_) {
                 setSaveToast({ msg: 'Erro ao salvar', ok: false });
@@ -1723,37 +1730,43 @@ export default function App() {
               }
             }}
             className="flex items-center gap-1 px-2 py-1 rounded border border-[#cfb53b]/30 bg-[#1a1508] text-[#cfb53b]/70 hover:text-[#cfb53b] hover:bg-[#241e0a] transition-colors cursor-pointer text-[9px] font-mono uppercase tracking-wide"
-            title="Salvar jogo manualmente"
+            title="Salvar — baixar arquivo no dispositivo"
           >
             <Save className="w-3 h-3" /> Salvar
           </button>
 
-          {/* Load */}
-          <button
-            onClick={() => {
-              const raw = localStorage.getItem('religion_simulator_MANUAL_SAVE');
-              if (!raw) {
-                setSaveToast({ msg: 'Sem save', ok: false });
-                setTimeout(() => setSaveToast(null), 2000);
-                return;
-              }
-              try {
-                const { state: saved, savedAt } = JSON.parse(raw);
-                const mins = Math.round((Date.now() - savedAt) / 60000);
-                setState(saved);
-                playSound('click');
-                setSaveToast({ msg: `Carregado (${mins < 1 ? '<1' : mins}min atrás)`, ok: true });
-                setTimeout(() => setSaveToast(null), 2500);
-              } catch(_) {
-                setSaveToast({ msg: 'Save corrompido', ok: false });
-                setTimeout(() => setSaveToast(null), 2000);
-              }
-            }}
+          {/* Load — pick file from device */}
+          <label
             className="flex items-center gap-1 px-2 py-1 rounded border border-[#cfb53b]/30 bg-[#1a1508] text-[#cfb53b]/70 hover:text-[#cfb53b] hover:bg-[#241e0a] transition-colors cursor-pointer text-[9px] font-mono uppercase tracking-wide"
-            title="Carregar save manual"
+            title="Carregar — escolher arquivo do dispositivo"
           >
             <FolderOpen className="w-3 h-3" /> Carregar
-          </button>
+            <input
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                  try {
+                    const { state: saved } = JSON.parse(ev.target?.result as string);
+                    if (!saved || !saved.religionName) throw new Error('invalid');
+                    setState(saved);
+                    playSound('click');
+                    setSaveToast({ msg: `Carregado: ${saved.religionName}`, ok: true });
+                    setTimeout(() => setSaveToast(null), 2500);
+                  } catch(_) {
+                    setSaveToast({ msg: 'Arquivo inválido', ok: false });
+                    setTimeout(() => setSaveToast(null), 2000);
+                  }
+                };
+                reader.readAsText(file);
+                e.target.value = '';
+              }}
+            />
+          </label>
 
           <div className="w-px h-4 bg-[#cfb53b]/20 mx-0.5" />
 
