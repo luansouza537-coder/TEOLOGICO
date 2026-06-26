@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dogma, ReligionTrait } from '../types';
-import { BookOpen, Sparkles, HelpCircle, Check, ShieldAlert } from 'lucide-react';
+import { Sparkles, Check, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface DogmasPanelProps {
   dogmas: Dogma[];
@@ -17,8 +17,8 @@ interface DogmasPanelProps {
 }
 
 export default function DogmasPanel({ dogmas, faith, fervor, trait, faithPhase, onPurchaseDogma }: DogmasPanelProps) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // Categorise dogmas
   const universalDogmas = dogmas.filter((d) => !d.traitRequirement);
   const traitDogmas = dogmas.filter((d) => d.traitRequirement === trait);
 
@@ -29,104 +29,95 @@ export default function DogmasPanel({ dogmas, faith, fervor, trait, faithPhase, 
     Syncretist: 'Doutrinas Sincretistas'
   };
 
-  const checkAffordable = (d: Dogma) => {
-    return faith >= d.costFaith && fervor >= d.costFervor;
-  };
-
   const phaseLabels: Record<number, string> = { 2: 'Credo Estabelecido', 3: 'Era da Transcendência' };
   const phaseColors: Record<number, string> = { 2: 'text-orange-400 border-orange-700/40', 3: 'text-red-400 border-red-700/40' };
 
-  const renderDogmaCard = (d: Dogma) => {
-    const isAffordable = checkAffordable(d);
+  const renderDogma = (d: Dogma) => {
+    const isAffordable = faith >= d.costFaith && fervor >= d.costFervor;
     const isLocked = (d.phase ?? 1) > faithPhase;
+    const isExpanded = expandedId === d.id;
 
     if (isLocked) {
       return (
         <div key={d.id} className="flex items-center justify-between px-2 py-1.5 rounded border border-zinc-800/30 bg-zinc-900/20">
           <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-wide truncate">{d.name}</span>
-          <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded border shrink-0 ml-1 ${phaseColors[d.phase ?? 1]}`}>🔒 {phaseLabels[d.phase ?? 1] ?? 'Bloqueado'}</span>
+          <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded border shrink-0 ml-2 ${phaseColors[d.phase ?? 2]}`}>
+            🔒 {phaseLabels[d.phase ?? 2] ?? 'Bloqueado'}
+          </span>
+        </div>
+      );
+    }
+
+    if (d.purchased) {
+      return (
+        <div key={d.id} className="flex items-center gap-2 px-2 py-1.5 rounded border border-green-800/30 bg-[#1a2215]">
+          <Check className="w-3 h-3 text-green-400 shrink-0" />
+          <span className="text-[10px] font-mono text-green-400 flex-1 truncate">{d.name}</span>
+          <span className="text-[9px] text-[#dfcfa0]/35 font-mono truncate hidden sm:block">{d.effect.slice(0, 40)}{d.effect.length > 40 ? '…' : ''}</span>
         </div>
       );
     }
 
     return (
-      <div
-        key={d.id}
-        className={`rounded-lg p-3 border flex flex-col justify-between transition-all duration-300 relative ${
-          d.purchased
-            ? 'bg-[#1a2215] border-green-800/50 text-amber-100 shadow-inner'
-            : isAffordable
-            ? 'bg-[#292211] border-[#cfb53b]/50 hover:border-[#cfb53b] hover:bg-[#1e1a0c]/80 cursor-pointer'
-            : 'bg-[#1b170d] border-zinc-900 text-zinc-500 opacity-75 cursor-not-allowed'
-        }`}
-        onClick={() => !d.purchased && isAffordable && onPurchaseDogma(d.id)}
-        id={`dogma-card-${d.id}`}
-      >
-        {d.purchased && (
-          <div className="absolute top-2 right-2 bg-[#406834] text-white p-0.5 rounded-full">
-            <Check className="w-3 h-3" />
-          </div>
-        )}
+      <div key={d.id} className="rounded border border-[#cfb53b]/20 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setExpandedId(isExpanded ? null : d.id)}
+          className={`w-full flex items-center gap-2 px-2.5 py-2 text-left transition-colors cursor-pointer ${
+            isAffordable ? 'bg-[#1e1a0a] hover:bg-[#252010]' : 'bg-[#171308] opacity-60'
+          }`}
+        >
+          {isExpanded
+            ? <ChevronDown className="w-3 h-3 text-[#cfb53b]/60 shrink-0" />
+            : <ChevronRight className="w-3 h-3 text-[#cfb53b]/40 shrink-0" />}
+          <span className="flex-1 text-[11px] font-bold font-serif text-[#cfb53b] truncate">{d.name}</span>
+          <span className="shrink-0 text-[9px] font-mono flex gap-1">
+            {d.costFaith > 0 && <span className={faith >= d.costFaith ? 'text-[#cfb53b]' : 'text-red-500'}>{d.costFaith}Fé</span>}
+            {d.costFervor > 0 && <span className={fervor >= d.costFervor ? 'text-red-400' : 'text-red-500'}>{d.costFervor}Fv</span>}
+          </span>
+        </button>
 
-        <div>
-          <div className="flex justify-between items-start gap-2 mb-1.5">
-            <span className={`text-base font-bold font-serif ${d.purchased ? 'text-green-400' : 'text-[#cfb53b]'}`}>
-              {d.name}
-            </span>
-          </div>
-
-          <p className="text-[11px] text-amber-200/90 font-mono border-t border-[#cfb53b]/10 pt-2 mb-4 leading-normal">
-            <span className="font-bold text-[#cfb53b]">Efeito:</span> {d.effect}
-          </p>
-        </div>
-
-        {/* Cost display footer */}
-        {!d.purchased && (
-          <div className="flex gap-2.5 items-center justify-end text-xs font-mono border-t border-[#cfb53b]/10 pt-2">
-            <span className="text-gray-400">Custo:</span>
-            {d.costFaith > 0 && (
-              <span className={faith >= d.costFaith ? 'text-[#cfb53b] font-bold' : 'text-red-500'}>
-                {d.costFaith} Fé
-              </span>
-            )}
-            {d.costFervor > 0 && (
-              <span className={fervor >= d.costFervor ? 'text-red-400 font-bold' : 'text-red-500'}>
-                {d.costFervor} Fervor
-              </span>
-            )}
-          </div>
-        )}
-
-        {d.purchased && (
-          <div className="text-[10px] uppercase font-mono tracking-widest text-green-400 text-right font-bold border-t border-green-800/50 pt-2">
-            Dogma Adotado
+        {isExpanded && (
+          <div className="px-3 pb-3 pt-1.5 bg-[#141108] border-t border-[#cfb53b]/10 flex flex-col gap-2">
+            <p className="text-[10px] text-amber-200/80 leading-relaxed">
+              <span className="text-[#cfb53b] font-bold">Efeito:</span> {d.effect}
+            </p>
+            <button
+              onClick={() => { onPurchaseDogma(d.id); setExpandedId(null); }}
+              disabled={!isAffordable}
+              className={`py-1.5 px-3 rounded text-[10px] font-bold transition-all ${
+                isAffordable
+                  ? 'bg-[#cfb53b] text-[#1e1a0c] hover:bg-[#e6ca4a] cursor-pointer'
+                  : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+              }`}
+            >
+              {isAffordable ? 'Consagrar Dogma' : 'Fé/Fervor insuficiente'}
+            </button>
           </div>
         )}
       </div>
     );
   };
 
-  return (
-    <div className="bg-[#1e1a0c] text-[#dfcfa0] font-sans flex flex-col gap-6" id="dogmas-panel-component">
+  const purchased = dogmas.filter(d => d.purchased).length;
 
-      {/* Grid 1: Universal Dogmas */}
-      <div className="flex flex-col gap-3">
-        <h3 className="text-xs font-bold font-serif text-[#cfb53b] uppercase tracking-wider flex items-center gap-2">
-          <HelpCircle className="w-5 h-5" /> Dogmas Universais (Acessíveis a todos)
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">
-          {universalDogmas.map(renderDogmaCard)}
+  return (
+    <div className="flex flex-col gap-4" id="dogmas-panel-component">
+
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between mb-0.5">
+          <span className="text-[10px] font-bold uppercase font-mono text-[#cfb53b]/70 tracking-wider">Dogmas Universais</span>
+          <span className="text-[9px] font-mono text-[#dfcfa0]/35">{purchased}/{dogmas.length} consagrados</span>
         </div>
+        {universalDogmas.map(renderDogma)}
       </div>
 
-      {/* Grid 2: Unique Trait-locked Dogmas */}
-      <div className="flex flex-col gap-3">
-        <h3 className="text-xs font-bold font-serif text-[#cfb53b] uppercase tracking-wider flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-[#cfb53b]" /> Dogmas de Revelação: {traitLabels[trait]}
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">
-          {traitDogmas.map(renderDogmaCard)}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <Sparkles className="w-3 h-3 text-[#cfb53b]/70" />
+          <span className="text-[10px] font-bold uppercase font-mono text-[#cfb53b]/70 tracking-wider">Revelações: {traitLabels[trait]}</span>
         </div>
+        {traitDogmas.map(renderDogma)}
       </div>
 
     </div>

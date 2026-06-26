@@ -1997,100 +1997,83 @@ export default function App() {
             ];
             const currentPhaseInfo = phaseInfo[state.faithPhase ?? 1]!;
             return (
-              <div className="flex flex-col gap-6" id="faith-panel">
-                {/* Faith Phase Banner */}
-                <div className={`rounded-lg border p-3 flex items-center gap-3 ${currentPhaseInfo.color}`}>
-                  <span className={`w-3 h-3 rounded-full shrink-0 ${currentPhaseInfo.dot} shadow-[0_0_8px_currentColor]`} />
-                  <div>
-                    <div className="text-[9px] uppercase font-mono tracking-widest opacity-70">Fase {state.faithPhase ?? 1} de 3</div>
-                    <div className="text-xs font-bold font-serif">{currentPhaseInfo.name}</div>
-                    {(state.faithPhase ?? 1) < 3 && <div className="text-[9px] opacity-60 mt-0.5">{currentPhaseInfo.desc}</div>}
-                  </div>
-                </div>
-                {/* Header identidade */}
-                <div className="flex flex-col md:flex-row gap-4 items-start">
-                  <div className="flex-1 bg-[#241e0d] border border-[#cfb53b]/30 rounded-lg p-5">
-                    <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 tracking-widest">Seu Credo</span>
-                    <h2 className="text-3xl font-bold font-serif text-[#cfb53b] mt-1">{state.religionName}</h2>
-                    <span className="inline-block mt-2 px-2 py-0.5 bg-amber-950 border border-[#cfb53b]/30 text-[#cfb53b] text-[10px] font-bold uppercase font-mono rounded">
-                      {traitNames[state.religionTrait]}
-                    </span>
-                    <p className="text-xs text-[#dfcfa0]/70 mt-3 leading-relaxed italic">
-                      {traitDescriptions[state.religionTrait]}
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-3 min-w-[200px]">
-                    <div className="bg-[#171308] border border-[#cfb53b]/15 rounded p-3">
-                      <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Objetivo</span>
-                      <span className="text-xs font-bold text-amber-200 mt-0.5 block">{goalNames[state.victoryGoal]}</span>
+              <div className="flex flex-col gap-3" id="faith-panel">
+
+                {/* Compact identity strip */}
+                <div className="bg-[#1a1508] border border-[#cfb53b]/25 rounded-lg px-3 py-2.5 flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-bold font-serif text-[#cfb53b] truncate">{state.religionName}</span>
+                      <span className="text-[9px] px-1.5 py-0.5 bg-amber-950 border border-[#cfb53b]/30 text-[#cfb53b] font-bold uppercase font-mono rounded">{traitNames[state.religionTrait]}</span>
                     </div>
-                    <div className="bg-[#171308] border border-[#cfb53b]/15 rounded p-3">
-                      <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/50 block">Ciclos de Existência</span>
-                      <span className="text-2xl font-bold font-mono text-[#cfb53b]">#{state.cycle}</span>
-                    </div>
+                    <div className="text-[9px] text-[#dfcfa0]/45 font-mono mt-0.5">{goalNames[state.victoryGoal]}</div>
+                  </div>
+                  <div className={`shrink-0 flex items-center gap-1.5 px-2 py-1 rounded border text-[9px] font-mono ${currentPhaseInfo.color}`}>
+                    <span className={`w-2 h-2 rounded-full ${currentPhaseInfo.dot}`} />
+                    <span className="font-bold">{currentPhaseInfo.name}</span>
                   </div>
                 </div>
 
-                {/* Barra de progresso global */}
-                <div className="bg-[#171308] border border-[#cfb53b]/20 rounded-lg p-4">
-                  <div className="flex justify-between items-center text-xs font-mono font-bold mb-2">
-                    <span className="text-green-400">🌍 Alcance Global da Fé</span>
-                    <span className="text-green-300">{totalConvertedWorld.toLocaleString()} fiéis — {convPct.toFixed(3)}% da humanidade</span>
+                {/* Global progress bar */}
+                <div className="bg-[#171308] border border-[#cfb53b]/15 rounded-lg px-3 py-2">
+                  <div className="flex justify-between text-[10px] font-mono mb-1">
+                    <span className="text-green-400">🌍 Alcance Global</span>
+                    <span className="text-green-300 font-bold">{convPct.toFixed(3)}% · {totalConvertedWorld.toLocaleString()} fiéis</span>
                   </div>
-                  <div className="w-full h-3 bg-black/60 rounded border border-green-900/30 overflow-hidden">
+                  <div className="w-full h-2 bg-black/60 rounded border border-green-900/30 overflow-hidden">
                     <div className="h-full bg-gradient-to-r from-green-800 to-green-500 transition-all duration-500" style={{ width: `${Math.min(100, convPct)}%` }} />
                   </div>
+                  {(state.faithPhase ?? 1) < 3 && (
+                    <div className="text-[9px] text-[#dfcfa0]/35 mt-1 font-mono">{currentPhaseInfo.desc}</div>
+                  )}
                 </div>
 
-                {/* Grade de estatísticas */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {/* Stats grid — only non-redundant values */}
+                <div className="grid grid-cols-3 gap-2">
                   {[
-                    { label: 'Missionários Enviados', value: totalMissionaries, color: 'text-[#cfb53b]' },
-                    { label: 'Líderes Convertidos', value: `${totalLeaders} / 12`, color: 'text-sky-400' },
-                    { label: 'Templos Erguidos', value: state.totalTemples, color: 'text-green-400' },
-                    { label: 'Dogmas Consagrados', value: `${activeDogmas.length} / ${state.dogmas.length}`, color: 'text-amber-300' },
-                    { label: 'Poder de Fé', value: state.faith, color: 'text-[#cfb53b]' },
-                    { label: 'Poder de Fervor', value: state.fervor, color: 'text-red-400' },
-                    { label: 'Resistência Média', value: `${avgResistance.toFixed(1)}%`, color: 'text-[#8b0000]' },
-                    { label: 'Violência Média', value: `${avgViolence.toFixed(1)}%`, color: 'text-orange-400' },
+                    { label: 'Missionários', value: totalMissionaries, color: 'text-[#cfb53b]' },
+                    { label: 'Líderes', value: `${totalLeaders}/12`, color: 'text-sky-400' },
+                    { label: 'Templos', value: state.totalTemples, color: 'text-green-400' },
+                    { label: 'Dogmas', value: `${activeDogmas.length}/${state.dogmas.length}`, color: 'text-amber-300' },
+                    { label: 'Resistência', value: `${avgResistance.toFixed(1)}%`, color: 'text-red-500' },
+                    { label: 'Violência', value: `${avgViolence.toFixed(1)}%`, color: 'text-orange-400' },
                   ].map(({ label, value, color }) => (
-                    <div key={label} className="bg-[#171308] border border-[#cfb53b]/10 rounded p-3">
-                      <span className="text-[9px] uppercase font-mono text-[#dfcfa0]/45 block">{label}</span>
-                      <span className={`text-xl font-bold font-mono ${color} block mt-0.5`}>{value}</span>
+                    <div key={label} className="bg-[#171308] border border-[#cfb53b]/10 rounded px-2 py-1.5">
+                      <span className="text-[8px] uppercase font-mono text-[#dfcfa0]/40 block">{label}</span>
+                      <span className={`text-base font-bold font-mono ${color} block`}>{value}</span>
                     </div>
                   ))}
                 </div>
 
-                {/* Países com templo */}
-                {totalTemplesList.length > 0 && (
-                  <div className="bg-[#171308] border border-[#cfb53b]/15 rounded-lg p-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#cfb53b] mb-3 font-serif">🏛️ Templos no Mundo</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2">
-                      {totalTemplesList.map(c => {
-                        const templeName = TEMPLE_NAMES[state.religionTrait]?.[c.templeLevel - 1] ?? 'Templo';
-                        return (
-                          <div key={c.id} className="bg-black/30 rounded px-2 py-1.5 border border-[#cfb53b]/10">
-                            <span className="text-[9px] font-mono text-[#dfcfa0]/50 block">{c.name}</span>
-                            <span className="text-[10px] font-bold text-[#cfb53b]">{templeName}</span>
-                            <span className="text-[9px] text-[#dfcfa0]/40 block">Nível {c.templeLevel}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Dogmas ativos */}
-                {activeDogmas.length > 0 && (
-                  <div className="bg-[#171308] border border-[#cfb53b]/15 rounded-lg p-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#cfb53b] mb-3 font-serif">📜 Dogmas Revelados</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {activeDogmas.map(d => (
-                        <span key={d.id} className="text-[10px] px-2 py-1 bg-amber-950/50 border border-[#cfb53b]/20 text-amber-200 rounded font-mono">
-                          {d.name}
-                        </span>
-                      ))}
-                    </div>
+                {/* Templos + Dogmas side by side */}
+                {(totalTemplesList.length > 0 || activeDogmas.length > 0) && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {totalTemplesList.length > 0 && (
+                      <div className="bg-[#171308] border border-[#cfb53b]/15 rounded-lg px-2 py-2">
+                        <div className="text-[9px] font-mono text-[#cfb53b]/60 uppercase tracking-wider mb-1.5">🏛️ Templos ({state.totalTemples})</div>
+                        <div className="flex flex-col gap-1">
+                          {totalTemplesList.map(c => {
+                            const templeName = TEMPLE_NAMES[state.religionTrait]?.[c.templeLevel - 1] ?? 'Templo';
+                            return (
+                              <div key={c.id} className="flex justify-between items-center text-[9px] font-mono">
+                                <span className="text-[#dfcfa0]/60 truncate">{c.name}</span>
+                                <span className="text-[#cfb53b] shrink-0 ml-1">Nv{c.templeLevel}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {activeDogmas.length > 0 && (
+                      <div className="bg-[#171308] border border-[#cfb53b]/15 rounded-lg px-2 py-2">
+                        <div className="text-[9px] font-mono text-[#cfb53b]/60 uppercase tracking-wider mb-1.5">📜 Dogmas ({activeDogmas.length})</div>
+                        <div className="flex flex-col gap-1">
+                          {activeDogmas.map(d => (
+                            <div key={d.id} className="text-[9px] font-mono text-amber-200/70 truncate">✓ {d.name}</div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
