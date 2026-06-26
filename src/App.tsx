@@ -1016,7 +1016,7 @@ export default function App() {
             isGameOver = true;
             gameOverReason = 'victory';
           }
-        } else if (prev.victoryGoal === 'TheEnlightened' && updatedCountries.every((c) => c.leaderInfiltration >= 100)) {
+        } else if (prev.victoryGoal === 'TheEnlightened' && updatedCountries.filter((c) => c.leaderInfiltration >= 100).length >= 14) {
           isGameOver = true;
           gameOverReason = 'victory';
         }
@@ -1399,9 +1399,9 @@ export default function App() {
     if (countryObj.id === 'japan') cost = Math.round(cost * 1.4); // Japão: ceticismo cultural +40% custo
     if (countryObj.id === 'china') cost = Math.round(cost * 1.5); // China: censura +50% custo
     if (countryObj.id === 'saudi_arabia') cost += 25;
-    if (countryObj.id === 'haiti') cost = Math.round(cost * 0.5); // Haiti: receptividade extrema -50% custo
     // Escalating cost per missionary already sent (each costs 15 more than the last)
     cost += (countryObj.missionariesSent ?? 0) * 15;
+    if (countryObj.id === 'haiti') cost = Math.round(cost * 0.5); // Haiti: receptividade extrema -50% custo (aplicado por último para incluir escalonamento)
     // Doctrine modifiers on missionary cost
     if (state.doctrines?.find(d => d.id === 'doc_ritual')?.chosen === 'A') cost += 10;
     if (state.doctrines?.find(d => d.id === 'doc_ritual')?.chosen === 'B') cost = Math.max(5, cost - 10);
@@ -1831,7 +1831,7 @@ export default function App() {
     victoryPaceText = `${converted}/4 potências`;
   } else if (state.victoryGoal === 'TheEnlightened') {
     const count = state.countries.filter(c => c.leaderInfiltration >= 100).length;
-    victoryPaceText = `${count}/18 líderes`;
+    victoryPaceText = `${count}/14 líderes`;
   } else if (state.victoryGoal === 'PerpetualPeace') {
     const peaceful = state.countries.filter(c => c.violence < 20).length;
     victoryPaceText = `${peaceful}/${state.countries.length} nações`;

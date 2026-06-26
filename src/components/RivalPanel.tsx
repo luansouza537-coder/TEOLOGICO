@@ -78,7 +78,7 @@ export default function RivalPanel({
       case 'OneFlock':
         return { label: 'Um Só Rebanho', progress: (superpowersControlled / 4) * 100, detail: `${superpowersControlled}/4 superpotências controladas`, color: 'bg-[#cfb53b]' };
       case 'TheEnlightened':
-        return { label: 'O Iluminado', progress: (totalInfiltratedLeaders / 18) * 100, detail: `${totalInfiltratedLeaders}/18 líderes convertidos`, color: 'bg-sky-500' };
+        return { label: 'O Iluminado', progress: (totalInfiltratedLeaders / 14) * 100, detail: `${totalInfiltratedLeaders}/14 líderes convertidos`, color: 'bg-sky-500' };
       default:
         return null;
     }
