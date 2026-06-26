@@ -206,7 +206,7 @@ export default function WorldMapFlat({ countries, selectedCountryId, onSelectCou
   }, [selectedCountryId]);
 
   return (
-    <div className="relative w-full border border-[#cfb53b]/20 rounded-lg overflow-hidden bg-[#0e0b04]" style={{ height: '320px' }}>
+    <div className="relative w-full overflow-hidden bg-[#0e0b04]" style={{ height: '100%', minHeight: '220px' }}>
       {/* Header */}
       <div className="absolute top-2 left-3 right-3 flex items-center justify-between z-[1000] pointer-events-none">
         <div className="flex items-center gap-2 bg-black/70 px-2 py-1 rounded border border-[#cfb53b]/20">

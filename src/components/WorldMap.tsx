@@ -164,16 +164,16 @@ export default function WorldMap({
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 w-full" id="world-map-component">
-      
+    <div className="flex flex-col lg:flex-row h-full w-full" id="world-map-component">
+
       {/* LEFT PORTION: The Tactical Grid Map */}
-      <div className="flex-1 bg-[#1a1508] border-2 border-[#cfb53b]/40 rounded-lg p-4 relative overflow-hidden flex flex-col justify-between min-h-[450px]">
-        
+      <div className="flex-1 min-h-0 bg-[#1a1508] border-b-2 lg:border-b-0 lg:border-r-2 border-[#cfb53b]/40 relative overflow-hidden flex flex-col" style={{ minHeight: '260px' }}>
+
         {/* Parchment background detail */}
         <div className="absolute inset-0 bg-[radial-gradient(#cfb53b_1px,transparent_1px)] [background-size:24px_24px] opacity-5 pointer-events-none" />
-        
-        {/* Map */}
-        <div className="flex-1 my-4 flex flex-col justify-center">
+
+        {/* Map — fills all remaining space */}
+        <div className="flex-1 min-h-0">
           <WorldMapFlat
             countries={countries}
             selectedCountryId={selectedCountryId}
@@ -208,7 +208,7 @@ export default function WorldMap({
       </div>
 
       {/* RIGHT PORTION: Detailed Info and Core Active Actions */}
-      <div className="w-full lg:w-96 bg-[#211a0a] border-2 border-[#cfb53b]/60 rounded-lg p-5 flex flex-col justify-between shadow-xl min-h-[480px] overflow-y-auto max-h-[85vh]">
+      <div className="w-full lg:w-96 bg-[#211a0a] border-t-2 lg:border-t-0 lg:border-l-0 border-[#cfb53b]/60 p-4 flex flex-col justify-between overflow-y-auto max-h-[55vh] lg:max-h-full">
         {selectedCountry ? (
           <div className="flex-1 flex flex-col h-full gap-4">
             

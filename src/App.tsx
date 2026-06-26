@@ -1846,9 +1846,9 @@ export default function App() {
       )}
 
       {/* 2. MAIN PANEL — fills remaining height, scrolls internally */}
-      <main className="flex-1 min-h-0 overflow-y-auto relative z-10">
+      <main className={`flex-1 min-h-0 relative z-10 ${activeTab === 'map' ? 'overflow-hidden flex flex-col' : 'overflow-y-auto'}`}>
 
-        {/* Map tab — edge-to-edge, no padding */}
+        {/* Map tab — fills full remaining height */}
         {activeTab === 'map' && (
           <WorldMap
             countries={state.countries}
