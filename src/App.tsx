@@ -1641,7 +1641,8 @@ export default function App() {
     if (remaining <= 0) {
       victoryPaceText = 'Vitória próxima!';
     } else {
-      victoryPaceText = rate > 0 ? `~${Math.ceil(remaining / rate)} ciclos` : '—';
+      const est = rate > 0 ? Math.ceil(remaining / rate) : 0;
+      victoryPaceText = rate > 0 && est > 0 && est < 99999 ? `~${est} ciclos` : '—';
     }
   } else if (state.victoryGoal === 'OneFlock') {
     const superPowers = ['usa', 'china', 'india', 'germany'];
@@ -1850,6 +1851,20 @@ export default function App() {
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
           </div>
+        </div>
+
+        {/* Rival progress bar — thin strip at bottom of header */}
+        <div className="flex items-center gap-2 px-3 py-1 bg-[#0e0804] border-t border-red-900/30">
+          <span className="text-[8px] font-mono text-red-400/70 shrink-0 uppercase tracking-wider">⚔ Rival</span>
+          <div className="flex-1 h-1.5 bg-black/60 rounded overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-[#8b0000] to-red-500 transition-all duration-500"
+              style={{ width: `${Math.min(100, state.rivalProgress)}%` }}
+            />
+          </div>
+          <span className={`text-[8px] font-mono font-bold shrink-0 ${state.rivalProgress >= 75 ? 'text-red-400' : state.rivalProgress >= 40 ? 'text-orange-400' : 'text-red-400/50'}`}>
+            {Math.round(state.rivalProgress)}%
+          </span>
         </div>
 
       </header>

@@ -60,8 +60,9 @@ export default function RivalPanel({
     return inc;
   };
 
-  const speed = calcSpeed();
-  const cyclesLeft = speed > 0 ? Math.round((100 - rivalProgress) / speed) : 9999;
+  const speed = Math.max(0, calcSpeed());
+  const rawCycles = speed > 0 ? Math.round((100 - rivalProgress) / speed) : 9999;
+  const cyclesLeft = rawCycles > 0 ? rawCycles : 9999;
   const speedColor = speed <= 0.25 ? 'text-green-400' : speed <= 0.5 ? 'text-yellow-400' : speed <= 0.8 ? 'text-orange-400' : 'text-red-400';
   const SpeedIcon = speed <= 0.25 ? TrendingDown : speed <= 0.6 ? Minus : TrendingUp;
 
