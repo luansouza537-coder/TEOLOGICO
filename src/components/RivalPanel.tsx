@@ -4,8 +4,8 @@
  */
 
 import React from 'react';
-import { Country, VictoryGoalType } from '../types';
-import { ShieldAlert, Crosshair, Users, Globe, Smile, Flame } from 'lucide-react';
+import { Country, VictoryGoalType, ReligionTrait, Dogma, DoctrineChoice } from '../types';
+import { ShieldAlert, Flame, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 
 interface RivalPanelProps {
   countries: Country[];
@@ -13,6 +13,9 @@ interface RivalPanelProps {
   rivalProgress: number;
   victoryGoal: VictoryGoalType;
   resistanceStreak: number;
+  religionTrait: ReligionTrait;
+  dogmas: Dogma[];
+  doctrines: DoctrineChoice[];
 }
 
 export default function RivalPanel({
@@ -20,216 +23,194 @@ export default function RivalPanel({
   rivalName,
   rivalProgress,
   victoryGoal,
-  resistanceStreak
+  resistanceStreak,
+  religionTrait,
+  dogmas,
+  doctrines,
 }: RivalPanelProps) {
 
-  // Calculations
-  const totalPopulation = countries.reduce((acc, curr) => acc + curr.population, 0);
-  const totalConverts = countries.reduce((acc, curr) => acc + curr.converts, 0);
-  const conversionRate = (totalConverts / totalPopulation) * 100;
-
-  const avgResistance = countries.reduce((acc, curr) => acc + curr.resistance, 0) / countries.length;
-  const avgViolence = countries.reduce((acc, curr) => acc + curr.violence, 0) / countries.length;
-
-  const totalInfiltratedLeaders = countries.filter((c) => c.leaderInfiltration >= 100).length;
-
-  // Superpowers tracking for "Um Só Rebanho"
+  const totalPopulation = countries.reduce((a, c) => a + c.population, 0);
+  const totalConverts = countries.reduce((a, c) => a + c.converts, 0);
+  const conversionRate = totalPopulation > 0 ? totalConverts / totalPopulation : 0;
+  const avgResistance = countries.reduce((a, c) => a + c.resistance, 0) / countries.length;
+  const avgViolence = countries.reduce((a, c) => a + c.violence, 0) / countries.length;
+  const activeCountries = countries.filter(c => c.converts > 0).length;
+  const establishedTemples = countries.filter(c => (c.templeLevel ?? 0) >= 2).length;
+  const totalInfiltratedLeaders = countries.filter(c => c.leaderInfiltration >= 100).length;
   const superpowers = ['usa', 'china', 'india', 'germany'];
-  const superpowersControlledCount = countries.filter(
-    (c) => superpowers.includes(c.id) && c.converts >= c.population * 0.5 && c.leaderInfiltration >= 100
-  ).length;
+  const superpowersControlled = countries.filter(c => superpowers.includes(c.id) && c.converts >= c.population * 0.5 && c.leaderInfiltration >= 100).length;
+  const hasRelogioJuizo = dogmas.some(d => d.id === 'relogio_juizo' && d.purchased);
+  const moralSourceDoc = doctrines.find(d => d.id === 'doc_moral_source');
+  const hasMoralA = moralSourceDoc?.chosen === 'A';
 
-  const renderGoalStatus = () => {
+  // Mirror speed calculation from App.tsx
+  const calcSpeed = () => {
+    let inc = 0.2;
+    if (avgResistance > 60) inc += 0.4;
+    else if (avgResistance > 40) inc += 0.2;
+    if (activeCountries < 3) inc += 0.2;
+    if (conversionRate > 0.5) inc *= 0.3;
+    else if (conversionRate > 0.25) inc *= 0.5;
+    if (establishedTemples > 0) inc *= Math.pow(0.92, establishedTemples);
+    if (religionTrait === 'Syncretist') inc *= 0.7;
+    if (hasMoralA) inc *= 0.80;
+    if (hasRelogioJuizo) inc *= 0.7;
+    const propheticL4 = countries.filter(c => religionTrait === 'Prophetic' && (c.templeLevel ?? 0) >= 4).length;
+    if (propheticL4 > 0) inc *= Math.pow(0.85, propheticL4);
+    return inc;
+  };
+
+  const speed = calcSpeed();
+  const cyclesLeft = speed > 0 ? Math.round((100 - rivalProgress) / speed) : 9999;
+  const speedColor = speed <= 0.25 ? 'text-green-400' : speed <= 0.5 ? 'text-yellow-400' : speed <= 0.8 ? 'text-orange-400' : 'text-red-400';
+  const SpeedIcon = speed <= 0.25 ? TrendingDown : speed <= 0.6 ? Minus : TrendingUp;
+
+  const renderGoalProgress = () => {
+    const convPct = conversionRate * 100;
     switch (victoryGoal) {
       case 'GlobalEcstasy':
-        return (
-          <div className="bg-[#241d0c] border border-[#cfb53b]/30 p-4 rounded-lg">
-            <span className="text-[10px] uppercase font-mono text-[#cfb53b]">Objetivo Atual</span>
-            <h4 className="text-base font-bold font-serif text-[#cfb53b] mt-0.5">Êxtase Global</h4>
-            <p className="text-xs text-[#dfcfa0]/80 mt-1">
-              Converter 80% da humanidade mundial.
-            </p>
-            <div className="mt-3">
-              <div className="flex justify-between text-xs font-mono font-bold mb-1">
-                <span>Progresso Real:</span>
-                <span>{conversionRate.toFixed(4)}% / 80%</span>
-              </div>
-              <div className="w-full h-3 bg-black/60 rounded border border-[#cfb53b]/20 overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-amber-600 to-[#cfb53b] transition-all duration-300"
-                  style={{ width: `${Math.min(100, (conversionRate / 80) * 100)}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        );
-      case 'PerpetualPeace':
-        const countriesOver20 = countries.filter((c) => c.violence >= 20).length;
-        const totalCountriesPercentSafe = ((12 - countriesOver20) / 12) * 100;
-        return (
-          <div className="bg-[#241d00] border border-orange-700/30 p-4 rounded-lg">
-            <span className="text-[10px] uppercase font-mono text-orange-400">Objetivo Atual</span>
-            <h4 className="text-base font-bold font-serif text-orange-400 mt-0.5 font-sans">Paz Perpétua</h4>
-            <p className="text-xs text-[#dfcfa0]/80 mt-1">
-              Todos os 12 países devem possuir nível de violência abaixo de 20%.
-            </p>
-            <div className="mt-3">
-              <div className="flex justify-between text-xs font-mono font-bold mb-1">
-                <span>Países Pacíficos (Violência &lt; 20%):</span>
-                <span>{12 - countriesOver20} / 12 países</span>
-              </div>
-              <div className="w-full h-3 bg-black/60 rounded border border-orange-500/20 overflow-hidden">
-                <div
-                  className="h-full bg-orange-500 transition-all duration-300"
-                  style={{ width: `${totalCountriesPercentSafe}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        );
+        return { label: 'Êxtase Global', progress: Math.min(100, (convPct / 80) * 100), detail: `${convPct.toFixed(3)}% / 80% da humanidade`, color: 'bg-[#cfb53b]' };
+      case 'PerpetualPeace': {
+        const safe = countries.filter(c => c.violence < 20).length;
+        return { label: 'Paz Perpétua', progress: (safe / 12) * 100, detail: `${safe}/12 países com violência < 20%`, color: 'bg-orange-500' };
+      }
       case 'OneFlock':
-        return (
-          <div className="bg-[#211d12] border border-[#cfb53b]/30 p-4 rounded-lg">
-            <span className="text-[10px] uppercase font-mono text-[#cfb53b]">Objetivo Atual</span>
-            <h4 className="text-base font-bold font-serif text-[#cfb53b] mt-0.5">Um Só Rebanho</h4>
-            <p className="text-xs text-[#dfcfa0]/80 mt-1">
-              Tomar poder político absoluto (conversão &ge; 50% AND mentes infiltradas a 100%) nas 4 superpotências: EUA, China, Índia e Alemanha.
-            </p>
-            <div className="mt-3 flex flex-col gap-2">
-              <div className="flex justify-between text-xs font-mono font-bold">
-                <span>Superpotências Controladas:</span>
-                <span>{superpowersControlledCount} / 4 países</span>
-              </div>
-              <div className="w-full h-3 bg-black/60 rounded border border-[#cfb53b]/20 overflow-hidden">
-                <div
-                  className="h-full bg-amber-600 transition-all duration-300"
-                  style={{ width: `${(superpowersControlledCount / 4) * 100}%` }}
-                />
-              </div>
-
-              {/* Checkbox checklist */}
-              <div className="grid grid-cols-2 gap-2 mt-2 border-t border-[#cfb53b]/10 pt-2 text-[10px] font-mono">
-                {superpowers.map((id) => {
-                  const country = countries.find((c) => c.id === id);
-                  if (!country) return null;
-                  const isConvertsOK = country.converts >= country.population * 0.5;
-                  const isLeaderOK = country.leaderInfiltration >= 100;
-                  const isControlled = isConvertsOK && isLeaderOK;
-                  return (
-                    <div key={id} className="flex flex-col gap-0.5">
-                      <span className={`font-bold ${isControlled ? 'text-[#cfb53b]' : 'text-zinc-500'}`}>
-                        {country.name}: {isControlled ? '✓ CONTROLADO' : '✗ INDEPENDENTE'}
-                      </span>
-                      <span className="text-[9px] text-zinc-400">
-                        ({Math.round((country.converts / country.population) * 100)}% converts • {country.leaderInfiltration}% líder)
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        );
+        return { label: 'Um Só Rebanho', progress: (superpowersControlled / 4) * 100, detail: `${superpowersControlled}/4 superpotências controladas`, color: 'bg-[#cfb53b]' };
       case 'TheEnlightened':
-        const percentEnlightened = (totalInfiltratedLeaders / 12) * 100;
-        return (
-          <div className="bg-[#12202c] border border-sky-800/40 p-4 rounded-lg">
-            <span className="text-[10px] uppercase font-mono text-sky-400">Objetivo Atual</span>
-            <h4 className="text-base font-bold font-serif text-sky-400 mt-0.5">O Iluminado</h4>
-            <p className="text-xs text-[#dfcfa0]/80 mt-1">
-              Infiltrar-se e converter os líderes supremos de todos os 12 países a 100%.
-            </p>
-            <div className="mt-3">
-              <div className="flex justify-between text-xs font-mono font-bold mb-1">
-                <span>Líderes Convertidos:</span>
-                <span>{totalInfiltratedLeaders} / 12 líderes</span>
-              </div>
-              <div className="w-full h-3 bg-black/60 rounded border border-sky-500/20 overflow-hidden">
-                <div
-                  className="h-full bg-sky-500 transition-all duration-300"
-                  style={{ width: `${percentEnlightened}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        );
+        return { label: 'O Iluminado', progress: (totalInfiltratedLeaders / 12) * 100, detail: `${totalInfiltratedLeaders}/12 líderes convertidos`, color: 'bg-sky-500' };
       default:
         return null;
     }
   };
 
+  const goal = renderGoalProgress();
+
+  const modifiers = [
+    { label: 'Resistência global', value: avgResistance > 60 ? '+0.4/ciclo' : avgResistance > 40 ? '+0.2/ciclo' : 'Neutra', active: avgResistance > 40, good: false },
+    { label: 'Poucos países ativos', value: '+0.2/ciclo', active: activeCountries < 3, good: false },
+    { label: `Conversão ${(conversionRate * 100).toFixed(1)}%`, value: conversionRate > 0.5 ? '×0.30' : conversionRate > 0.25 ? '×0.50' : 'Sem freio', active: conversionRate > 0.25, good: true },
+    { label: `${establishedTemples} templo(s) nível 2+`, value: establishedTemples > 0 ? `×${Math.pow(0.92, establishedTemples).toFixed(2)}` : 'Nenhum', active: establishedTemples > 0, good: true },
+    { label: 'Trait Sincretista', value: '×0.70', active: religionTrait === 'Syncretist', good: true },
+    { label: 'Relógio do Juízo', value: '×0.70', active: hasRelogioJuizo, good: true },
+    { label: 'Doutrina Fonte Moral A', value: '×0.80', active: hasMoralA, good: true },
+  ];
+
+  const countermeasures = [
+    { label: 'Conversão > 25%', done: conversionRate > 0.25, tip: 'Envie missionários e construa templos' },
+    { label: 'Resistência < 40%', done: avgResistance <= 40, tip: 'Use Pacificar e Intervenção de Emergência' },
+    { label: '3+ países com fiéis', done: activeCountries >= 3, tip: 'Expanda para novos países' },
+    { label: 'Templo nível 2+ ativo', done: establishedTemples > 0, tip: 'Construa e evolua templos' },
+    { label: 'Sincretista ou Relógio do Juízo', done: religionTrait === 'Syncretist' || hasRelogioJuizo, tip: 'Compre o dogma Relógio do Juízo' },
+  ];
+  const doneCt = countermeasures.filter(c => c.done).length;
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" id="rival-panel-component">
+    <div className="flex flex-col gap-3" id="rival-panel-component">
 
-      {/* LEFT COLUMN: Core Worldwide Metrics & Goals */}
-      <div className="flex flex-col gap-4">
-
-        <h3 className="text-sm font-bold font-serif text-[#cfb53b] uppercase tracking-wider flex items-center gap-1.5">
-          <Globe className="w-5 h-5" /> Métricas e Metas Globais
-        </h3>
-
-        {/* Dynamic goal interface card */}
-        {renderGoalStatus()}
-
-        {/* Warning Streak Indicator */}
-        {resistanceStreak > 0 && (
-          <div className="bg-red-950/80 border border-[#8b0000] rounded p-3 text-xs leading-relaxed text-red-200 flex items-start gap-2.5 animate-pulse">
-            <ShieldAlert className="w-5 h-5 text-red-400 shrink-0" />
-            <div>
-              <strong className="uppercase">Aviso de Perseguição Global!</strong>
-              <p className="mt-0.5">
-                A resistência mundial está em nível crítico (&gt; 85%). Você está há <strong>{resistanceStreak}/3 ciclos</strong> sob perseguição. Se atingir 3 consecutivos, todos os canais de fé serão demolidos (Derrota)!
-              </p>
-            </div>
+      {/* Rival card */}
+      <div className="bg-[#1a0808] border border-red-900/50 rounded-lg p-3">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div>
+            <span className="text-[8px] uppercase font-mono tracking-widest px-1.5 py-0.5 bg-red-950 text-red-400 border border-red-900 rounded font-bold">Seita Adversária</span>
+            <h3 className="text-lg font-bold font-serif text-red-400 mt-1 leading-tight">{rivalName}</h3>
+            <p className="text-[9px] text-[#dfcfa0]/50 mt-0.5">Nega o espírito e busca uma utopia mecânica. Se vencerem primeiro, você perde.</p>
           </div>
-        )}
-      </div>
-
-      {/* RIGHT COLUMN: The Dreaded Rival Religion */}
-      <div className="bg-[#1e1313] border-2 border-red-950 rounded-lg p-5 flex flex-col justify-between shadow-xl">
-        <div>
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 bg-red-950 text-red-400 border border-red-900 rounded font-bold animate-pulse">
-              Seita Adversária Ativa
-            </span>
-            <span className="text-xs font-mono font-semibold text-red-400 flex items-center gap-1">
-              <Flame className="w-3.5 h-3.5 text-red-500" /> Rival do Amanhã
-            </span>
-          </div>
-
-          <h3 className="text-2xl font-bold font-serif text-red-400 mt-2">
-            {rivalName}
-          </h3>
-          <p className="text-xs text-[#dfcfa0]/75 leading-relaxed mt-2">
-            Nega o espírito e busca construir uma utopia mecânica. Se alcançarem sua meta primeiro, você falhará.
-          </p>
-
-          {/* Rival's progress bar */}
-          <div className="bg-[#120505] border border-red-950/60 rounded p-4">
-            <div className="flex justify-between items-center text-xs font-mono font-extrabold text-red-400 mb-1.5">
-              <span>Progresso de Vitória Rival:</span>
-              <span>{Math.round(rivalProgress)}% / 100%</span>
-            </div>
-            <div className="w-full h-3.5 bg-black rounded overflow-hidden border border-red-900/30">
-              <div
-                className="h-full bg-gradient-to-r from-[#8b0000] to-red-600 transition-all duration-300"
-                style={{ width: `${rivalProgress}%` }}
-              />
-            </div>
-            <span className="text-[9px] text-[#dfcfa0]/50 block mt-1 leading-normal">
-              Eles convertem cidadãos passivamente no escuro do ceticismo. Cada dogma que você compra que estimula ceticismo ou cada escândalo seu acelera os planos da Ordem.
-            </span>
-          </div>
+          <Flame className="w-5 h-5 text-red-500 shrink-0 mt-1" />
         </div>
 
-        {/* Action item block */}
-        <div className="bg-[#120a0a] border border-red-950 p-2 rounded mt-4">
-          <span className="text-[10px] uppercase font-bold text-red-400 flex items-center gap-1">
-            <ShieldAlert className="w-3.5 h-3.5" /> Antagonismo Religioso
+        {/* Progress bar */}
+        <div className="flex justify-between text-[10px] font-mono mb-1">
+          <span className="text-red-400 font-bold">Progresso Rival</span>
+          <span className="text-red-300 font-bold">{Math.round(rivalProgress)}%</span>
+        </div>
+        <div className="w-full h-2.5 bg-black/60 rounded overflow-hidden border border-red-900/40">
+          <div className="h-full bg-gradient-to-r from-[#8b0000] to-red-500 transition-all duration-300" style={{ width: `${rivalProgress}%` }} />
+        </div>
+
+        {/* A — Speed indicator */}
+        <div className={`flex items-center justify-between text-[9px] font-mono mt-2 ${speedColor}`}>
+          <span className="flex items-center gap-1">
+            <SpeedIcon className="w-3 h-3" />
+            <span className="font-bold">+{speed.toFixed(2)}%/ciclo</span>
+            {speed <= 0.25 && <span className="text-green-400/70"> · Contido</span>}
+            {speed > 0.25 && speed <= 0.5 && <span className="text-yellow-400/70"> · Moderado</span>}
+            {speed > 0.5 && speed <= 0.8 && <span className="text-orange-400/70"> · Acelerando</span>}
+            {speed > 0.8 && <span className="text-red-400/70"> · Crítico</span>}
           </span>
-          <p className="text-[10px] text-[#dfcfa0]/70 mt-1 leading-normal">
-            Resistência global alta gera mais Fervor de emergência — use para dogmas defensivos.
-          </p>
+          <span className="text-[#dfcfa0]/35">{cyclesLeft < 9999 ? `~${cyclesLeft} ciclos` : '∞'}</span>
+        </div>
+      </div>
+
+      {/* Your goal progress */}
+      {goal && (
+        <div className="bg-[#171308] border border-[#cfb53b]/20 rounded-lg px-3 py-2">
+          <div className="flex justify-between text-[9px] font-mono mb-1.5">
+            <span className="text-[#cfb53b]/70 uppercase tracking-wider">🎯 {goal.label}</span>
+            <span className="text-[#cfb53b] font-bold">{Math.round(goal.progress)}%</span>
+          </div>
+          <div className="w-full h-1.5 bg-black/50 rounded overflow-hidden">
+            <div className={`h-full ${goal.color} transition-all`} style={{ width: `${goal.progress}%` }} />
+          </div>
+          <div className="text-[9px] text-[#dfcfa0]/35 font-mono mt-1">{goal.detail}</div>
+        </div>
+      )}
+
+      {/* B — Modifier breakdown */}
+      <div className="bg-[#171308] border border-[#cfb53b]/15 rounded-lg px-3 py-2.5">
+        <div className="text-[9px] font-mono text-[#cfb53b]/60 uppercase tracking-wider mb-2">📊 Por que avança {speed.toFixed(2)}%/ciclo</div>
+        <div className="flex flex-col gap-1">
+          {modifiers.map(m => (
+            <div key={m.label} className="flex justify-between items-center text-[9px] font-mono">
+              <span className={m.active ? (m.good ? 'text-green-400' : 'text-red-400') : 'text-zinc-600'}>
+                {m.active ? (m.good ? '✓' : '▲') : '–'} {m.label}
+              </span>
+              <span className={`font-bold ml-2 ${m.active && !m.good ? 'text-red-400' : m.active ? 'text-green-400' : 'text-zinc-700'}`}>{m.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* C — Countermeasures */}
+      <div className="bg-[#171308] border border-[#cfb53b]/15 rounded-lg px-3 py-2.5">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-[9px] font-mono text-[#cfb53b]/60 uppercase tracking-wider">🛡️ Contramedidas</span>
+          <span className={`text-[9px] font-mono font-bold ${doneCt >= 4 ? 'text-green-400' : doneCt >= 2 ? 'text-yellow-400' : 'text-red-400'}`}>{doneCt}/{countermeasures.length} ativas</span>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          {countermeasures.map(cm => (
+            <div key={cm.label} className="flex items-start gap-2">
+              <span className={`text-[10px] shrink-0 ${cm.done ? 'text-green-400' : 'text-zinc-600'}`}>{cm.done ? '✓' : '✗'}</span>
+              <div>
+                <span className={`text-[9px] font-mono font-bold ${cm.done ? 'text-green-400' : 'text-zinc-400'}`}>{cm.label}</span>
+                {!cm.done && <div className="text-[8px] text-zinc-600 mt-0.5">{cm.tip}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Resistance streak warning */}
+      {resistanceStreak > 0 && (
+        <div className="bg-red-950/80 border border-[#8b0000] rounded-lg p-3 flex items-start gap-2 animate-pulse">
+          <ShieldAlert className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+          <div>
+            <strong className="text-[10px] uppercase text-red-300">Perseguição Global!</strong>
+            <p className="text-[9px] text-red-200/80 mt-0.5">Resistência acima de 85% há <strong>{resistanceStreak}/3 ciclos</strong>. Em 3 ciclos consecutivos todos os templos são demolidos — derrota!</p>
+          </div>
+        </div>
+      )}
+
+      {/* Stats row */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-[#171308] border border-[#cfb53b]/10 rounded px-2 py-1.5">
+          <span className="text-[8px] uppercase font-mono text-[#dfcfa0]/40 block">Resistência Média</span>
+          <span className={`text-sm font-bold font-mono ${avgResistance > 60 ? 'text-red-500' : avgResistance > 40 ? 'text-orange-400' : 'text-green-400'}`}>{avgResistance.toFixed(1)}%</span>
+          <span className="text-[8px] text-[#dfcfa0]/30 block">{avgResistance > 85 ? '⚠ Zona crítica' : avgResistance > 60 ? 'Acelera rival' : 'Sob controle'}</span>
+        </div>
+        <div className="bg-[#171308] border border-[#cfb53b]/10 rounded px-2 py-1.5">
+          <span className="text-[8px] uppercase font-mono text-[#dfcfa0]/40 block">Violência Média</span>
+          <span className={`text-sm font-bold font-mono ${avgViolence > 60 ? 'text-red-500' : avgViolence > 40 ? 'text-orange-400' : 'text-green-400'}`}>{avgViolence.toFixed(1)}%</span>
+          <span className="text-[8px] text-[#dfcfa0]/30 block">{avgViolence > 60 ? 'Use Pacificar' : 'Tolerável'}</span>
         </div>
       </div>
 

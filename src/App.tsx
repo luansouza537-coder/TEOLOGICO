@@ -1973,6 +1973,9 @@ export default function App() {
               rivalProgress={state.rivalProgress}
               victoryGoal={state.victoryGoal}
               resistanceStreak={state.resistanceStreak}
+              religionTrait={state.religionTrait}
+              dogmas={state.dogmas}
+              doctrines={state.doctrines ?? []}
             />
           )}
 
