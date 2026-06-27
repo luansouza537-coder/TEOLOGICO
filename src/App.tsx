@@ -953,17 +953,14 @@ export default function App() {
         const activeCountriesCount = updatedCountries.filter(c => c.converts > 0).length;
         const convertedRate2 = totalPopCount > 0 ? (totalConvertsCount / totalPopCount) : 0;
 
-        let rivalIncrement = 0.15; // base (reduced from 0.2 for fairer early game)
+        let rivalIncrement = 0.08; // base
 
-        // Grace period: rival doesn't advance in the first 20 cycles
-        if (prev.cycle < 20) rivalIncrement = 0;
+        // Grace period: rival frozen for first 40 cycles
+        if (prev.cycle < 40) rivalIncrement = 0;
         else {
-          // Rival thrives when faith is weak or resistance is high
-          if (avgResistance > 60) rivalIncrement += 0.4;
-          else if (avgResistance > 40) rivalIncrement += 0.2;
-
-          // Rival fills the void when player has very little presence (raised threshold from 3 to 2)
-          if (activeCountriesCount < 2) rivalIncrement += 0.1;
+          // Resistance penalty (softened — was +0.4/+0.2)
+          if (avgResistance > 60) rivalIncrement += 0.15;
+          else if (avgResistance > 40) rivalIncrement += 0.08;
         }
 
         // Rival retreats before established faith

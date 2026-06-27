@@ -47,11 +47,10 @@ export default function RivalPanel({
 
   // Mirror speed calculation from App.tsx
   const calcSpeed = () => {
-    if (cycle < 20) return 0; // grace period
-    let inc = 0.15;
-    if (avgResistance > 60) inc += 0.4;
-    else if (avgResistance > 40) inc += 0.2;
-    if (activeCountries < 2) inc += 0.1;
+    if (cycle < 40) return 0; // grace period
+    let inc = 0.08;
+    if (avgResistance > 60) inc += 0.15;
+    else if (avgResistance > 40) inc += 0.08;
     if (conversionRate > 0.5) inc *= 0.3;
     else if (conversionRate > 0.25) inc *= 0.5;
     if (establishedTemples > 0) inc *= Math.pow(0.92, establishedTemples);
@@ -90,9 +89,8 @@ export default function RivalPanel({
   const goal = renderGoalProgress();
 
   const modifiers = [
-    { label: cycle < 20 ? `Período de graça (ciclo ${cycle}/20)` : 'Período de graça', value: cycle < 20 ? 'Inativo' : 'Encerrado', active: cycle < 20, good: true },
-    { label: 'Resistência global', value: avgResistance > 60 ? '+0.4/ciclo' : avgResistance > 40 ? '+0.2/ciclo' : 'Neutra', active: avgResistance > 40, good: false },
-    { label: 'Poucos países ativos', value: '+0.1/ciclo', active: activeCountries < 2, good: false },
+    { label: cycle < 40 ? `Período de graça (ciclo ${cycle}/40)` : 'Período de graça', value: cycle < 40 ? 'Inativo' : 'Encerrado', active: cycle < 40, good: true },
+    { label: 'Resistência global', value: avgResistance > 60 ? '+0.15/ciclo' : avgResistance > 40 ? '+0.08/ciclo' : 'Neutra', active: avgResistance > 40, good: false },
     { label: `Conversão ${(conversionRate * 100).toFixed(1)}%`, value: conversionRate > 0.5 ? '×0.30' : conversionRate > 0.25 ? '×0.50' : 'Sem freio', active: conversionRate > 0.25, good: true },
     { label: `${establishedTemples} templo(s) nível 2+`, value: establishedTemples > 0 ? `×${Math.pow(0.92, establishedTemples).toFixed(2)}` : 'Nenhum', active: establishedTemples > 0, good: true },
     { label: 'Trait Sincretista', value: '×0.70', active: religionTrait === 'Syncretist', good: true },
