@@ -47,10 +47,8 @@ export default function RivalPanel({
 
   // Mirror speed calculation from App.tsx
   const calcSpeed = () => {
-    if (cycle < 40) return 0; // grace period
-    let inc = 0.08;
-    if (avgResistance > 60) inc += 0.15;
-    else if (avgResistance > 40) inc += 0.08;
+    if (cycle < 60) return 0; // grace period
+    let inc = 0.04;
     if (conversionRate > 0.5) inc *= 0.3;
     else if (conversionRate > 0.25) inc *= 0.5;
     if (establishedTemples > 0) inc *= Math.pow(0.92, establishedTemples);
@@ -89,8 +87,7 @@ export default function RivalPanel({
   const goal = renderGoalProgress();
 
   const modifiers = [
-    { label: cycle < 40 ? `Período de graça (ciclo ${cycle}/40)` : 'Período de graça', value: cycle < 40 ? 'Inativo' : 'Encerrado', active: cycle < 40, good: true },
-    { label: 'Resistência global', value: avgResistance > 60 ? '+0.15/ciclo' : avgResistance > 40 ? '+0.08/ciclo' : 'Neutra', active: avgResistance > 40, good: false },
+    { label: cycle < 60 ? `Período de graça (ciclo ${cycle}/60)` : 'Período de graça', value: cycle < 60 ? 'Inativo' : 'Encerrado', active: cycle < 60, good: true },
     { label: `Conversão ${(conversionRate * 100).toFixed(1)}%`, value: conversionRate > 0.5 ? '×0.30' : conversionRate > 0.25 ? '×0.50' : 'Sem freio', active: conversionRate > 0.25, good: true },
     { label: `${establishedTemples} templo(s) nível 2+`, value: establishedTemples > 0 ? `×${Math.pow(0.92, establishedTemples).toFixed(2)}` : 'Nenhum', active: establishedTemples > 0, good: true },
     { label: 'Trait Sincretista', value: '×0.70', active: religionTrait === 'Syncretist', good: true },

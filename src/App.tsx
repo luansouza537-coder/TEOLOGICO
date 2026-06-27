@@ -955,15 +955,10 @@ export default function App() {
         const activeCountriesCount = updatedCountries.filter(c => c.converts > 0).length;
         const convertedRate2 = totalPopCount > 0 ? (totalConvertsCount / totalPopCount) : 0;
 
-        let rivalIncrement = 0.08; // base
+        let rivalIncrement = 0.04; // base (symbolic pressure)
 
-        // Grace period: rival frozen for first 40 cycles
-        if (prev.cycle < 40) rivalIncrement = 0;
-        else {
-          // Resistance penalty (softened — was +0.4/+0.2)
-          if (avgResistance > 60) rivalIncrement += 0.15;
-          else if (avgResistance > 40) rivalIncrement += 0.08;
-        }
+        // Grace period: rival frozen for first 60 cycles
+        if (prev.cycle < 60) rivalIncrement = 0;
 
         // Rival retreats before established faith
         if (convertedRate2 > 0.5) rivalIncrement *= 0.3;
