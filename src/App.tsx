@@ -370,6 +370,10 @@ export default function App() {
           let lastConflictCycle = c.lastConflictCycle ?? -99;
           let localReligionStrength = c.localReligionStrength ?? 0;
 
+          // Declared here so Temple passive effects (outside if converts>0) can access them
+          const _temples = c.temples ?? [0,0,0,0];
+          const _hasAnyTemple = _temples.some(t => t > 0);
+
           if (converts > 0) {
             cyclesPresent += 1;
 
@@ -531,8 +535,6 @@ export default function App() {
             }
 
             // Temple growth bonus (stacks per temple count per level)
-            const _temples = c.temples ?? [0,0,0,0];
-            const _hasAnyTemple = _temples.some(t => t > 0);
             if (_hasAnyTemple && hasTithe) {
               const GROWTH_PER = [0.015, 0.025, 0.04, 0.06];
               const totalGrowthBonus = _temples.reduce((s, count, i) => s + count * GROWTH_PER[i], 0);
