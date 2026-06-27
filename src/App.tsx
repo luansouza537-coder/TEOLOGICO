@@ -868,7 +868,7 @@ export default function App() {
         // Teocracias aliadas (resultado de golpe): geram +5 Fé/ciclo e reduzem resistência dos vizinhos -0.1/ciclo
         let theoFaithBonus = 0;
         updatedCountries
-          .filter(c => c.regimeType === 'teocracia' && c.leaderInfiltration >= 100 && c.converts > 0)
+          .filter(c => c.coupDone === true && c.leaderInfiltration >= 100 && c.converts > 0)
           .forEach(theoC => {
             theoFaithBonus += 5;
             const neighborIds = COUNTRY_NEIGHBORS[theoC.id] ?? [];
@@ -1886,7 +1886,7 @@ export default function App() {
       if (prev.faith < COUP_COST.faith || prev.fervor < COUP_COST.fervor || prev.tithe < COUP_COST.tithe) return prev;
 
       const newTags = (country.tags ?? [])
-        .filter(t => t !== 'Autoritário' && t !== 'Secular')
+        .filter(t => t !== 'Autoritário' && t !== 'Secular' && t !== 'Militarista')
         .concat(country.tags?.includes('Devoto') ? [] : ['Devoto']);
 
       const updatedCountry = {
@@ -1897,6 +1897,7 @@ export default function App() {
         leaderInfiltration: 100,
         localReligionStrength: 10,
         tags: newTags,
+        coupDone: true,
         lastActionCycle: prev.cycle,
       };
 
