@@ -14,6 +14,7 @@ import LeadersPanel from './components/LeadersPanel';
 import RivalPanel from './components/RivalPanel';
 import SplashScreen from './components/SplashScreen';
 import MainMenu from './components/MainMenu';
+import FirstTempleModal from './components/FirstTempleModal';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Gamepad2, Info, BookOpen, AlertTriangle, Map, ScrollText, Crown, Skull, Sparkles, Save, FolderOpen } from 'lucide-react';
 import { calcPeaceEffectiveness } from './utils/peaceEffectiveness';
 import { playFileSound } from './utils/sound';
@@ -162,6 +163,8 @@ export default function App() {
   const [newsText, setNewsText] = useState('CONEXÃO COLETIVA ESTÁVEL: Monitorando a disseminação teológica pelo globo...');
   const [floatingTexts, setFloatingTexts] = useState<{ id: number; text: string; x: number; y: number; colorClass: string; countryId?: string }[]>([]);
   const [saveToast, setSaveToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [firstTempleModal, setFirstTempleModal] = useState<{ countryName: string } | null>(null);
+  const firstTempleShownRef = useRef(false);
   const soundtrackRef = useRef<HTMLAudioElement | null>(null);
   const alertPlayedThisCycleRef = useRef<number>(-1);
   const isMutedRef = useRef(isMuted);
@@ -1144,10 +1147,18 @@ export default function App() {
           : prev.eventCooldowns;
 
         // Count temples completed this cycle (templePending > 0 → now 0 means it just finished)
-        const newlyCompletedTemples = updatedCountries.filter((c, i) => {
+        const justCompletedTemples = updatedCountries.filter((c, i) => {
           const prev_c = prev.countries[i];
           return prev_c.templePending > 0 && c.templePending === 0 && c.templeLevel > prev_c.templeLevel;
-        }).length;
+        });
+        const newlyCompletedTemples = justCompletedTemples.length;
+
+        // First temple ever built — trigger celebration modal
+        if (newlyCompletedTemples > 0 && prev.totalTemples === 0 && !firstTempleShownRef.current) {
+          firstTempleShownRef.current = true;
+          const firstTempleCountry = justCompletedTemples[0];
+          setTimeout(() => setFirstTempleModal({ countryName: firstTempleCountry.name }), 400);
+        }
 
         // Count temples destroyed this cycle by violence
         const newlyDestroyedTemples = updatedCountries.filter((c, i) => {
@@ -2833,6 +2844,16 @@ export default function App() {
           </div>
         );
       })()}
+
+      {/* First Temple celebration modal */}
+      {firstTempleModal && (
+        <FirstTempleModal
+          religionName={state.religionName}
+          trait={state.religionTrait}
+          countryName={firstTempleModal.countryName}
+          onClose={() => setFirstTempleModal(null)}
+        />
+      )}
 
       {/* 4a. VICTORY SCREEN — full immersive overlay */}
       {state.isGameOver && state.gameOverReason === 'victory' && (
