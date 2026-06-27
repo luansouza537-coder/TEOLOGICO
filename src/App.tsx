@@ -15,6 +15,7 @@ import RivalPanel from './components/RivalPanel';
 import SplashScreen from './components/SplashScreen';
 import MainMenu from './components/MainMenu';
 import FirstTempleModal from './components/FirstTempleModal';
+import TutorialModal from './components/TutorialModal';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Gamepad2, Info, BookOpen, AlertTriangle, Map, ScrollText, Crown, Skull, Sparkles, Save, FolderOpen } from 'lucide-react';
 import { calcPeaceEffectiveness } from './utils/peaceEffectiveness';
 import { playFileSound } from './utils/sound';
@@ -159,6 +160,7 @@ export default function App() {
 
   const hasSave = !!localStorage.getItem('religion_simulator_state_v2');
   const [appScreen, setAppScreen] = useState<'splash' | 'menu' | 'creation' | 'game'>(() => 'splash');
+  const [showOnboardingTutorial, setShowOnboardingTutorial] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'map' | 'dogmas' | 'leaders' | 'rival' | 'faith' | 'guide'>('map');
   const [faithSubTab, setFaithSubTab] = useState<'visao' | 'doutrinas'>('visao');
@@ -2053,7 +2055,7 @@ export default function App() {
   }
 
   if (appScreen === 'creation' || !state.started) {
-    return <CreationScreen onStart={(name: string, trait: ReligionTrait, goal: VictoryGoalType, foundingDogmaIds: string[]) => { handleStartGame(name, trait, goal, foundingDogmaIds); setAppScreen('game'); }} />;
+    return <CreationScreen onStart={(name: string, trait: ReligionTrait, goal: VictoryGoalType, foundingDogmaIds: string[]) => { handleStartGame(name, trait, goal, foundingDogmaIds); setAppScreen('game'); setShowOnboardingTutorial(true); }} />;
   }
 
   // Formatting helpers
@@ -3070,6 +3072,13 @@ export default function App() {
           trait={state.religionTrait}
           countryName={firstTempleModal.countryName}
           onClose={() => setFirstTempleModal(null)}
+        />
+      )}
+
+      {showOnboardingTutorial && (
+        <TutorialModal
+          victoryGoal={state.victoryGoal}
+          onClose={() => setShowOnboardingTutorial(false)}
         />
       )}
 
