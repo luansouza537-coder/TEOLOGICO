@@ -73,6 +73,11 @@ const COUNTRY_POSITIONS: Record<string, { lat: number; lon: number; name: string
   indonesia:    { lat: -0.79,  lon: 113.92,  name: 'Indonésia' },
   nigeria:      { lat: 9.08,   lon: 8.67,    name: 'Nigéria' },
   haiti:        { lat: 18.97,  lon: -72.28,  name: 'Haiti' },
+  ukraine:      { lat: 48.38,  lon: 31.17,   name: 'Ucrânia' },
+  ethiopia:     { lat: 9.14,   lon: 40.49,   name: 'Etiópia' },
+  philippines:  { lat: 12.88,  lon: 121.77,  name: 'Filipinas' },
+  colombia:     { lat: 4.57,   lon: -74.29,  name: 'Colômbia' },
+  cuba:         { lat: 21.52,  lon: -77.78,  name: 'Cuba' },
 };
 
 function getMarkerColor(country: Country): string {

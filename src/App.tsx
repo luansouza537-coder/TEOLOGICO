@@ -21,24 +21,29 @@ import { playFileSound } from './utils/sound';
 
 // Geographic neighbors for aura_iluminada dogma effect
 const COUNTRY_NEIGHBORS: Record<string, string[]> = {
-  usa:          ['mexico', 'canada_proxy'],
-  mexico:       ['usa', 'haiti'],
-  brazil:       ['mexico', 'south_africa', 'nigeria'],
-  germany:      ['russia', 'turkey'],
-  russia:       ['germany', 'china', 'iran'],
+  usa:          ['mexico', 'canada_proxy', 'cuba'],
+  mexico:       ['usa', 'haiti', 'colombia', 'cuba'],
+  brazil:       ['mexico', 'south_africa', 'nigeria', 'colombia'],
+  germany:      ['russia', 'turkey', 'ukraine'],
+  russia:       ['germany', 'china', 'iran', 'ukraine'],
   china:        ['russia', 'india', 'japan', 'south_korea'],
   india:        ['china', 'iran', 'indonesia'],
-  japan:        ['china', 'australia', 'south_korea', 'indonesia'],
-  egypt:        ['saudi_arabia', 'nigeria', 'turkey'],
+  japan:        ['china', 'australia', 'south_korea', 'indonesia', 'philippines'],
+  egypt:        ['saudi_arabia', 'nigeria', 'turkey', 'ethiopia'],
   saudi_arabia: ['egypt', 'turkey', 'iran'],
   south_africa: ['brazil', 'nigeria'],
   australia:    ['japan', 'indonesia'],
-  turkey:       ['germany', 'egypt', 'saudi_arabia', 'iran'],
+  turkey:       ['germany', 'egypt', 'saudi_arabia', 'iran', 'ukraine'],
   iran:         ['saudi_arabia', 'turkey', 'russia', 'india'],
-  south_korea:  ['japan', 'china'],
-  indonesia:    ['japan', 'australia', 'india'],
-  nigeria:      ['egypt', 'south_africa', 'brazil'],
-  haiti:        ['mexico', 'usa'],
+  south_korea:  ['japan', 'china', 'philippines'],
+  indonesia:    ['japan', 'australia', 'india', 'philippines'],
+  nigeria:      ['egypt', 'south_africa', 'brazil', 'ethiopia'],
+  haiti:        ['mexico', 'usa', 'colombia', 'cuba'],
+  ukraine:      ['germany', 'russia', 'turkey'],
+  ethiopia:     ['egypt', 'nigeria'],
+  philippines:  ['indonesia', 'south_korea', 'japan'],
+  colombia:     ['mexico', 'brazil', 'haiti'],
+  cuba:         ['usa', 'mexico', 'haiti'],
 };
 
 const TEMPLE_NAMES: Record<string, string[]> = {
@@ -518,6 +523,11 @@ export default function App() {
               if (convertFracIndo >= 0.10) growthFactor *= 1.5; // crescimento viral após 10%
               else growthFactor *= 0.7; // resistência islâmica: 30% mais lenta antes de 10%
             }
+            if (c.id === 'ethiopia' && prev.religionTrait === 'Mistical') growthFactor *= 1.3;
+            if (c.id === 'colombia') {
+              if (violence > 50) growthFactor *= 0.60;
+              else if (violence < 30) growthFactor *= 1.60;
+            }
 
             // Temple growth bonus (stacks per temple count per level)
             const _temples = c.temples ?? [0,0,0,0];
@@ -786,6 +796,60 @@ export default function App() {
           };
         }
 
+        // ukraine: violência cresce se Rússia não convertida, cai se convertida
+        const ukraineIdx = updatedCountries.findIndex(c => c.id === 'ukraine');
+        if (ukraineIdx !== -1 && updatedCountries[ukraineIdx].converts > 0) {
+          const russiaConverted = updatedCountries.find(c => c.id === 'russia')?.leaderInfiltration >= 100;
+          const vDelta = russiaConverted ? -0.5 : 0.8;
+          updatedCountries[ukraineIdx] = {
+            ...updatedCountries[ukraineIdx],
+            violence: Math.max(0, Math.min(100, updatedCountries[ukraineIdx].violence + vDelta)),
+          };
+        }
+
+        // ethiopia: Syncretist trait → resistência cresce +0.2/ciclo
+        const ethiopiaIdx = updatedCountries.findIndex(c => c.id === 'ethiopia');
+        if (ethiopiaIdx !== -1 && updatedCountries[ethiopiaIdx].converts > 0 && prev.religionTrait === 'Syncretist') {
+          updatedCountries[ethiopiaIdx] = {
+            ...updatedCountries[ethiopiaIdx],
+            resistance: Math.min(100, updatedCountries[ethiopiaIdx].resistance + 0.2),
+          };
+        }
+
+        // philippines: líder convertido → +1.5% converts na Indonésia e Japão por ciclo
+        const phObj = updatedCountries.find(c => c.id === 'philippines');
+        if (phObj && phObj.leaderInfiltration >= 100) {
+          ['indonesia', 'japan'].forEach(targetId => {
+            const idx = updatedCountries.findIndex(c => c.id === targetId);
+            if (idx !== -1 && updatedCountries[idx].converts > 0) {
+              const surge = Math.floor(updatedCountries[idx].converts * 0.015);
+              updatedCountries[idx] = {
+                ...updatedCountries[idx],
+                converts: Math.min(updatedCountries[idx].population, updatedCountries[idx].converts + surge),
+              };
+            }
+          });
+        }
+
+        // cuba: a cada 15 ciclos de presença → culto clandestino (+30 fervor + 2% conversão)
+        let cubaFervorBonus = 0;
+        const cubaIdx = updatedCountries.findIndex(c => c.id === 'cuba');
+        if (cubaIdx !== -1) {
+          const cubaC = updatedCountries[cubaIdx];
+          if (cubaC.converts > 0 && cubaC.cyclesPresent >= 15 && cubaC.cyclesPresent % 15 === 0) {
+            const bonusConverts = Math.floor(cubaC.population * 0.02);
+            updatedCountries[cubaIdx] = {
+              ...cubaC,
+              converts: Math.min(cubaC.population, cubaC.converts + bonusConverts),
+            };
+            cubaFervorBonus = 30;
+          }
+          // líder convertido → resistência zero
+          if (cubaC.leaderInfiltration >= 100) {
+            updatedCountries[cubaIdx] = { ...updatedCountries[cubaIdx], resistance: 0 };
+          }
+        }
+
         // south_korea: líder convertido → +1.5% converts no Japão e Indonésia por ciclo
         const skObj = updatedCountries.find(c => c.id === 'south_korea');
         if (skObj && skObj.leaderInfiltration >= 100) {
@@ -953,6 +1017,7 @@ export default function App() {
           fervorGained += 3;
         }
         if (hasRelogioJuizo) fervorGained += 5;
+        fervorGained += cubaFervorBonus;
 
         // China special trait: fervor doubled from high-resistance countries (capped at +5/cycle to avoid exploit)
         const chinaObj = updatedCountries.find(c => c.id === 'china');
@@ -1424,6 +1489,7 @@ export default function App() {
     // Escalating cost per missionary already sent (each costs 15 more than the last)
     cost += (countryObj.missionariesSent ?? 0) * 15;
     if (countryObj.id === 'haiti') cost = Math.round(cost * 0.5); // Haiti: receptividade extrema -50% custo (aplicado por último para incluir escalonamento)
+    if (countryObj.id === 'cuba') cost = Math.round(cost * 1.80); // Cuba: regime opressor +80% custo
     // Doctrine modifiers on missionary cost
     if (state.doctrines?.find(d => d.id === 'doc_ritual')?.chosen === 'A') cost += 10;
     if (state.doctrines?.find(d => d.id === 'doc_ritual')?.chosen === 'B') cost = Math.max(5, cost - 10);

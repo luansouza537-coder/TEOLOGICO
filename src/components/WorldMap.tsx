@@ -23,6 +23,11 @@ const COUNTRY_LORE: Record<string, string> = {
   mexico: 'Terra da Virgem de Guadalupe e dos cartéis. O catolicismo popular é identidade — uma religião que ofereça paz comunitária pode varrer o país em meses.',
   saudi_arabia: 'Coração do Islã sunita. As leis teocráticas são muralhas de aço — e ainda assim uma juventude silenciosa questiona tudo que lhe foi ensinado.',
   australia: 'Continente-ilha de pragmatismo anglo-saxão. A solidão do interior imenso e a busca por identidade abrem janelas que o racional não fecha.',
+  ukraine: 'Nação forjada na resistência. A guerra e o sofrimento abriram feridas profundas — e feridas profundas são solo fértil para a fé. Mas enquanto a Rússia arde, a violência não descansa.',
+  ethiopia: 'Uma das mais antigas tradições cristãs do mundo vive aqui. A espiritualidade está nas pedras, nos cantos, no cheiro do café. Caminhos Místicos encontram eco ancestral nessa terra.',
+  philippines: 'Arquipélago de fé intensa no coração do Pacífico. O catolicismo é identidade nacional — um povo já aberto ao sagrado aguarda apenas a mensagem certa para irradiar fé pelo Sudeste Asiático.',
+  colombia: 'Terra de contrastes radicais: favelas e catedrais, cartéis e comunidades de fé. Quem conseguir pacificar a violência encontrará um dos povos mais receptivos da América do Sul.',
+  cuba: 'Sob décadas de ateísmo estatal, a espiritualidade cubana sobreviveu em sussurros. Os cultos clandestinos guardam uma chama que o regime nunca apagou — só quem chegar com paciência colherá essa colheita proibida.',
 };
 
 const CONTINENTS = [
@@ -92,6 +97,7 @@ export default function WorldMap({
     if (c.id === 'china') base += 20;
     if (c.id === 'saudi_arabia') base += 25;
     base += (c.missionariesSent ?? 0) * 15;
+    if (c.id === 'cuba') base = Math.round(base * 1.80);
     return base;
   };
 
