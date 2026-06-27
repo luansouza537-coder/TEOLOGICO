@@ -178,26 +178,30 @@ export default function App() {
   const isMutedRef = useRef(isMuted);
   useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
 
+  // Create audio element programmatically so it exists before game screen mounts
+  useEffect(() => {
+    const audio = new Audio('/soundtrack.mp3');
+    audio.loop = true;
+    audio.volume = 0.35;
+    audio.muted = isMutedRef.current;
+    soundtrackRef.current = audio;
+    return () => { audio.pause(); soundtrackRef.current = null; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Sound preference state persistence
   useEffect(() => {
     localStorage.setItem('audio_muted_v2', String(isMuted));
   }, [isMuted]);
 
-  // Soundtrack: starts when game begins, respects mute toggle
-  useEffect(() => {
-    if (!soundtrackRef.current) return;
-    if (state.started && !state.isGameOver) {
-      soundtrackRef.current.volume = 0.35;
-      soundtrackRef.current.muted = isMuted;
-      soundtrackRef.current.play().catch(() => {});
-    } else {
-      soundtrackRef.current.pause();
-    }
-  }, [state.started, state.isGameOver]);
-
   useEffect(() => {
     if (soundtrackRef.current) soundtrackRef.current.muted = isMuted;
   }, [isMuted]);
+
+  // Pause soundtrack on game over
+  useEffect(() => {
+    if (state.isGameOver && soundtrackRef.current) soundtrackRef.current.pause();
+  }, [state.isGameOver]);
 
   // #9: Dynamic browser tab title
   useEffect(() => {
@@ -3064,9 +3068,6 @@ export default function App() {
           </div>
         </div>
       )}
-
-      {/* Soundtrack — loop infinito, controlado pelo toggle de mute */}
-      <audio ref={soundtrackRef} src="/soundtrack.mp3" loop preload="auto" />
 
       {/* Save/Load toast notification */}
       {saveToast && (
