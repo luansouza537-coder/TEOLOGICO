@@ -1280,19 +1280,24 @@ export default function App() {
   // Handle Religion Initialization
   const handleStartGame = (name: string, trait: ReligionTrait, goal: VictoryGoalType, foundingDogmaIds: string[] = []) => {
     // Fresh countries initialization (giving focus to USA first)
-    const presetCountries = INITIAL_COUNTRIES.map((c) => {
+    let presetCountries = INITIAL_COUNTRIES.map((c) => {
       if (c.id === 'usa') {
         return { ...c, converts: 120, leaderInfiltration: 5, resistance: 15, violence: 45, missionariesSent: 0, templeLevel: 0, cyclesPresent: 1, lastConflictCycle: -99 };
       }
       return { ...c, converts: 0, leaderInfiltration: 0, missionariesSent: 0, templeLevel: 0, cyclesPresent: 0, lastConflictCycle: -99 };
     });
 
+    // Apply one-time founding pillar effects that normally fire on purchase
+    if (foundingDogmaIds.includes('templos_sociais')) {
+      presetCountries = presetCountries.map(c => ({ ...c, resistance: Math.max(0, c.resistance - 10) }));
+    }
+
     setState({
       started: true,
       religionName: name,
       religionTrait: trait,
       victoryGoal: goal,
-      faith: 30, // reasonable starting point
+      faith: 60,
       fervor: 8,
       cycle: 1,
       paused: false,
