@@ -1984,8 +1984,16 @@ export default function App() {
         hasSave={hasSave}
         onNewGame={() => setAppScreen('creation')}
         onLoadGame={() => {
-          if (state.started) setAppScreen('game');
-          else setAppScreen('creation');
+          if (state.started) {
+            setAppScreen('game');
+            // Play directly inside user gesture so mobile allows it
+            if (soundtrackRef.current && !isMuted) {
+              soundtrackRef.current.volume = 0.35;
+              soundtrackRef.current.play().catch(() => {});
+            }
+          } else {
+            setAppScreen('creation');
+          }
         }}
       />
     );
@@ -2194,19 +2202,11 @@ export default function App() {
               onClick={() => {
                 const targetMute = !isMuted;
                 setIsMuted(targetMute);
-                if (!targetMute) {
-                  setTimeout(() => {
-                    try {
-                      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-                      const osc = audioCtx.createOscillator();
-                      const gain = audioCtx.createGain();
-                      osc.connect(gain); gain.connect(audioCtx.destination);
-                      osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
-                      gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
-                      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-                      osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-                    } catch(_) {}
-                  }, 50);
+                if (!targetMute && soundtrackRef.current) {
+                  // Resume soundtrack directly inside user gesture
+                  soundtrackRef.current.muted = false;
+                  soundtrackRef.current.volume = 0.35;
+                  soundtrackRef.current.play().catch(() => {});
                 }
               }}
               className={`p-1 rounded cursor-pointer border transition-colors ${isMuted ? 'bg-[#1a1308] border-neutral-700 text-[#8b6b15]' : 'bg-amber-950/20 border-[#cfb53b]/40 text-[#cfb53b]'}`}
