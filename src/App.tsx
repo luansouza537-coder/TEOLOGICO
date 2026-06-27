@@ -865,6 +865,24 @@ export default function App() {
           });
         }
 
+        // Teocracias aliadas (resultado de golpe): geram +5 Fé/ciclo e reduzem resistência dos vizinhos -0.1/ciclo
+        let theoFaithBonus = 0;
+        updatedCountries
+          .filter(c => c.regimeType === 'teocracia' && c.leaderInfiltration >= 100 && c.converts > 0)
+          .forEach(theoC => {
+            theoFaithBonus += 5;
+            const neighborIds = COUNTRY_NEIGHBORS[theoC.id] ?? [];
+            neighborIds.forEach(nId => {
+              const nIdx = updatedCountries.findIndex(x => x.id === nId);
+              if (nIdx !== -1) {
+                updatedCountries[nIdx] = {
+                  ...updatedCountries[nIdx],
+                  resistance: Math.max(0, updatedCountries[nIdx].resistance - 0.1),
+                };
+              }
+            });
+          });
+
         if (hasAssistenciaMedica) {
           const sorted = [...updatedCountries].sort((a, b) => b.violence - a.violence);
           sorted.slice(0, 2).forEach(topViolent => {
@@ -968,6 +986,7 @@ export default function App() {
 
         // DOUTRINAS — efeitos globais de Fé e Fervor
         if (getDoc('doc_economy') === 'A') fervorGained += 5;
+        faithGained += theoFaithBonus;
         if (getDoc('doc_economy') === 'B') faithGained += 4;
         if (getDoc('doc_charity') === 'B') faithGained += 2;
         if (getDoc('doc_world') === 'A') fervorGained += 4;
@@ -1851,6 +1870,47 @@ export default function App() {
     });
   };
 
+  // Coup d'état — convert dictatorship to allied theocracy
+  const stageCoup = (countryId: string) => {
+    const countryObj = state.countries.find(c => c.id === countryId);
+    if (!countryObj) return;
+    const COUP_COST = { faith: 350, fervor: 150, tithe: 80 };
+    if (state.faith < COUP_COST.faith || state.fervor < COUP_COST.fervor || state.tithe < COUP_COST.tithe) return;
+
+    addFloatingText('⚔ Golpe!', countryObj.coordinates.x, countryObj.coordinates.y - 8, 'text-red-400 font-bold font-serif', countryObj.id);
+    addFloatingText('Teocracia!', countryObj.coordinates.x, countryObj.coordinates.y, 'text-[#cfb53b] font-bold font-serif', countryObj.id);
+
+    setState(prev => {
+      const country = prev.countries.find(c => c.id === countryId);
+      if (!country) return prev;
+      if (prev.faith < COUP_COST.faith || prev.fervor < COUP_COST.fervor || prev.tithe < COUP_COST.tithe) return prev;
+
+      const newTags = (country.tags ?? [])
+        .filter(t => t !== 'Autoritário' && t !== 'Secular')
+        .concat(country.tags?.includes('Devoto') ? [] : ['Devoto']);
+
+      const updatedCountry = {
+        ...country,
+        regimeType: 'teocracia' as const,
+        resistance: 0,
+        violence: Math.min(100, country.violence + 25),
+        leaderInfiltration: 100,
+        localReligionStrength: 10,
+        tags: newTags,
+        lastActionCycle: prev.cycle,
+      };
+
+      playSound('success');
+      return {
+        ...prev,
+        faith: prev.faith - COUP_COST.faith,
+        fervor: prev.fervor - COUP_COST.fervor,
+        tithe: prev.tithe - COUP_COST.tithe,
+        countries: prev.countries.map(c => c.id === countryId ? updatedCountry : c),
+      };
+    });
+  };
+
   // Dogma upgrade purchaser callback
   const purchaseDogma = (dogmaId: string) => {
     setState((prev) => {
@@ -2221,6 +2281,7 @@ export default function App() {
             onInfiltrateLeader={infiltrateLeader}
             onPerformEcstasyRitual={performEcstasyRitual}
             onOpenTemple={openTemple}
+            onStageCoup={stageCoup}
             totalTemples={state.totalTemples}
             templeCosts={TEMPLE_COSTS}
             templeNames={TEMPLE_NAMES}

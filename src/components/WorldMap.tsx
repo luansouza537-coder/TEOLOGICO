@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { Country, ReligionTrait } from '../types';
-import { Crosshair, ShieldAlert, HeartHandshake, Skull, Crown, Star, Network, Building2, X } from 'lucide-react';
+import { Crosshair, ShieldAlert, HeartHandshake, Skull, Crown, Star, Network, Building2, X, Sword } from 'lucide-react';
 import { calcPeaceEffectiveness } from '../utils/peaceEffectiveness';
 import WorldMapFlat from './WorldMapFlat';
 
@@ -52,6 +52,7 @@ interface WorldMapProps {
   onInfiltrateLeader: (countryId: string) => void;
   onPerformEcstasyRitual: (countryId: string) => void;
   onOpenTemple: (countryId: string, level: number) => void;
+  onStageCoup: (countryId: string) => void;
   totalTemples: number;
   templeCosts: { faith: number; fervor: number; tithe: number }[];
   templeNames: Record<string, string[]>;
@@ -73,6 +74,7 @@ export default function WorldMap({
   onInfiltrateLeader,
   onPerformEcstasyRitual,
   onOpenTemple,
+  onStageCoup,
   totalTemples,
   templeCosts,
   templeNames,
@@ -453,6 +455,50 @@ export default function WorldMap({
                       <span className="font-mono text-[9px] bg-black/30 px-1.5 py-0.5 rounded flex gap-1"><span>50 Fé</span><span>10 Ferv</span></span>
                     </button>
                   )}
+
+                  {/* ACTION 5: Coup d'état — only shown for opressor/autoritario */}
+                  {['opressor', 'autoritario'].includes(selectedCountry.regimeType) && (() => {
+                    const COUP_COST = { faith: 350, fervor: 150, tithe: 80 };
+                    const convertPct = selectedCountry.population > 0 ? selectedCountry.converts / selectedCountry.population : 0;
+                    const isChina = selectedCountry.id === 'china';
+                    const reqPct = isChina ? 0.35 : 0.25;
+                    const hasTemple4 = (selectedCountry.temples?.[3] ?? 0) > 0;
+                    const meetsLeader = selectedCountry.leaderInfiltration >= 100;
+                    const meetsConverts = convertPct >= reqPct;
+                    const meetsTemple = hasTemple4;
+                    const meetsViolence = selectedCountry.violence <= 50;
+                    const allMet = meetsLeader && meetsConverts && meetsTemple && meetsViolence;
+                    const canAfford = faith >= COUP_COST.faith && fervor >= COUP_COST.fervor && tithe >= COUP_COST.tithe;
+                    const canAct = allMet && canAfford;
+                    return (
+                      <div className="border border-red-900/40 rounded-lg bg-[#1a0808] p-2.5 flex flex-col gap-2">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-red-400 uppercase tracking-wider">
+                          <Sword className="w-3.5 h-3.5" /> Golpe de Estado Teocrático
+                        </div>
+                        <div className="flex flex-col gap-0.5 text-[9px] font-mono">
+                          <span className={meetsLeader ? 'text-green-400' : 'text-red-400'}>{meetsLeader ? '✓' : '✗'} Líder convertido (100%)</span>
+                          <span className={meetsConverts ? 'text-green-400' : 'text-red-400'}>{meetsConverts ? '✓' : '✗'} {Math.round(reqPct * 100)}% de fiéis ({Math.round(convertPct * 100)}% atual)</span>
+                          <span className={meetsTemple ? 'text-green-400' : 'text-red-400'}>{meetsTemple ? '✓' : '✗'} Templo nível 4 no país</span>
+                          <span className={meetsViolence ? 'text-green-400' : 'text-red-400'}>{meetsViolence ? '✓' : '✗'} Violência ≤ 50 ({Math.round(selectedCountry.violence)} atual)</span>
+                        </div>
+                        {allMet && (
+                          <p className="text-[9px] text-red-300/70 font-mono leading-relaxed">⚠ Violência subirá +25 após o golpe. O Estado adotará sua religião oficialmente.</p>
+                        )}
+                        <button
+                          onClick={() => onStageCoup(selectedCountry.id)}
+                          disabled={!canAct}
+                          className={`py-2 px-3 rounded text-xs font-bold flex justify-between items-center transition-all ${canAct ? 'bg-red-950 hover:bg-red-900 text-red-100 border border-red-600/60 cursor-pointer' : 'bg-zinc-900 text-zinc-600 cursor-not-allowed'}`}
+                        >
+                          <span className="flex items-center gap-1.5"><Sword className="w-3.5 h-3.5" /> Executar Golpe</span>
+                          <span className="font-mono text-[9px] flex gap-1 bg-black/30 px-1.5 py-0.5 rounded">
+                            <span className={faith >= COUP_COST.faith ? 'text-[#cfb53b]' : 'text-red-500'}>{COUP_COST.faith} Fé</span>
+                            <span className={fervor >= COUP_COST.fervor ? 'text-red-300' : 'text-red-500'}>{COUP_COST.fervor} Ferv</span>
+                            <span className={tithe >= COUP_COST.tithe ? 'text-emerald-400' : 'text-red-500'}>{COUP_COST.tithe} Díz</span>
+                          </span>
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
