@@ -816,10 +816,10 @@ export default function App() {
           };
         }
 
-        // philippines: líder convertido → +1.5% converts na Indonésia e Japão por ciclo
+        // philippines: líder convertido → +1.5% converts na Indonésia e Coreia do Sul por ciclo
         const phObj = updatedCountries.find(c => c.id === 'philippines');
         if (phObj && phObj.leaderInfiltration >= 100) {
-          ['indonesia', 'japan'].forEach(targetId => {
+          ['indonesia', 'south_korea'].forEach(targetId => {
             const idx = updatedCountries.findIndex(c => c.id === targetId);
             if (idx !== -1 && updatedCountries[idx].converts > 0) {
               const surge = Math.floor(updatedCountries[idx].converts * 0.015);
@@ -1486,10 +1486,10 @@ export default function App() {
     if (countryObj.id === 'japan') cost = Math.round(cost * 1.4); // Japão: ceticismo cultural +40% custo
     if (countryObj.id === 'china') cost = Math.round(cost * 1.5); // China: censura +50% custo
     if (countryObj.id === 'saudi_arabia') cost += 25;
+    if (countryObj.id === 'cuba') cost = Math.round(cost * 1.80); // Cuba: regime opressor +80% custo (antes do escalonamento)
     // Escalating cost per missionary already sent (each costs 15 more than the last)
     cost += (countryObj.missionariesSent ?? 0) * 15;
     if (countryObj.id === 'haiti') cost = Math.round(cost * 0.5); // Haiti: receptividade extrema -50% custo (aplicado por último para incluir escalonamento)
-    if (countryObj.id === 'cuba') cost = Math.round(cost * 1.80); // Cuba: regime opressor +80% custo
     // Doctrine modifiers on missionary cost
     if (state.doctrines?.find(d => d.id === 'doc_ritual')?.chosen === 'A') cost += 10;
     if (state.doctrines?.find(d => d.id === 'doc_ritual')?.chosen === 'B') cost = Math.max(5, cost - 10);

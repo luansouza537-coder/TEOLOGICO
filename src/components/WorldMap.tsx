@@ -96,8 +96,8 @@ export default function WorldMap({
     if (c.id === 'japan') base += 15;
     if (c.id === 'china') base += 20;
     if (c.id === 'saudi_arabia') base += 25;
+    if (c.id === 'cuba') base = Math.round(base * 1.80); // antes do escalonamento
     base += (c.missionariesSent ?? 0) * 15;
-    if (c.id === 'cuba') base = Math.round(base * 1.80);
     return base;
   };
 
