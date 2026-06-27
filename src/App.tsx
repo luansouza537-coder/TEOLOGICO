@@ -140,7 +140,7 @@ export default function App() {
       lastEventTimestamp: 0,
       eventCooldowns: {},
       doctrines: INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null })),
-      tithe: 50,
+      tithe: 200,
       faithPhase: 1,
       firstCountryConverted: null,
       peakFervor: 5,
@@ -844,6 +844,8 @@ export default function App() {
           }
         });
         titheGained = Math.floor(titheGained);
+        // Floor: guarantee at least 1 tithe/cycle when any converts exist (prevents permanent bankruptcy)
+        if (totalConvertsCount > 0 && titheGained < 1) titheGained = 1;
         // Maintenance costs raised — missionaries and temples are real burdens
         const missionaryMaintenance = updatedCountries.reduce((s, c) => s + (c.missionariesSent ?? 0) * 2, 0);
         const templeMaintenance = updatedCountries.reduce((s, c) => {
@@ -996,9 +998,10 @@ export default function App() {
         }
         const phaseAdvanced = newFaithPhase > prev.faithPhase;
 
-        // 5. Evaluate Warning Streak — only counts countries with active presence to avoid early-game insta-loss
+        // 5. Evaluate Warning Streak — only triggers when player has established presence in 5+ countries
+        const hasEstablishedPresence = activePresenceCountries.length >= 5;
         let newStreak = prev.resistanceStreak;
-        if (activePresenceCountries.length > 0 && avgResistanceActive > 85) {
+        if (hasEstablishedPresence && avgResistanceActive > 85) {
           newStreak += 1;
         } else {
           newStreak = 0;
@@ -1030,7 +1033,7 @@ export default function App() {
         }
 
         // Losses tests — only if victory not already triggered
-        if (!isGameOver && newStreak >= 3) {
+        if (!isGameOver && newStreak >= 5) {
           isGameOver = true;
           gameOverReason = 'resistance';
         } else if (!isGameOver && updatedRivalProgress >= 100) {
@@ -1311,7 +1314,7 @@ export default function App() {
       lastEventTimestamp: 0,
       eventCooldowns: {},
       doctrines: INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null })),
-      tithe: 50,
+      tithe: 200,
       faithPhase: 1,
       firstCountryConverted: null,
       peakFervor: 5,
@@ -1348,7 +1351,7 @@ export default function App() {
       lastEventTimestamp: 0,
       eventCooldowns: {},
       doctrines: INITIAL_DOCTRINES.map(d => ({ ...d, chosen: null })),
-      tithe: 50,
+      tithe: 200,
       faithPhase: 1,
       firstCountryConverted: null,
       peakFervor: 5,
@@ -2056,11 +2059,13 @@ export default function App() {
           </span>
         </div>
 
-        {/* Temple hint — shown when player can afford to build but hasn't yet */}
+        {/* Temple hint — shown when player can actually build (faith + conversion % met) */}
         {(() => {
-          const templeReadyCountry = state.countries.find(c =>
-            c.missionariesSent >= 1 && c.templeLevel === 0 && c.templePending === 0 && state.faith >= 40
-          );
+          const templeReadyCountry = state.countries.find(c => {
+            if (c.missionariesSent < 1 || c.templeLevel > 0 || c.templePending > 0) return false;
+            const convertPct = c.population > 0 ? c.converts / c.population : 0;
+            return state.faith >= 40 && convertPct >= 0.02;
+          });
           if (!templeReadyCountry) return null;
           return (
             <div

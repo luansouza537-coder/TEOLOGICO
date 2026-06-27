@@ -198,7 +198,7 @@ export default function RivalPanel({
           <ShieldAlert className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
           <div>
             <strong className="text-[10px] uppercase text-red-300">Perseguição Global!</strong>
-            <p className="text-[9px] text-red-200/80 mt-0.5">Resistência acima de 85% há <strong>{resistanceStreak}/3 ciclos</strong>. Em 3 ciclos consecutivos todos os templos são demolidos — derrota!</p>
+            <p className="text-[9px] text-red-200/80 mt-0.5">Resistência acima de 85% há <strong>{resistanceStreak}/5 ciclos</strong>. Em 5 ciclos consecutivos todos os templos são demolidos — derrota!</p>
           </div>
         </div>
       )}
