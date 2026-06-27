@@ -121,7 +121,7 @@ export default function App() {
       religionName: '',
       religionTrait: 'Mistical',
       victoryGoal: 'GlobalEcstasy',
-      faith: 25, // starting Faith
+      faith: 60, // starting Faith
       fervor: 5,  // starting Fervor
       cycle: 0,
       paused: false,
@@ -537,6 +537,7 @@ export default function App() {
             let addedConverts = Math.floor(converts * growthFactor * remainingFraction * Math.max(0.01, hostilityMultiplier));
             // TAG: Secular — harder to convert (-20%)
             if ((c.tags ?? []).includes('Secular')) addedConverts = Math.floor(addedConverts * 0.80);
+            addedConverts = Math.max(converts > 0 ? 1 : 0, addedConverts);
             converts = Math.min(pop, converts + addedConverts);
 
             // INACTIVITY DECAY: fiéis se perdem quando o jogador ignora o país por muito tempo
@@ -859,10 +860,11 @@ export default function App() {
         const convertedRate = totalPopCount > 0 ? (totalConvertsCount / totalPopCount) : 0;
         const activeCountries = updatedCountries.filter(c => c.converts > 0).length;
 
-        // Base: 1 Fé + 1 per active country (max ~13). Replaces flat +4.
+        // Base faith: rewards geographic expansion more aggressively
         let fervorGained = 0;
-        let faithGained = 1 + activeCountries;
-        faithGained += Math.floor(totalConvertsCount / 50000000); // 1 per 50M converts (was 10M)
+        let faithGained = 3 + activeCountries * 2;
+        faithGained += Math.floor(totalConvertsCount / 50000000);
+        if (prev.fervor > 100) faithGained += Math.floor((prev.fervor - 100) / 100);
 
         // Dogma bonuses reduced to avoid runaway stacking
         if (hasTemploAbrigo) faithGained += 2;     // was +5
@@ -1327,7 +1329,7 @@ export default function App() {
       religionName: '',
       religionTrait: 'Mistical',
       victoryGoal: 'GlobalEcstasy',
-      faith: 25,
+      faith: 60,
       fervor: 5,
       cycle: 0,
       paused: false,
