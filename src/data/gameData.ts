@@ -12,7 +12,7 @@ export const INITIAL_COUNTRIES: Country[] = [
     population: 335000000,
     converts: 120, // Start with a tiny pocket of believers
     resistance: 15,
-    violence: 45,
+    violence: 30,
     leaderInfiltration: 5,
     leaderName: 'Presidente Joseph',
     regimeType: 'democracia',
@@ -62,10 +62,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     population: 1408000000,
     converts: 0,
     resistance: 30,
-    violence: 48,
+    violence: 38,
     leaderInfiltration: 0,
     leaderName: 'Primeiro-Ministro Dev',
-    regimeType: 'teocracia',
+    regimeType: 'democracia',
     specialTrait: 'Sincretismo Ancestral',
     specialTraitDesc: 'Prontidão para fés harmônicas. Seitas Sincretistas convertem 50% mais rápido, enquanto caminhos Místicos enfrentam desconfiança sectária.',
     coordinates: { x: 73, y: 48 },
@@ -126,7 +126,7 @@ export const INITIAL_COUNTRIES: Country[] = [
     templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
-    localReligionStrength: 20,
+    localReligionStrength: 45,
     tags: ['Devoto', 'Progressista'],
     lastActionCycle: 0,
     convertsHistory: []
@@ -186,7 +186,7 @@ export const INITIAL_COUNTRIES: Country[] = [
     name: 'África do Sul',
     population: 59000000,
     converts: 0,
-    resistance: 18,
+    resistance: 28,
     violence: 68,
     leaderInfiltration: 0,
     leaderName: 'Líder Mandela II',
@@ -201,8 +201,8 @@ export const INITIAL_COUNTRIES: Country[] = [
     templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
-    localReligionStrength: 20,
-    tags: ['Secular'],
+    localReligionStrength: 50,
+    tags: ['Devoto'],
     lastActionCycle: 0,
     convertsHistory: []
   },
@@ -227,7 +227,7 @@ export const INITIAL_COUNTRIES: Country[] = [
     cyclesPresent: 0,
     lastConflictCycle: -99,
     localReligionStrength: 50,
-    tags: ['Secular', 'Autoritário'],
+    tags: ['Secular'],
     lastActionCycle: 0,
     convertsHistory: []
   },
@@ -236,7 +236,7 @@ export const INITIAL_COUNTRIES: Country[] = [
     name: 'México',
     population: 126000000,
     converts: 0,
-    resistance: 12,
+    resistance: 28,
     violence: 74,
     leaderInfiltration: 0,
     leaderName: 'Presidente Carlos',
@@ -251,7 +251,7 @@ export const INITIAL_COUNTRIES: Country[] = [
     templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
-    localReligionStrength: 25,
+    localReligionStrength: 45,
     tags: ['Devoto', 'Progressista'],
     lastActionCycle: 0,
     convertsHistory: []
@@ -314,7 +314,7 @@ export const INITIAL_COUNTRIES: Country[] = [
     resistance: 48,
     violence: 30,
     leaderInfiltration: 0,
-    leaderName: 'Presidente Erdogan',
+    leaderName: 'Presidente Kemal',
     regimeType: 'autoritario',
     specialTrait: 'Fronteira entre Mundos',
     specialTraitDesc: 'Posição geopolítica única entre Oriente e Ocidente. Converter a Turquia reduz a resistência do Egito e da Alemanha em 8% permanentemente.',
@@ -339,10 +339,10 @@ export const INITIAL_COUNTRIES: Country[] = [
     resistance: 80,
     violence: 45,
     leaderInfiltration: 0,
-    leaderName: 'Aiatolá Khamenei II',
+    leaderName: 'Aiatolá Rashidi',
     regimeType: 'teocracia',
     specialTrait: 'Teocracia Rival Ativa',
-    specialTraitDesc: 'Possui estrutura religiosa própria que compete ativamente. Cada ciclo sem presença no Irã aumenta a resistência global em +0.3%. Se convertido, esse efeito inverte.',
+    specialTraitDesc: 'Possui estrutura religiosa própria que compete ativamente. Cada ciclo sem presença no Irã adiciona +0.3 de resistência em todos os países. Se convertido, esse efeito inverte.',
     coordinates: { x: 65, y: 44 },
     missionariesSent: 0,
     temples: [0,0,0,0],
@@ -376,7 +376,7 @@ export const INITIAL_COUNTRIES: Country[] = [
     templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
-    localReligionStrength: 15,
+    localReligionStrength: 30,
     tags: ['Secular', 'Progressista'],
     lastActionCycle: 0,
     convertsHistory: []
@@ -389,7 +389,7 @@ export const INITIAL_COUNTRIES: Country[] = [
     resistance: 50,
     violence: 40,
     leaderInfiltration: 0,
-    leaderName: 'Presidente Widodo',
+    leaderName: 'Presidente Arief',
     regimeType: 'democracia',
     specialTrait: 'Maior Nação Islâmica do Mundo',
     specialTraitDesc: 'Resistência religiosa enraizada. Conversão base 30% mais lenta, mas quando supera 10% da população o crescimento se torna viral — +50% de conversão passiva.',
@@ -414,7 +414,7 @@ export const INITIAL_COUNTRIES: Country[] = [
     resistance: 30,
     violence: 65,
     leaderInfiltration: 0,
-    leaderName: 'Presidente Tinubu',
+    leaderName: 'Presidente Emeka',
     regimeType: 'vibrante',
     specialTrait: 'Crescimento Demográfico Explosivo',
     specialTraitDesc: 'A população nigeriana cresce a cada ciclo. Converter agora vale mais no futuro — cada ciclo sem presença aumenta o potencial perdido.',
@@ -426,7 +426,7 @@ export const INITIAL_COUNTRIES: Country[] = [
     templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
-    localReligionStrength: 45,
+    localReligionStrength: 60,
     tags: ['Devoto', 'Tribal'],
     lastActionCycle: 0,
     convertsHistory: []
@@ -436,7 +436,7 @@ export const INITIAL_COUNTRIES: Country[] = [
     name: 'Haiti',
     population: 11500000,
     converts: 0,
-    resistance: 8,
+    resistance: 18,
     violence: 78,
     leaderInfiltration: 0,
     leaderName: 'Presidente Conille',
@@ -451,7 +451,7 @@ export const INITIAL_COUNTRIES: Country[] = [
     templeSpec: null,
     cyclesPresent: 0,
     lastConflictCycle: -99,
-    localReligionStrength: 10,
+    localReligionStrength: 35,
     tags: ['Tribal', 'Progressista'],
     lastActionCycle: 0,
     convertsHistory: []
@@ -1080,6 +1080,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     title: 'A Sombra Dançante',
     description: 'Uma sombra inexplicável dança sobre uma cidade sagrada ao pôr do sol por sete dias. Teólogos do mundo divergem sobre o significado.',
     impactType: 'neutral',
+    traitRequirement: 'Mistical',
     actionEffects: {
       globalFervorMod: 20,
       countryResistanceMod: { egypt: 8, saudi_arabia: 8, india: 5 }
@@ -1613,7 +1614,7 @@ export const RANDOM_EVENTS_POOL: GameEvent[] = [
     actionEffects: {
       globalFaithCostMod: -50,
       globalConvertsModPct: -12,
-      countryResistanceMod: { usa: -10, germany: -8, australia: -8, japan: -8 }
+      countryResistanceMod: { usa: 10, germany: 8, australia: 8, japan: 8 }
     }
   }
 

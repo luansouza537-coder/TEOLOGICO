@@ -21,24 +21,24 @@ import { playFileSound } from './utils/sound';
 
 // Geographic neighbors for aura_iluminada dogma effect
 const COUNTRY_NEIGHBORS: Record<string, string[]> = {
-  usa:          ['mexico', 'brazil'],
-  mexico:       ['usa', 'brazil', 'haiti'],
-  brazil:       ['usa', 'mexico', 'south_africa', 'haiti'],
-  germany:      ['russia', 'egypt', 'turkey'],
-  russia:       ['germany', 'china', 'india'],
+  usa:          ['mexico', 'canada_proxy'],
+  mexico:       ['usa', 'haiti'],
+  brazil:       ['mexico', 'south_africa', 'nigeria'],
+  germany:      ['russia', 'turkey'],
+  russia:       ['germany', 'china', 'iran'],
   china:        ['russia', 'india', 'japan', 'south_korea'],
-  india:        ['russia', 'china', 'egypt', 'south_africa', 'iran'],
+  india:        ['china', 'iran', 'indonesia'],
   japan:        ['china', 'australia', 'south_korea', 'indonesia'],
-  egypt:        ['germany', 'india', 'saudi_arabia', 'south_africa', 'nigeria', 'turkey'],
+  egypt:        ['saudi_arabia', 'nigeria', 'turkey'],
   saudi_arabia: ['egypt', 'turkey', 'iran'],
-  south_africa: ['brazil', 'india', 'egypt', 'nigeria'],
+  south_africa: ['brazil', 'nigeria'],
   australia:    ['japan', 'indonesia'],
   turkey:       ['germany', 'egypt', 'saudi_arabia', 'iran'],
-  iran:         ['saudi_arabia', 'turkey', 'india'],
-  south_korea:  ['japan', 'china', 'indonesia'],
-  indonesia:    ['japan', 'australia', 'south_korea'],
-  nigeria:      ['egypt', 'south_africa'],
-  haiti:        ['mexico', 'brazil'],
+  iran:         ['saudi_arabia', 'turkey', 'russia', 'india'],
+  south_korea:  ['japan', 'china'],
+  indonesia:    ['japan', 'australia', 'india'],
+  nigeria:      ['egypt', 'south_africa', 'brazil'],
+  haiti:        ['mexico', 'usa'],
 };
 
 const TEMPLE_NAMES: Record<string, string[]> = {
@@ -782,7 +782,7 @@ export default function App() {
         if (nigeriaIdx !== -1) {
           updatedCountries[nigeriaIdx] = {
             ...updatedCountries[nigeriaIdx],
-            population: updatedCountries[nigeriaIdx].population + 50000,
+            population: updatedCountries[nigeriaIdx].population + 200000,
           };
         }
 
