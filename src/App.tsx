@@ -189,9 +189,9 @@ export default function App() {
     const fadeIn = () => {
       let v = 0;
       const step = setInterval(() => {
-        v = Math.min(0.75, v + 0.05);
+        v = Math.min(0.38, v + 0.025);
         audio.volume = v;
-        if (v >= 0.75) clearInterval(step);
+        if (v >= 0.38) clearInterval(step);
       }, 75);
     };
 
