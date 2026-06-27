@@ -2069,7 +2069,7 @@ export default function App() {
           const templeReadyCountry = state.countries.find(c => {
             if (c.missionariesSent < 1 || c.templeLevel > 0 || c.templePending > 0) return false;
             const convertPct = c.population > 0 ? c.converts / c.population : 0;
-            return state.faith >= 40 && convertPct >= 0.02;
+            return state.faith >= 40 && c.converts > 0;
           });
           if (!templeReadyCountry) return null;
           return (

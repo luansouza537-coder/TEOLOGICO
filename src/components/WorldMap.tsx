@@ -120,7 +120,7 @@ export default function WorldMap({
     if (sent >= 10 && convertPct >= 50 && level >= 3 && cycles >= 50) return 4;
     if (sent >= 6 && convertPct >= 25 && level >= 2 && cycles >= 25) return 3;
     if (sent >= 3 && convertPct >= 10 && level >= 1) return 2;
-    if (sent >= 1 && convertPct >= 2) return 1;
+    if (sent >= 1 && c.converts > 0) return 1;
     return 0;
   };
 
