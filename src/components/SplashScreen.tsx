@@ -12,61 +12,7 @@ interface SplashScreenProps {
 export default function SplashScreen({ onComplete }: SplashScreenProps) {
   const [phase, setPhase] = useState<'video' | 'logo' | 'done'>('video');
   const [logoVisible, setLogoVisible] = useState(false);
-  const [musicStarted, setMusicStarted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    const audio = new Audio('/splash-music.mp3');
-    audio.loop = true;
-    audio.volume = 0;
-    audioRef.current = audio;
-
-    // Try autoplay immediately; browsers may allow it
-    audio.play().then(() => {
-      setMusicStarted(true);
-      fadeIn(audio);
-    }).catch(() => {
-      // Autoplay blocked — user tap will trigger startMusic()
-    });
-
-    return () => {
-      audio.pause();
-      audio.currentTime = 0;
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const fadeIn = (audio: HTMLAudioElement) => {
-    let v = 0;
-    const step = setInterval(() => {
-      v = Math.min(0.75, v + 0.05);
-      audio.volume = v;
-      if (v >= 0.75) clearInterval(step);
-    }, 75);
-  };
-
-  const startMusic = () => {
-    const audio = audioRef.current;
-    if (!audio || musicStarted) return;
-    audio.play().then(() => {
-      setMusicStarted(true);
-      fadeIn(audio);
-    }).catch(() => {});
-  };
-
-  const stopMusic = (cb?: () => void) => {
-    const audio = audioRef.current;
-    if (!audio || audio.paused) { cb?.(); return; }
-    const step = setInterval(() => {
-      audio.volume = Math.max(0, audio.volume - 0.08);
-      if (audio.volume <= 0) {
-        clearInterval(step);
-        audio.pause();
-        cb?.();
-      }
-    }, 50);
-  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -74,21 +20,16 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
       setTimeout(() => setLogoVisible(true), 50);
       setTimeout(() => {
         setPhase('done');
-        stopMusic(() => setTimeout(onComplete, 300));
+        setTimeout(onComplete, 600);
       }, 2800);
     }, 4500);
     return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onComplete]);
 
   const handleSkip = () => {
     if (phase === 'done') return;
-    if (!musicStarted) {
-      startMusic();
-      return;
-    }
     setPhase('done');
-    stopMusic(() => setTimeout(onComplete, 200));
+    setTimeout(onComplete, 300);
   };
 
   return (
@@ -97,7 +38,6 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
       onClick={handleSkip}
       style={{ opacity: phase === 'done' ? 0 : 1, transition: 'opacity 0.6s ease' }}
     >
-      {/* Background video — muted, music comes from audio element */}
       <video
         ref={videoRef}
         src="/splash.mp4"
@@ -109,10 +49,8 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
         style={{ opacity: 0.6 }}
       />
 
-      {/* Dark overlay gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-black/80" />
 
-      {/* Logo overlay — appears after video plays for a bit */}
       <div
         className="relative z-10 flex flex-col items-center gap-3 text-center px-8"
         style={{
@@ -141,8 +79,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
         </p>
       </div>
 
-      {/* Touch hint */}
-      {phase === 'video' && !musicStarted && (
+      {phase === 'video' && (
         <div className="absolute bottom-8 right-6 text-[9px] text-white/25 font-mono tracking-widest">
           TOQUE PARA COMEÇAR
         </div>

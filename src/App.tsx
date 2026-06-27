@@ -174,11 +174,47 @@ export default function App() {
   const [firstTempleModal, setFirstTempleModal] = useState<{ countryName: string } | null>(null);
   const firstTempleShownRef = useRef(false);
   const soundtrackRef = useRef<HTMLAudioElement | null>(null);
+  const splashMusicRef = useRef<HTMLAudioElement | null>(null);
   const alertPlayedThisCycleRef = useRef<number>(-1);
   const isMutedRef = useRef(isMuted);
   useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
 
-  // Create audio element programmatically so it exists before game screen mounts
+  // Splash music: try autoplay, fall back to first user touch anywhere
+  useEffect(() => {
+    const audio = new Audio('/splash-music.mp3');
+    audio.loop = true;
+    audio.volume = 0;
+    splashMusicRef.current = audio;
+
+    const fadeIn = () => {
+      let v = 0;
+      const step = setInterval(() => {
+        v = Math.min(0.75, v + 0.05);
+        audio.volume = v;
+        if (v >= 0.75) clearInterval(step);
+      }, 75);
+    };
+
+    const tryPlay = () => {
+      audio.play().then(fadeIn).catch(() => {});
+    };
+
+    // Try immediately (works on desktop and some Android with user-gesture history)
+    audio.play().then(fadeIn).catch(() => {
+      // Blocked — start on very first touch/click anywhere on the page
+      document.addEventListener('touchstart', tryPlay, { once: true, capture: true });
+      document.addEventListener('click', tryPlay, { once: true, capture: true });
+    });
+
+    return () => {
+      audio.pause();
+      document.removeEventListener('touchstart', tryPlay, true);
+      document.removeEventListener('click', tryPlay, true);
+      splashMusicRef.current = null;
+    };
+  }, []);
+
+  // Create soundtrack audio programmatically so ref exists before game screen mounts
   useEffect(() => {
     const audio = new Audio('/soundtrack.mp3');
     audio.loop = true;
@@ -1392,7 +1428,14 @@ export default function App() {
       presetCountries = presetCountries.map(c => ({ ...c, resistance: Math.max(0, c.resistance - 10) }));
     }
 
-    // Play soundtrack directly inside the user gesture so mobile browsers allow it
+    // Fade out splash music then start soundtrack (all inside user gesture)
+    const sm = splashMusicRef.current;
+    if (sm && !sm.paused) {
+      const fadeOut = setInterval(() => {
+        sm.volume = Math.max(0, sm.volume - 0.1);
+        if (sm.volume <= 0) { clearInterval(fadeOut); sm.pause(); }
+      }, 50);
+    }
     if (soundtrackRef.current && !isMuted) {
       soundtrackRef.current.volume = 0.35;
       soundtrackRef.current.currentTime = 0;
@@ -1990,7 +2033,13 @@ export default function App() {
         onLoadGame={() => {
           if (state.started) {
             setAppScreen('game');
-            // Play directly inside user gesture so mobile allows it
+            const sm = splashMusicRef.current;
+            if (sm && !sm.paused) {
+              const fadeOut = setInterval(() => {
+                sm.volume = Math.max(0, sm.volume - 0.1);
+                if (sm.volume <= 0) { clearInterval(fadeOut); sm.pause(); }
+              }, 50);
+            }
             if (soundtrackRef.current && !isMuted) {
               soundtrackRef.current.volume = 0.35;
               soundtrackRef.current.play().catch(() => {});
