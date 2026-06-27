@@ -158,7 +158,8 @@ export default function App() {
   const [faithSubTab, setFaithSubTab] = useState<'visao' | 'doutrinas'>('visao');
   const [showTutorial, setShowTutorial] = useState(() => localStorage.getItem('tutorial_seen') !== 'true');
   const [tutorialStep, setTutorialStep] = useState(0); // #5: interactive tutorial step
-  const [specChoiceCountryId, setSpecChoiceCountryId] = useState<string | null>(null);
+  const [specChoiceQueue, setSpecChoiceQueue] = useState<string[]>([]);
+  const specChoiceCountryId = specChoiceQueue[0] ?? null;
   const [phaseNotification, setPhaseNotification] = useState<2 | 3 | null>(null);
   const [isMuted, setIsMuted] = useState<boolean>(() => localStorage.getItem('audio_muted_v2') === 'true');
   const [newsText, setNewsText] = useState('CONEXÃO COLETIVA ESTÁVEL: Monitorando a disseminação teológica pelo globo...');
@@ -682,7 +683,7 @@ export default function App() {
                 const wasZero = newTemples[lvl] === 0;
                 newTemples[lvl] += newBuilding[lvl];
                 newBuilding[lvl] = 0;
-                if (lvl === 1 && wasZero) setSpecChoiceCountryId(c.id);
+                if (lvl === 1 && wasZero) setSpecChoiceQueue(q => [...q, c.id]);
               }
             }
           }
@@ -1714,14 +1715,27 @@ export default function App() {
   const TEMPLE_PRESENCE_REQ = [0, 0.10, 0.25, 0.50];
 
   // Action callback 5: Build a temple of a specific level in a country
+  const TEMPLE_MAX_PER_LEVEL = 5; // cap per level per country
+  const TEMPLE_MISSION_REQ = [1, 3, 6, 10]; // missionaries required per level
+
   const openTemple = (countryId: string, level: number = 1) => {
     const countryObj = state.countries.find((c) => c.id === countryId);
     if (!countryObj || level < 1 || level > 4) return;
 
     const temples = countryObj.temples ?? [0,0,0,0];
+    const building = countryObj.templesBuilding ?? [0,0,0,0];
+
+    // Missionary requirement
+    if ((countryObj.missionariesSent ?? 0) < TEMPLE_MISSION_REQ[level - 1]) return;
 
     // Unlock gate: need at least 1 completed temple of previous level
     if (level > 1 && temples[level - 2] === 0) return;
+
+    // Cap: max 5 built + in-progress per level per country
+    if (temples[level - 1] + building[level - 1] >= TEMPLE_MAX_PER_LEVEL) return;
+
+    // No new construction if a batch is already in progress for this level
+    if (building[level - 1] > 0) return;
 
     // Presence requirement
     const presenceReq = TEMPLE_PRESENCE_REQ[level - 1];
@@ -1746,12 +1760,16 @@ export default function App() {
       const country = prev.countries.find(c => c.id === countryId);
       if (!country) return prev;
       if (prev.faith < cost.faith || prev.fervor < cost.fervor || prev.tithe < cost.tithe) return prev;
+      const prevTemples = country.temples ?? [0,0,0,0];
+      const prevBuilding = country.templesBuilding ?? [0,0,0,0];
+      if (prevBuilding[level - 1] > 0) return prev; // double-click guard
+      if (prevTemples[level - 1] + prevBuilding[level - 1] >= TEMPLE_MAX_PER_LEVEL) return prev;
 
-      const newTemples = [...(country.temples ?? [0,0,0,0])];
-      const newBuilding = [...(country.templesBuilding ?? [0,0,0,0])];
+      const newTemples = [...prevTemples];
+      const newBuilding = [...prevBuilding];
       const newBuildCycles = [...(country.templesBuildCycles ?? [0,0,0,0])];
-      newBuilding[level - 1] += 1;
-      if (newBuildCycles[level - 1] === 0) newBuildCycles[level - 1] = buildCycles;
+      newBuilding[level - 1] = 1;
+      newBuildCycles[level - 1] = buildCycles;
 
       playSound('click');
 
@@ -2830,7 +2848,7 @@ export default function App() {
                 <button
                   onClick={() => {
                     setState(prev => ({ ...prev, countries: prev.countries.map(c => c.id === specChoiceCountryId ? { ...c, templeSpec: 'conversion' } : c) }));
-                    setSpecChoiceCountryId(null);
+                    setSpecChoiceQueue(q => q.slice(1));
                   }}
                   className="py-3 px-4 rounded-lg bg-[#1a2a1a] border border-green-700/50 text-green-300 text-xs font-bold hover:bg-[#213021] transition-all text-left flex flex-col gap-1"
                 >
@@ -2840,7 +2858,7 @@ export default function App() {
                 <button
                   onClick={() => {
                     setState(prev => ({ ...prev, countries: prev.countries.map(c => c.id === specChoiceCountryId ? { ...c, templeSpec: 'resistance' } : c) }));
-                    setSpecChoiceCountryId(null);
+                    setSpecChoiceQueue(q => q.slice(1));
                   }}
                   className="py-3 px-4 rounded-lg bg-[#1a1a2a] border border-blue-700/50 text-blue-300 text-xs font-bold hover:bg-[#21213a] transition-all text-left flex flex-col gap-1"
                 >

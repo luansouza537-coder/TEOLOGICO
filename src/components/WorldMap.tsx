@@ -112,18 +112,6 @@ export default function WorldMap({
     estavel:     [0.85, 0.70, 0.55, 0.40],
   };
 
-  const getTempleUnlockLevel = (c: Country): number => {
-    const sent = c.missionariesSent ?? 0;
-    const temples = c.temples ?? [0,0,0,0];
-    const cycles = c.cyclesPresent ?? 0;
-    const convertPct = c.population > 0 ? (c.converts / c.population) * 100 : 0;
-    if (sent >= 10 && convertPct >= 50 && temples[2] > 0 && cycles >= 50) return 4;
-    if (sent >= 6 && convertPct >= 25 && temples[1] > 0 && cycles >= 25) return 3;
-    if (sent >= 3 && convertPct >= 10 && temples[0] > 0) return 2;
-    if (sent >= 1 && c.converts > 0) return 1;
-    return 0;
-  };
-
   const closeSheet = () => {
     setSheetOpen(false);
     onSelectCountry('');
@@ -469,7 +457,10 @@ export default function WorldMap({
                     const PRESENCE_REQ = [0, 0.10, 0.25, 0.50];
                     const BUILD_CYCLES_ARR = [3, 6, 10, 15];
                     const LEVEL_LABELS = ['NIV 1', 'NIV 2', 'NIV 3', 'NIV 4'];
-                    const UNLOCK_MISSIONS = [1, 3, 6, 10];
+                    const MISSION_REQ = [1, 3, 6, 10];
+                    const MAX_PER_LEVEL = 5;
+                    const GROWTH_PER = [0.015, 0.025, 0.04, 0.06];
+                    const RESIST_PER = [0.15, 0.3, 0.5, 0.9];
                     const convertPct = selectedCountry.population > 0 ? selectedCountry.converts / selectedCountry.population : 0;
                     const traitNames = templeNames[trait] ?? [];
                     const temples = selectedCountry.temples ?? [0,0,0,0];
@@ -477,7 +468,9 @@ export default function WorldMap({
                     const buildCycles = selectedCountry.templesBuildCycles ?? [0,0,0,0];
                     const specLabel = selectedCountry.templeSpec === 'conversion' ? '⚡ Expansão da Fé' : selectedCountry.templeSpec === 'resistance' ? '🛡️ Bastião da Doutrina' : null;
 
-                    const totalBuilt = temples.reduce((a, b) => a + b, 0);
+                    // Global bonus preview
+                    const growthBonus = Math.min(temples.reduce((s, n, i) => s + n * GROWTH_PER[i], 0), 0.5);
+                    const resistDrop = Math.min(temples.reduce((s, n, i) => s + n * RESIST_PER[i], 0), 3.0);
 
                     return (
                       <>
@@ -486,6 +479,16 @@ export default function WorldMap({
                           <span>Missionários: {selectedCountry.missionariesSent} · Presença: {selectedCountry.cyclesPresent} ciclos</span>
                           {specLabel && <span className="text-blue-400/80">{specLabel}</span>}
                         </div>
+
+                        {/* Active bonus row */}
+                        {temples.some(t => t > 0) && (
+                          <div className="flex gap-2 text-[9px] font-mono bg-black/20 border border-[#cfb53b]/10 rounded px-2 py-1">
+                            <span className="text-green-400">+{Math.round(growthBonus * 100)}% conv/ciclo</span>
+                            <span className="text-[#dfcfa0]/30">·</span>
+                            <span className="text-blue-400">-{resistDrop.toFixed(1)} res/ciclo</span>
+                            {growthBonus >= 0.5 && <span className="text-[#cfb53b]/60 ml-auto">cap atingido</span>}
+                          </div>
+                        )}
 
                         {/* 4 level cards */}
                         {[0,1,2,3].map(lvl => {
@@ -496,15 +499,17 @@ export default function WorldMap({
                           const name = traitNames[lvl] ?? `Nível ${lvl+1}`;
                           const presenceReq = PRESENCE_REQ[lvl];
                           const meetsPresence = convertPct >= presenceReq;
-                          const missionReq = UNLOCK_MISSIONS[lvl];
+                          const missionReq = MISSION_REQ[lvl];
                           const meetsMissions = selectedCountry.missionariesSent >= missionReq;
                           const needsPrevLevel = lvl > 0 && temples[lvl-1] === 0;
                           const cyclesReq = lvl === 2 ? 25 : lvl === 3 ? 50 : 0;
                           const meetsCycles = selectedCountry.cyclesPresent >= cyclesReq;
-                          const canUnlock = meetsMissions && meetsPresence && !needsPrevLevel && meetsCycles;
+                          const atCap = count >= MAX_PER_LEVEL;
+                          const isBuilding = inProgress > 0;
+                          const canUnlock = meetsMissions && meetsPresence && !needsPrevLevel && meetsCycles && !atCap;
                           const canAfford = cost ? faith >= cost.faith && fervor >= cost.fervor && tithe >= cost.tithe : false;
                           const totalBuildTime = BUILD_CYCLES_ARR[lvl];
-                          const buildProgress = inProgress > 0 && cyclesLeft > 0
+                          const buildProgress = isBuilding && cyclesLeft > 0
                             ? Math.round(((totalBuildTime - cyclesLeft) / totalBuildTime) * 100)
                             : 0;
 
@@ -516,28 +521,33 @@ export default function WorldMap({
                                   <span className="text-[9px] font-mono font-bold text-[#cfb53b]/60 uppercase tracking-wider">{LEVEL_LABELS[lvl]}</span>
                                   <span className="text-[11px] font-serif font-bold text-[#dfcfa0]">{name}</span>
                                 </div>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1.5">
                                   {count > 0 && (
-                                    <span className="text-[10px] font-mono font-bold text-[#cfb53b]">{count} ✓</span>
+                                    <span className="text-[10px] font-mono font-bold text-[#cfb53b]">{count}/{MAX_PER_LEVEL}</span>
                                   )}
-                                  {inProgress > 0 && (
-                                    <span className="text-[9px] font-mono text-yellow-400 animate-pulse">{inProgress} 🏗️</span>
+                                  {isBuilding && (
+                                    <span className="text-[9px] font-mono text-yellow-400 animate-pulse">🏗️</span>
                                   )}
                                 </div>
                               </div>
 
                               {/* Build progress bar (if building) */}
-                              {inProgress > 0 && (
+                              {isBuilding && (
                                 <div className="flex flex-col gap-0.5">
                                   <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                                     <div className="h-full bg-yellow-500 rounded-full transition-all" style={{ width: `${buildProgress}%` }} />
                                   </div>
-                                  <span className="text-[8px] font-mono text-yellow-400/70">{cyclesLeft} ciclos restantes</span>
+                                  <span className="text-[8px] font-mono text-yellow-400/70">{cyclesLeft} ciclos restantes — aguarde para construir mais</span>
                                 </div>
                               )}
 
-                              {/* Unlock requirements if locked */}
-                              {!canUnlock && (
+                              {/* Cap reached */}
+                              {atCap && !isBuilding && (
+                                <span className="text-[8px] font-mono text-[#cfb53b]/50">Capacidade máxima ({MAX_PER_LEVEL}/{MAX_PER_LEVEL})</span>
+                              )}
+
+                              {/* Unlock requirements if locked (and not building/at cap) */}
+                              {!canUnlock && !isBuilding && !atCap && (
                                 <div className="flex flex-col gap-0.5 text-[8px] font-mono">
                                   {!meetsMissions && <span className="text-red-400/70">✗ {missionReq} missionários (atual: {selectedCountry.missionariesSent})</span>}
                                   {needsPrevLevel && <span className="text-red-400/70">✗ Requer {traitNames[lvl-1] ?? `Nível ${lvl}`} construído</span>}
@@ -547,7 +557,7 @@ export default function WorldMap({
                               )}
 
                               {/* Build button */}
-                              {canUnlock && cost && (
+                              {canUnlock && !isBuilding && cost && (
                                 <button
                                   onClick={() => onOpenTemple(selectedCountry.id, lvl + 1)}
                                   disabled={!canAfford}
@@ -569,7 +579,7 @@ export default function WorldMap({
                         })}
 
                         {/* Empty state */}
-                        {totalBuilt === 0 && !building.some(b => b > 0) && selectedCountry.missionariesSent === 0 && (
+                        {selectedCountry.missionariesSent === 0 && (
                           <div className="text-[9px] text-zinc-500 font-mono text-center py-1">
                             Envie missionários para desbloquear templos
                           </div>
