@@ -1873,11 +1873,14 @@ export default function App() {
         {/* ROW 1 — identity + 4 stats */}
         <div className="px-3 pt-2 pb-1.5 flex items-center gap-2">
           {/* Icon + name + trait */}
-          <div className="flex items-center gap-1.5 shrink-0 min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0 flex-1">
             <div className="p-1 bg-[#cfb53b] text-[#1e1a0c] rounded shrink-0">
               <Gamepad2 className="w-3.5 h-3.5" />
             </div>
-            <span className="text-sm font-bold font-serif text-[#cfb53b] uppercase tracking-wide truncate max-w-[110px]">{state.religionName}</span>
+            <span
+              className="font-bold font-serif text-[#cfb53b] uppercase tracking-wide leading-tight min-w-0"
+              style={{ fontSize: `clamp(9px, ${Math.max(9, 14 - Math.max(0, state.religionName.length - 10))}px, 14px)` }}
+            >{state.religionName}</span>
             <span className="text-[8px] uppercase px-1 py-0.5 bg-amber-950 text-[#cfb53b] font-bold border border-[#cfb53b]/30 rounded shrink-0">{traitNames[state.religionTrait]}</span>
           </div>
 
@@ -2282,7 +2285,7 @@ export default function App() {
                 <div className="bg-[#1a1508] border border-[#cfb53b]/25 rounded-lg px-3 py-2.5 flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-bold font-serif text-[#cfb53b] truncate">{state.religionName}</span>
+                      <span className="text-sm font-bold font-serif text-[#cfb53b] break-words">{state.religionName}</span>
                       <span className="text-[9px] px-1.5 py-0.5 bg-amber-950 border border-[#cfb53b]/30 text-[#cfb53b] font-bold uppercase font-mono rounded">{traitNames[state.religionTrait]}</span>
                     </div>
                     <div className="text-[9px] text-[#dfcfa0]/45 font-mono mt-0.5">{goalNames[state.victoryGoal]}</div>
