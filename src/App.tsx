@@ -844,15 +844,15 @@ export default function App() {
           }
         });
         titheGained = Math.floor(titheGained);
-        // Floor: guarantee at least 1 tithe/cycle when any converts exist (prevents permanent bankruptcy)
-        if (totalConvertsCount > 0 && titheGained < 1) titheGained = 1;
-        // Maintenance costs raised — missionaries and temples are real burdens
-        const missionaryMaintenance = updatedCountries.reduce((s, c) => s + (c.missionariesSent ?? 0) * 2, 0);
+        // Maintenance — missionaries reduced to 0.5/cycle (was 2, was killing early-game tithe)
+        const missionaryMaintenance = updatedCountries.reduce((s, c) => s + (c.missionariesSent ?? 0) * 0.5, 0);
         const templeMaintenance = updatedCountries.reduce((s, c) => {
           const t = c.templeLevel ?? 0;
           return s + (t === 1 ? 3 : t === 2 ? 7 : t === 3 ? 14 : t === 4 ? 25 : 0);
         }, 0);
-        const netTithe = titheGained - missionaryMaintenance - templeMaintenance;
+        const rawNetTithe = titheGained - missionaryMaintenance - templeMaintenance;
+        // Floor on net: when any converts exist, tithe always grows by at least +1
+        const netTithe = totalConvertsCount > 0 ? Math.max(1, rawNetTithe) : rawNetTithe;
 
         // 4. Currency accumulations
         // Base Faith gain: scales with active presence, not flat over time
