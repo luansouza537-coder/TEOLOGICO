@@ -23,10 +23,10 @@ export interface Country {
   specialTraitDesc: string;
   coordinates: { x: number; y: number }; // for map visual rendering
   missionariesSent: number;
-  templeLevel: number; // 0 = none, 1-4 = temple tier
-  templePending: number; // 0 = no pending build; 1-4 = level being built
-  templeBuildCyclesLeft: number; // cycles remaining until templePending completes
-  templeSpec: 'conversion' | 'resistance' | null; // chosen specialization at level 2+
+  temples: number[];           // [l1count, l2count, l3count, l4count] completed temples per level
+  templesBuilding: number[];   // count currently being built per level
+  templesBuildCycles: number[]; // shared countdown per level (all pending at that level complete together)
+  templeSpec: 'conversion' | 'resistance' | null; // specialization unlocked after first level-2 temple
   cyclesPresent: number; // cycles with at least 1 convert (for linguistic barrier)
   lastConflictCycle: number; // last cycle a group conflict fired in this country
   localReligionStrength: number; // 0-100: strength of competing local religion/ideology

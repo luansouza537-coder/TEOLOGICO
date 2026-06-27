@@ -82,9 +82,10 @@ export default function App() {
           parsed.countries = parsed.countries.map((c: any) => ({
             ...c,
             missionariesSent: c.missionariesSent ?? 0,
-            templeLevel: c.templeLevel ?? 0,
-            templePending: c.templePending ?? 0,
-            templeBuildCyclesLeft: c.templeBuildCyclesLeft ?? 0,
+            // Migrate old single-temple saves to new multi-temple system
+            temples: c.temples ?? (c.templeLevel > 0 ? [0,0,0,0].map((_,i) => i === (c.templeLevel-1) ? 1 : 0) : [0,0,0,0]),
+            templesBuilding: c.templesBuilding ?? [0,0,0,0],
+            templesBuildCycles: c.templesBuildCycles ?? (c.templePending > 0 ? [0,0,0,0].map((_,i) => i === (c.templePending-1) ? (c.templeBuildCyclesLeft ?? 0) : 0) : [0,0,0,0]),
             templeSpec: c.templeSpec ?? null,
             cyclesPresent: c.cyclesPresent ?? 0,
             lastConflictCycle: c.lastConflictCycle ?? -99,
@@ -517,10 +518,13 @@ export default function App() {
               else growthFactor *= 0.7; // resistência islâmica: 30% mais lenta antes de 10%
             }
 
-            // Temple growth bonus (only when tithe is sufficient) — must be before addedConverts
-            if (c.templeLevel > 0 && hasTithe) {
-              growthFactor *= (1 + 0.03 * c.templeLevel);
-              // Specialization bonus: conversion spec adds +20% growth
+            // Temple growth bonus (stacks per temple count per level)
+            const _temples = c.temples ?? [0,0,0,0];
+            const _hasAnyTemple = _temples.some(t => t > 0);
+            if (_hasAnyTemple && hasTithe) {
+              const GROWTH_PER = [0.015, 0.025, 0.04, 0.06];
+              const totalGrowthBonus = _temples.reduce((s, count, i) => s + count * GROWTH_PER[i], 0);
+              growthFactor *= (1 + Math.min(totalGrowthBonus, 0.5));
               if (c.templeSpec === 'conversion') growthFactor *= 1.20;
             }
 
@@ -545,7 +549,7 @@ export default function App() {
 
             // INACTIVITY DECAY: fiéis se perdem quando o jogador ignora o país por muito tempo
             const cyclesSinceAction = prev.cycle - (c.lastActionCycle ?? 0);
-            if (cyclesSinceAction > 15 && c.templeLevel < 3) {
+            if (cyclesSinceAction > 15 && (_temples[2] === 0 && _temples[3] === 0)) {
               const decayRate = cyclesSinceAction > 30 ? 0.005 : 0.002;
               const decayed = Math.floor(converts * decayRate);
               converts = Math.max(0, converts - decayed);
@@ -579,9 +583,9 @@ export default function App() {
             const convertFrac = converts / pop;
             // TAG: Devoto — nationalism is 30% stronger (grows faster / decays slower)
             const devotoBonusMult = (c.tags ?? []).includes('Devoto') ? 1.3 : 1.0;
-            if (convertFrac < 0.05 && c.templeLevel === 0 && converts === 0) {
+            if (convertFrac < 0.05 && !_hasAnyTemple && converts === 0) {
               localReligionStrength = Math.min(95, localReligionStrength + 0.3 * devotoBonusMult);
-            } else if (convertFrac > 0.30 && c.templeLevel > 0) {
+            } else if (convertFrac > 0.30 && _hasAnyTemple) {
               localReligionStrength = Math.max(5, localReligionStrength - 0.5 / devotoBonusMult);
             } else {
               localReligionStrength = localReligionStrength > 50
@@ -601,7 +605,7 @@ export default function App() {
             // Alta violência + presença significativa gera conflito local esporádico
             const convertPctConflict = (converts / pop) * 100;
             if (violence > 50 && convertPctConflict > 15 && (prev.cycle - lastConflictCycle) > 10) {
-              const conflictChance = c.templeLevel >= 2 ? 0.04 : 0.08;
+              const conflictChance = (_temples[1] > 0 || _temples[2] > 0 || _temples[3] > 0) ? 0.04 : 0.08;
               if (Math.random() < conflictChance) {
                 const conflictLoss = Math.floor(converts * 0.07);
                 converts = Math.max(0, converts - conflictLoss);
@@ -615,8 +619,9 @@ export default function App() {
               let leaderGrowth = 0.03; // very slow base — player must actively infiltrate
               if (hasLobbyPolitico) leaderGrowth *= 2.0;
               if (hasEcumenicalAlliance) leaderGrowth *= 1.3;
-              if (prev.religionTrait === 'Prophetic' && c.templeLevel > 0) {
-                leaderGrowth += 0.08 * c.templeLevel;
+              if (prev.religionTrait === 'Prophetic' && _hasAnyTemple) {
+                const totalLvl = _temples.reduce((s, count, i) => s + count * (i + 1), 0);
+                leaderGrowth += Math.min(0.32, 0.08 * totalLvl);
               }
               leaderInfiltration = Math.min(100, leaderInfiltration + leaderGrowth);
             }
@@ -630,21 +635,20 @@ export default function App() {
             else if (convertPct > 25) resistance = Math.min(100, resistance + 0.2);
           }
 
-          // Temple passive effects — only when Dízimo is sufficient (abandoned temples do nothing)
-          if (c.templeLevel > 0 && hasTithe) {
-            const templeResistDrop = c.templeLevel === 1 ? 0.2 : c.templeLevel === 2 ? 0.4 : c.templeLevel === 3 ? 0.7 : 1.2;
-            resistance = Math.max(0, resistance - templeResistDrop);
-            // Specialization bonus (C): chosen at level 2+
-            // Note: growthFactor bonus is applied inside the converts > 0 block (see below)
+          // Temple passive effects — stacks per temple count per level
+          if (_hasAnyTemple && hasTithe) {
+            const RESIST_PER = [0.15, 0.3, 0.5, 0.9];
+            const totalResistDrop = _temples.reduce((s, count, i) => s + count * RESIST_PER[i], 0);
+            resistance = Math.max(0, resistance - Math.min(totalResistDrop, 3.0));
             if (c.templeSpec === 'resistance') resistance = Math.max(0, resistance - 0.5);
-            // Trait-specific bonuses on top
+            const totalTempleWeight = _temples.reduce((s, count, i) => s + count * (i + 1), 0);
             if (prev.religionTrait === 'Activist') {
-              violence = Math.max(0, violence - (0.5 * c.templeLevel));
+              violence = Math.max(0, violence - (0.3 * totalTempleWeight));
             }
-            if (prev.religionTrait === 'Mistical' && c.templeLevel >= 3) {
+            if (prev.religionTrait === 'Mistical' && _temples[2] > 0) {
               resistance = Math.max(0, resistance - 0.3);
             }
-            if (prev.religionTrait === 'Syncretist' && c.templeLevel >= 2) {
+            if (prev.religionTrait === 'Syncretist' && _temples[1] > 0) {
               resistance = Math.max(0, resistance - 0.2);
             }
           }
@@ -666,30 +670,33 @@ export default function App() {
           totalResistanceSum += resistance;
           totalViolenceSum += violence;
 
-          // TEMPLE CONSTRUCTION PHASE (A): decrement build timer, complete when 0
-          let templeLevel = c.templeLevel;
-          let templePending = c.templePending;
-          let templeBuildCyclesLeft = c.templeBuildCyclesLeft;
+          // TEMPLE CONSTRUCTION PHASE (A): per-level countdown, all pending at that level complete together
+          const newTemples = [..._temples];
+          const newBuilding = [...(c.templesBuilding ?? [0,0,0,0])];
+          const newBuildCycles = [...(c.templesBuildCycles ?? [0,0,0,0])];
           let templeSpec = c.templeSpec;
-          if (templePending > 0 && templeBuildCyclesLeft > 0) {
-            templeBuildCyclesLeft -= 1;
-            if (templeBuildCyclesLeft === 0) {
-              templeLevel = templePending;
-              templePending = 0;
-              // Trigger spec choice for level 2+
-              if (templeLevel >= 2) {
-                setSpecChoiceCountryId(c.id);
+          for (let lvl = 0; lvl < 4; lvl++) {
+            if (newBuilding[lvl] > 0 && newBuildCycles[lvl] > 0) {
+              newBuildCycles[lvl] -= 1;
+              if (newBuildCycles[lvl] === 0) {
+                const wasZero = newTemples[lvl] === 0;
+                newTemples[lvl] += newBuilding[lvl];
+                newBuilding[lvl] = 0;
+                if (lvl === 1 && wasZero) setSpecChoiceCountryId(c.id);
               }
             }
           }
 
-          // TEMPLE VULNERABILITY (E): high violence can destroy temple level
-          if (templeLevel > 0 && templePending === 0) {
+          // TEMPLE VULNERABILITY (E): high violence destroys one temple (highest level first)
+          const _anyBuilt = newTemples.some(t => t > 0);
+          if (_anyBuilt) {
             let destructionChance = violence > 90 ? 0.05 : violence > 70 ? 0.02 : 0;
-            if (c.id === 'haiti') destructionChance *= 2; // Haiti: violência destrói templos 2× mais rápido
+            if (c.id === 'haiti') destructionChance *= 2;
             if (destructionChance > 0 && Math.random() < destructionChance) {
-              templeLevel = Math.max(0, templeLevel - 1);
-              templeSpec = templeLevel < 2 ? null : templeSpec;
+              for (let lvl = 3; lvl >= 0; lvl--) {
+                if (newTemples[lvl] > 0) { newTemples[lvl] -= 1; break; }
+              }
+              if (!newTemples.slice(1).some(t => t > 0)) templeSpec = null;
             }
           }
 
@@ -703,7 +710,7 @@ export default function App() {
             violence = Math.min(100, violence + 0.3);
           }
 
-          return { ...c, converts, resistance, violence, leaderInfiltration, cyclesPresent, lastConflictCycle, templeLevel, templePending, templeBuildCyclesLeft, templeSpec, localReligionStrength };
+          return { ...c, converts, resistance, violence, leaderInfiltration, cyclesPresent, lastConflictCycle, temples: newTemples, templesBuilding: newBuilding, templesBuildCycles: newBuildCycles, templeSpec, localReligionStrength };
         });
 
         // Post-map passive dogma effects
@@ -843,17 +850,20 @@ export default function App() {
             const tier2 = Math.min(Math.max(c.converts - 200_000, 0), 800_000);
             const tier3 = Math.max(c.converts - 1_000_000, 0);
             const localBase = tier1 / 800_000 + tier2 / 1_600_000 + tier3 / 2_000_000;
-            const templeBonus = c.templeLevel === 1 ? 1.3 : c.templeLevel === 2 ? 1.8 : c.templeLevel === 3 ? 2.5 : c.templeLevel >= 4 ? 4.0 : 1.0;
-            titheGained += localBase * templeBonus;
+            const ct = c.temples ?? [0,0,0,0];
+            const maxLvl = Math.max(0, ...ct.map((n, i) => n > 0 ? i + 1 : 0));
+            const templeBonus = maxLvl === 0 ? 1.0 : maxLvl === 1 ? 1.3 : maxLvl === 2 ? 1.8 : maxLvl === 3 ? 2.5 : 4.0;
+            const extraBonus = 1 + Math.max(0, ct[0] - 1) * 0.05 + Math.max(0, ct[1] - 1) * 0.08 + Math.max(0, ct[2] - 1) * 0.12 + Math.max(0, ct[3] - 1) * 0.18;
+            titheGained += localBase * templeBonus * extraBonus;
           }
         });
         titheGained = Math.floor(titheGained);
         // Maintenance — missionaries reduced to 0.5/cycle (was 2, was killing early-game tithe)
         const missionaryMaintenance = updatedCountries.reduce((s, c) => s + (c.missionariesSent ?? 0) * 0.5, 0);
-        const templeMaintenance = updatedCountries.reduce((s, c) => {
-          const t = c.templeLevel ?? 0;
-          return s + (t === 1 ? 3 : t === 2 ? 7 : t === 3 ? 14 : t === 4 ? 25 : 0);
-        }, 0);
+        const TEMPLE_MAINT_PER = [2, 5, 10, 18];
+        const templeMaintenance = updatedCountries.reduce((s, c) =>
+          s + (c.temples ?? [0,0,0,0]).reduce((sum, count, i) => sum + count * TEMPLE_MAINT_PER[i], 0)
+        , 0);
         const rawNetTithe = titheGained - missionaryMaintenance - templeMaintenance;
         // Floor on net: when any converts exist, tithe always grows by at least +1
         const netTithe = totalConvertsCount > 0 ? Math.max(1, rawNetTithe) : rawNetTithe;
@@ -881,21 +891,14 @@ export default function App() {
         // Maintenance cost: active missions and temples consume faith each cycle
         const maintenanceCost = activeCountries + Math.floor(prev.totalTemples * 0.5);
         faithGained = Math.max(0, faithGained - maintenanceCost);
-        // Temple global faith/fervor bonuses (reduced to prevent runaway accumulation)
+        // Temple global faith/fervor bonuses — scale with count at each level
         updatedCountries.forEach((c) => {
-          if (c.templeLevel === 0) return;
-          if (prev.religionTrait === 'Mistical') {
-            if (c.templeLevel >= 3) faithGained += c.templeLevel >= 4 ? 4 : 2;
-          }
-          if (prev.religionTrait === 'Prophetic') {
-            if (c.templeLevel >= 3) { faithGained += 3; fervorGained += 1; }
-          }
-          if (prev.religionTrait === 'Activist') {
-            if (c.templeLevel >= 4) faithGained += 3;
-          }
-          if (prev.religionTrait === 'Syncretist') {
-            if (c.templeLevel >= 4) faithGained += 5;
-          }
+          const t = c.temples ?? [0,0,0,0];
+          if (!t.some(n => n > 0)) return;
+          if (prev.religionTrait === 'Mistical') faithGained += t[2] * 2 + t[3] * 4;
+          if (prev.religionTrait === 'Prophetic') { const hi = t[2] + t[3]; faithGained += hi * 3; fervorGained += hi; }
+          if (prev.religionTrait === 'Activist') faithGained += t[3] * 3;
+          if (prev.religionTrait === 'Syncretist') faithGained += t[3] * 5;
         });
 
         // DOUTRINAS — efeitos globais de Fé e Fervor
@@ -970,7 +973,7 @@ export default function App() {
         else if (convertedRate2 > 0.25) rivalIncrement *= 0.5;
 
         // Each temple level ≥2 slows rival globally
-        const establishedTemples = updatedCountries.filter(c => c.templeLevel >= 2).length;
+        const establishedTemples = updatedCountries.filter(c => (c.temples?.[1] ?? 0) > 0 || (c.temples?.[2] ?? 0) > 0 || (c.temples?.[3] ?? 0) > 0).length;
         if (establishedTemples > 0) rivalIncrement *= Math.pow(0.92, establishedTemples);
 
         // Syncretist coexists better with rival ideologies
@@ -978,7 +981,7 @@ export default function App() {
         if (getDoc('doc_moral_source') === 'A') rivalIncrement *= 0.80;
         if (hasRelogioJuizo) rivalIncrement *= 0.7;
         // Prophetic L4 temple: rival slows globally per such temple
-        const propheticL4Temples = updatedCountries.filter(c => prev.religionTrait === 'Prophetic' && c.templeLevel >= 4).length;
+        const propheticL4Temples = updatedCountries.filter(c => prev.religionTrait === 'Prophetic' && (c.temples?.[3] ?? 0) > 0).length;
         if (propheticL4Temples > 0) rivalIncrement *= Math.pow(0.85, propheticL4Temples);
 
         const updatedRivalProgress = Math.min(100, prev.rivalProgress + rivalIncrement);
@@ -1147,10 +1150,8 @@ export default function App() {
           : prev.eventCooldowns;
 
         // Count temples completed this cycle (templePending > 0 → now 0 means it just finished)
-        const justCompletedTemples = updatedCountries.filter((c, i) => {
-          const prev_c = prev.countries[i];
-          return prev_c.templePending > 0 && c.templePending === 0 && c.templeLevel > prev_c.templeLevel;
-        });
+        const countT = (c: { temples?: number[] }) => (c.temples ?? [0,0,0,0]).reduce((a,b)=>a+b,0);
+        const justCompletedTemples = updatedCountries.filter((c, i) => countT(c) > countT(prev.countries[i]));
         const newlyCompletedTemples = justCompletedTemples.length;
 
         // First temple ever built — trigger celebration modal
@@ -1160,11 +1161,7 @@ export default function App() {
           setTimeout(() => setFirstTempleModal({ countryName: firstTempleCountry.name }), 400);
         }
 
-        // Count temples destroyed this cycle by violence
-        const newlyDestroyedTemples = updatedCountries.filter((c, i) => {
-          const prev_c = prev.countries[i];
-          return prev_c.templeLevel > 0 && c.templeLevel < prev_c.templeLevel && c.templePending === 0;
-        }).length;
+        const newlyDestroyedTemples = updatedCountries.filter((c, i) => countT(c) < countT(prev.countries[i])).length;
 
         // Build phase advancement log
         const phaseNames = ['', 'Centelha Sagrada', 'Credo Estabelecido', 'Era da Transcendência'];
@@ -1194,7 +1191,7 @@ export default function App() {
           resistanceStreak: newStreak,
           isGameOver,
           gameOverReason,
-          totalTemples: Math.max(0, prev.totalTemples + newlyCompletedTemples - newlyDestroyedTemples),
+          totalTemples: updatedCountries.reduce((s, c) => s + countT(c), 0),
           faithPhase: newFaithPhase,
           eventActive: isGameOver ? null : (newlyTriggeredEvent || prev.eventActive),
           paused: isGameOver ? false : (phaseAdvanced ? true : (newlyTriggeredEvent ? true : prev.paused)),
@@ -1293,9 +1290,9 @@ export default function App() {
     // Fresh countries initialization (giving focus to USA first)
     let presetCountries = INITIAL_COUNTRIES.map((c) => {
       if (c.id === 'usa') {
-        return { ...c, converts: 120, leaderInfiltration: 5, resistance: 15, violence: 45, missionariesSent: 0, templeLevel: 0, cyclesPresent: 1, lastConflictCycle: -99 };
+        return { ...c, converts: 120, leaderInfiltration: 5, resistance: 15, violence: 45, missionariesSent: 0, temples: [0,0,0,0], templesBuilding: [0,0,0,0], templesBuildCycles: [0,0,0,0], templeSpec: null, cyclesPresent: 1, lastConflictCycle: -99 };
       }
-      return { ...c, converts: 0, leaderInfiltration: 0, missionariesSent: 0, templeLevel: 0, cyclesPresent: 0, lastConflictCycle: -99 };
+      return { ...c, converts: 0, leaderInfiltration: 0, missionariesSent: 0, temples: [0,0,0,0], templesBuilding: [0,0,0,0], templesBuildCycles: [0,0,0,0], templeSpec: null, cyclesPresent: 0, lastConflictCycle: -99 };
     });
 
     // Apply one-time founding pillar effects that normally fire on purchase
@@ -1352,7 +1349,7 @@ export default function App() {
       gameSpeed: 1,
       selectedCountryId: 'usa',
       dogmas: INITIAL_DOGMAS.map(d => ({ ...d, purchased: false })),
-      countries: INITIAL_COUNTRIES.map(c => ({ ...c, converts: c.id === 'usa' ? 120 : 0, leaderInfiltration: c.id === 'usa' ? 5 : 0, missionariesSent: 0, templeLevel: 0, cyclesPresent: c.id === 'usa' ? 1 : 0, lastConflictCycle: -99 })),
+      countries: INITIAL_COUNTRIES.map(c => ({ ...c, converts: c.id === 'usa' ? 120 : 0, leaderInfiltration: c.id === 'usa' ? 5 : 0, missionariesSent: 0, temples: [0,0,0,0], templesBuilding: [0,0,0,0], templesBuildCycles: [0,0,0,0], templeSpec: null, cyclesPresent: c.id === 'usa' ? 1 : 0, lastConflictCycle: -99 })),
       eventActive: null,
       rivalProgress: 0,
       rivalName: 'A Ordem Tecnocrática',
@@ -1484,9 +1481,10 @@ export default function App() {
     const baseEffect = baseEffects[tier];
     if (state.faith < cost.faith || state.fervor < cost.fervor) return;
 
+    const templeEffLevel = Math.max(0, ...(countryObj.temples ?? [0,0,0,0]).map((n,i) => n > 0 ? i+1 : 0));
     const eff = calcPeaceEffectiveness(
       countryObj.converts, countryObj.population,
-      countryObj.templeLevel, countryObj.leaderInfiltration,
+      templeEffLevel, countryObj.leaderInfiltration,
       state.tithe
     );
     const scaledViolence = Math.round(baseEffect.violence * eff);
@@ -1526,10 +1524,10 @@ export default function App() {
   // Action callback 3: Infiltrate Country Leader
   // Leader conversion is a 4-stage process requiring religion infrastructure + high costs.
   const LEADER_STAGES = [
-    { label: 'Ciente',       min: 0,  max: 25,  faith: 150, fervor: 0,   convertPct: 0.15, globalTemples: 5,  cyclesPresent: 0,  templeLevel: 0 },
-    { label: 'Simpático',    min: 25, max: 50,  faith: 300, fervor: 300, convertPct: 0.30, globalTemples: 15, cyclesPresent: 10, templeLevel: 0 },
-    { label: 'Comprometido', min: 50, max: 75,  faith: 500, fervor: 500, convertPct: 0.45, globalTemples: 25, cyclesPresent: 0,  templeLevel: 1 },
-    { label: 'Convertido',   min: 75, max: 100, faith: 700, fervor: 700, convertPct: 0.60, globalTemples: 35, cyclesPresent: 0,  templeLevel: 2 },
+    { label: 'Ciente',       min: 0,  max: 25,  faith: 150, fervor: 0,   convertPct: 0.15, globalTemples: 5,  cyclesPresent: 0,  localTempleMinLevel: 0 },
+    { label: 'Simpático',    min: 25, max: 50,  faith: 300, fervor: 300, convertPct: 0.30, globalTemples: 15, cyclesPresent: 10, localTempleMinLevel: 0 },
+    { label: 'Comprometido', min: 50, max: 75,  faith: 500, fervor: 500, convertPct: 0.45, globalTemples: 25, cyclesPresent: 0,  localTempleMinLevel: 1 },
+    { label: 'Convertido',   min: 75, max: 100, faith: 700, fervor: 700, convertPct: 0.60, globalTemples: 35, cyclesPresent: 0,  localTempleMinLevel: 2 },
   ];
   const SUPERPOWER_IDS = ['usa', 'china', 'india', 'germany'];
   const LEADER_SUCCESS_RATES: Record<string, number[]> = {
@@ -1554,7 +1552,8 @@ export default function App() {
     const requiredConvertPct = isSuperpower ? stage.convertPct * 2 : stage.convertPct;
     const requiredTemples = isSuperpower ? stage.globalTemples + 8 : stage.globalTemples;
     const actualConvertPct = countryObj.population > 0 ? countryObj.converts / countryObj.population : 0;
-    const canAct = actualConvertPct >= requiredConvertPct && state.totalTemples >= requiredTemples && countryObj.cyclesPresent >= stage.cyclesPresent && countryObj.templeLevel >= stage.templeLevel;
+    const meetsLocalTemple = stage.localTempleMinLevel === 0 || (countryObj.temples?.[stage.localTempleMinLevel - 1] ?? 0) > 0;
+    const canAct = actualConvertPct >= requiredConvertPct && state.totalTemples >= requiredTemples && countryObj.cyclesPresent >= stage.cyclesPresent && meetsLocalTemple;
     let baseFaith = stage.faith;
     let baseFervor = stage.fervor;
     const hasGJ = state.dogmas.some(d => d.id === 'reforma_escatologica' && d.purchased);
@@ -1585,7 +1584,7 @@ export default function App() {
     const meetsConverts  = actualConvertPct >= requiredConvertPct;
     const meetsTemples   = state.totalTemples >= requiredTemples;
     const meetsCycles    = countryObj.cyclesPresent >= stage.cyclesPresent;
-    const meetsTempleLocal = countryObj.templeLevel >= stage.templeLevel;
+    const meetsTempleLocal = stage.localTempleMinLevel === 0 || (countryObj.temples?.[stage.localTempleMinLevel - 1] ?? 0) > 0;
 
     if (!meetsConverts || !meetsTemples || !meetsCycles || !meetsTempleLocal) return;
 
@@ -1714,39 +1713,45 @@ export default function App() {
   // Minimum conversion % required to build each level
   const TEMPLE_PRESENCE_REQ = [0, 0.10, 0.25, 0.50];
 
-  // Action callback 5: Begin temple construction in a country
-  const openTemple = (countryId: string) => {
+  // Action callback 5: Build a temple of a specific level in a country
+  const openTemple = (countryId: string, level: number = 1) => {
     const countryObj = state.countries.find((c) => c.id === countryId);
-    if (!countryObj) return;
+    if (!countryObj || level < 1 || level > 4) return;
 
-    // Block if already building
-    if (countryObj.templePending > 0) return;
+    const temples = countryObj.temples ?? [0,0,0,0];
 
-    const nextLevel = countryObj.templeLevel + 1;
-    if (nextLevel > 4) return;
+    // Unlock gate: need at least 1 completed temple of previous level
+    if (level > 1 && temples[level - 2] === 0) return;
 
-    // B) Presence requirement check
-    const presenceReq = TEMPLE_PRESENCE_REQ[nextLevel - 1];
+    // Presence requirement
+    const presenceReq = TEMPLE_PRESENCE_REQ[level - 1];
     const convertPct = countryObj.converts / countryObj.population;
     if (convertPct < presenceReq) return;
 
-    const cost = TEMPLE_COSTS[nextLevel - 1];
+    // Cycles present for levels 3+
+    if (level === 3 && (countryObj.cyclesPresent ?? 0) < 25) return;
+    if (level === 4 && (countryObj.cyclesPresent ?? 0) < 50) return;
+
+    const cost = TEMPLE_COSTS[level - 1];
     if (state.faith < cost.faith || state.fervor < cost.fervor || state.tithe < cost.tithe) return;
 
-    const templeName = TEMPLE_NAMES[state.religionTrait]?.[nextLevel - 1] ?? 'Templo';
-    const buildCycles = TEMPLE_BUILD_CYCLES[nextLevel - 1];
+    const templeName = TEMPLE_NAMES[state.religionTrait]?.[level - 1] ?? 'Templo';
+    const buildCycles = TEMPLE_BUILD_CYCLES[level - 1];
 
-    addFloatingText(`🏗️ Construindo ${templeName}...`, countryObj.coordinates.x, countryObj.coordinates.y - 8, 'text-yellow-400 font-bold font-serif', countryObj.id);
+    addFloatingText(`🏗️ ${templeName}...`, countryObj.coordinates.x, countryObj.coordinates.y - 8, 'text-yellow-400 font-bold font-serif', countryObj.id);
     addFloatingText(`-${cost.faith} Fé`, countryObj.coordinates.x, countryObj.coordinates.y, 'text-red-500 font-bold font-mono', countryObj.id);
     addFloatingText(`-${cost.tithe} Díz`, countryObj.coordinates.x, countryObj.coordinates.y + 5, 'text-emerald-400 font-bold font-mono', countryObj.id);
 
     setState((prev) => {
       const country = prev.countries.find(c => c.id === countryId);
-      if (!country || country.templePending > 0) return prev;
+      if (!country) return prev;
       if (prev.faith < cost.faith || prev.fervor < cost.fervor || prev.tithe < cost.tithe) return prev;
-      const updatedCountries = prev.countries.map((c) =>
-        c.id === countryId ? { ...c, templePending: nextLevel, templeBuildCyclesLeft: buildCycles, lastActionCycle: prev.cycle } : c
-      );
+
+      const newTemples = [...(country.temples ?? [0,0,0,0])];
+      const newBuilding = [...(country.templesBuilding ?? [0,0,0,0])];
+      const newBuildCycles = [...(country.templesBuildCycles ?? [0,0,0,0])];
+      newBuilding[level - 1] += 1;
+      if (newBuildCycles[level - 1] === 0) newBuildCycles[level - 1] = buildCycles;
 
       playSound('click');
 
@@ -1755,7 +1760,9 @@ export default function App() {
         faith: prev.faith - cost.faith,
         fervor: prev.fervor - cost.fervor,
         tithe: prev.tithe - cost.tithe,
-        countries: updatedCountries,
+        countries: prev.countries.map(c =>
+          c.id === countryId ? { ...c, temples: newTemples, templesBuilding: newBuilding, templesBuildCycles: newBuildCycles, lastActionCycle: prev.cycle } : c
+        ),
       };
     });
   };
@@ -2078,7 +2085,7 @@ export default function App() {
         {/* Temple hint — shown when player can actually build (faith + conversion % met) */}
         {(() => {
           const templeReadyCountry = state.countries.find(c => {
-            if (c.missionariesSent < 1 || c.templeLevel > 0 || c.templePending > 0) return false;
+            if (c.missionariesSent < 1 || (c.temples ?? []).some(t => t > 0) || (c.templesBuilding ?? []).some(t => t > 0)) return false;
             const convertPct = c.population > 0 ? c.converts / c.population : 0;
             return state.faith >= 40 && c.converts > 0;
           });
@@ -2252,7 +2259,7 @@ export default function App() {
           {activeTab === 'faith' && (() => {
             const totalMissionaries = state.countries.reduce((a, c) => a + (c.missionariesSent ?? 0), 0);
             const totalLeaders = state.countries.filter(c => c.leaderInfiltration >= 100).length;
-            const totalTemplesList = state.countries.filter(c => (c.templeLevel ?? 0) > 0);
+            const totalTemplesList = state.countries.filter(c => (c.temples ?? []).some(t => t > 0));
             const activeDogmas = state.dogmas.filter(d => d.purchased);
             const convPct = totalWorldPopulation > 0 ? (totalConvertedWorld / totalWorldPopulation * 100) : 0;
             const avgViolence = state.countries.reduce((a, c) => a + c.violence, 0) / state.countries.length;
@@ -2444,7 +2451,7 @@ export default function App() {
                       const pct = c.population > 0 ? (c.converts / c.population) * 100 : 0;
                       const barColor = pct >= 50 ? 'bg-[#cfb53b]' : pct > 0 ? 'bg-amber-700' : 'bg-zinc-700';
                       const textColor = pct >= 50 ? 'text-[#cfb53b]' : pct > 0 ? 'text-amber-600' : 'text-zinc-600';
-                      const hasTemple = (c.templeLevel ?? 0) > 0;
+                      const hasTemple = (c.temples ?? []).some(t => t > 0);
                       const leaderDone = c.leaderInfiltration >= 100;
                       return (
                         <div key={c.id} className="bg-black/20 border border-[#cfb53b]/8 rounded px-1.5 py-1">
@@ -2811,7 +2818,8 @@ export default function App() {
       {specChoiceCountryId && (() => {
         const specCountry = state.countries.find(c => c.id === specChoiceCountryId);
         if (!specCountry) return null;
-        const templeName = TEMPLE_NAMES[state.religionTrait]?.[specCountry.templeLevel - 1] ?? 'Templo';
+        const specTempleLevel = Math.max(0, ...(specCountry.temples ?? [0,0,0,0]).map((n,i) => n > 0 ? i+1 : 0));
+        const templeName = TEMPLE_NAMES[state.religionTrait]?.[specTempleLevel - 1] ?? 'Templo';
         return (
           <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-40 animate-fade-in">
             <div className="w-full max-w-md bg-[#1a1208] border-2 border-[#cfb53b] p-6 rounded-xl text-center shadow-[0_0_40px_rgba(207,181,59,0.2)] flex flex-col gap-4">

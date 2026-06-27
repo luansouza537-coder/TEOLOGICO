@@ -46,7 +46,7 @@ interface WorldMapProps {
   onPacifyCountry: (countryId: string, tier: 1 | 2 | 3) => void;
   onInfiltrateLeader: (countryId: string) => void;
   onPerformEcstasyRitual: (countryId: string) => void;
-  onOpenTemple: (countryId: string) => void;
+  onOpenTemple: (countryId: string, level: number) => void;
   totalTemples: number;
   templeCosts: { faith: number; fervor: number; tithe: number }[];
   templeNames: Record<string, string[]>;
@@ -96,10 +96,10 @@ export default function WorldMap({
   };
 
   const LEADER_STAGES_UI = [
-    { label: 'Ciente',       min: 0,  max: 25,  faith: 150, fervor: 0,   convertPct: 0.15, globalTemples: 5,  cyclesPresent: 0,  templeLevel: 0 },
-    { label: 'Simpático',    min: 25, max: 50,  faith: 300, fervor: 300, convertPct: 0.30, globalTemples: 15, cyclesPresent: 10, templeLevel: 0 },
-    { label: 'Comprometido', min: 50, max: 75,  faith: 500, fervor: 500, convertPct: 0.45, globalTemples: 25, cyclesPresent: 0,  templeLevel: 1 },
-    { label: 'Convertido',   min: 75, max: 100, faith: 700, fervor: 700, convertPct: 0.60, globalTemples: 35, cyclesPresent: 0,  templeLevel: 2 },
+    { label: 'Ciente',       min: 0,  max: 25,  faith: 150, fervor: 0,   convertPct: 0.15, globalTemples: 5,  cyclesPresent: 0,  localTempleMinLevel: 0 },
+    { label: 'Simpático',    min: 25, max: 50,  faith: 300, fervor: 300, convertPct: 0.30, globalTemples: 15, cyclesPresent: 10, localTempleMinLevel: 0 },
+    { label: 'Comprometido', min: 50, max: 75,  faith: 500, fervor: 500, convertPct: 0.45, globalTemples: 25, cyclesPresent: 0,  localTempleMinLevel: 1 },
+    { label: 'Convertido',   min: 75, max: 100, faith: 700, fervor: 700, convertPct: 0.60, globalTemples: 35, cyclesPresent: 0,  localTempleMinLevel: 2 },
   ];
   const SUPERPOWER_IDS_UI = ['usa', 'china', 'india', 'germany'];
   const SUCCESS_RATES_UI: Record<string, number[]> = {
@@ -114,12 +114,12 @@ export default function WorldMap({
 
   const getTempleUnlockLevel = (c: Country): number => {
     const sent = c.missionariesSent ?? 0;
-    const level = c.templeLevel ?? 0;
+    const temples = c.temples ?? [0,0,0,0];
     const cycles = c.cyclesPresent ?? 0;
     const convertPct = c.population > 0 ? (c.converts / c.population) * 100 : 0;
-    if (sent >= 10 && convertPct >= 50 && level >= 3 && cycles >= 50) return 4;
-    if (sent >= 6 && convertPct >= 25 && level >= 2 && cycles >= 25) return 3;
-    if (sent >= 3 && convertPct >= 10 && level >= 1) return 2;
+    if (sent >= 10 && convertPct >= 50 && temples[2] > 0 && cycles >= 50) return 4;
+    if (sent >= 6 && convertPct >= 25 && temples[1] > 0 && cycles >= 25) return 3;
+    if (sent >= 3 && convertPct >= 10 && temples[0] > 0) return 2;
     if (sent >= 1 && c.converts > 0) return 1;
     return 0;
   };
@@ -208,8 +208,8 @@ export default function WorldMap({
                 {(['info', 'acoes', 'templo'] as SheetTab[]).map(tab => {
                   const canBuildHere = tab === 'templo'
                     && selectedCountry.missionariesSent >= 1
-                    && selectedCountry.templeLevel === 0
-                    && selectedCountry.templePending === 0
+                    && !(selectedCountry.temples ?? []).some(t => t > 0)
+                    && !(selectedCountry.templesBuilding ?? []).some(t => t > 0)
                     && faith >= 40;
                   return (
                     <button
@@ -352,7 +352,8 @@ export default function WorldMap({
                     const available = tiers.filter(t => v >= t.violenceReq);
                     const best = available[available.length - 1] ?? tiers[0];
                     const canAfford = faith >= best.faith && fervor >= best.fervor && hasConverts;
-                    const eff = calcPeaceEffectiveness(selectedCountry.converts, selectedCountry.population, selectedCountry.templeLevel, selectedCountry.leaderInfiltration, tithe);
+                    const templeEffLvl = Math.max(0, ...(selectedCountry.temples ?? [0,0,0,0]).map((n,i) => n > 0 ? i+1 : 0));
+                    const eff = calcPeaceEffectiveness(selectedCountry.converts, selectedCountry.population, templeEffLvl, selectedCountry.leaderInfiltration, tithe);
                     const effPct = Math.round(eff * 100);
                     const scaledV = Math.round(best.baseViolence * eff);
                     const scaledR = best.baseResistance !== 0 ? Math.round(best.baseResistance * eff) : 0;
@@ -402,7 +403,7 @@ export default function WorldMap({
                     const meetsConv = actualPct >= reqConvertPct;
                     const meetsTmpl = totalTemples >= reqTemples;
                     const meetsCyc = selectedCountry.cyclesPresent >= stage.cyclesPresent;
-                    const meetsTmplLoc = selectedCountry.templeLevel >= stage.templeLevel;
+                    const meetsTmplLoc = stage.localTempleMinLevel === 0 || (selectedCountry.temples?.[stage.localTempleMinLevel - 1] ?? 0) > 0;
                     const meetsAll = meetsConv && meetsTmpl && meetsCyc && meetsTmplLoc;
                     const canAfford = faith >= stage.faith && fervor >= stage.fervor;
                     const canAct = meetsAll && canAfford;
@@ -423,7 +424,7 @@ export default function WorldMap({
                           <span className={meetsConv ? 'text-green-400' : 'text-red-400'}>{meetsConv ? '✓' : '✗'} {Math.round(reqConvertPct * 100)}% fiéis ({Math.round(actualPct * 100)}% atual)</span>
                           <span className={meetsTmpl ? 'text-green-400' : 'text-red-400'}>{meetsTmpl ? '✓' : '✗'} {reqTemples} templos globais ({totalTemples} atual)</span>
                           {stage.cyclesPresent > 0 && <span className={meetsCyc ? 'text-green-400' : 'text-red-400'}>{meetsCyc ? '✓' : '✗'} {stage.cyclesPresent} ciclos de presença ({selectedCountry.cyclesPresent} atual)</span>}
-                          {stage.templeLevel > 0 && <span className={meetsTmplLoc ? 'text-green-400' : 'text-red-400'}>{meetsTmplLoc ? '✓' : '✗'} Templo nível {stage.templeLevel} local ({selectedCountry.templeLevel} atual)</span>}
+                          {stage.localTempleMinLevel > 0 && <span className={meetsTmplLoc ? 'text-green-400' : 'text-red-400'}>{meetsTmplLoc ? '✓' : '✗'} Templo nível {stage.localTempleMinLevel} local</span>}
                         </div>
                         <button
                           onClick={() => onInfiltrateLeader(selectedCountry.id)}
@@ -463,106 +464,114 @@ export default function WorldMap({
 
               {/* ── TEMPLO TAB ── */}
               {sheetTab === 'templo' && (
-                <div className="flex flex-col gap-3 pt-1">
-                  {selectedCountry.templeLevel === 0 && selectedCountry.templePending === 0 && (
-                    <div className="bg-[#cfb53b]/10 border border-[#cfb53b]/30 rounded-lg px-3 py-2 text-[9px] text-[#dfcfa0]/70 font-mono leading-relaxed">
-                      🏛️ Templos aceleram conversões e reduzem resistência na região. Construa um aqui para fortalecer sua presença — depois evolua até nível 4 para bônus máximos.
-                    </div>
-                  )}
+                <div className="flex flex-col gap-2 pt-1">
                   {(() => {
                     const PRESENCE_REQ = [0, 0.10, 0.25, 0.50];
-                    const BUILD_CYCLES = [3, 6, 10, 15];
-                    const availableLevel = getTempleUnlockLevel(selectedCountry);
-                    const nextLevel = selectedCountry.templeLevel + 1;
-                    const canBuildNext = availableLevel >= nextLevel && nextLevel <= 4;
-                    const cost = nextLevel <= 4 ? templeCosts[nextLevel - 1] : null;
-                    const presenceReq = nextLevel <= 4 ? PRESENCE_REQ[nextLevel - 1] : 0;
+                    const BUILD_CYCLES_ARR = [3, 6, 10, 15];
+                    const LEVEL_LABELS = ['NIV 1', 'NIV 2', 'NIV 3', 'NIV 4'];
+                    const UNLOCK_MISSIONS = [1, 3, 6, 10];
                     const convertPct = selectedCountry.population > 0 ? selectedCountry.converts / selectedCountry.population : 0;
-                    const meetsPresence = convertPct >= presenceReq;
-                    const canAfford = cost ? faith >= cost.faith && fervor >= cost.fervor && tithe >= cost.tithe : false;
                     const traitNames = templeNames[trait] ?? [];
-                    const currentTempleName = selectedCountry.templeLevel > 0 ? traitNames[selectedCountry.templeLevel - 1] : null;
-                    const nextTempleName = nextLevel <= 4 ? traitNames[nextLevel - 1] : null;
-                    const isBuilding = (selectedCountry.templePending ?? 0) > 0;
-                    const buildCyclesLeft = selectedCountry.templeBuildCyclesLeft ?? 0;
-                    const pendingName = isBuilding ? traitNames[(selectedCountry.templePending ?? 1) - 1] : null;
-                    const totalBuildCycles = isBuilding ? BUILD_CYCLES[(selectedCountry.templePending ?? 1) - 1] : 1;
-                    const buildProgress = isBuilding ? Math.round(((totalBuildCycles - buildCyclesLeft) / totalBuildCycles) * 100) : 0;
+                    const temples = selectedCountry.temples ?? [0,0,0,0];
+                    const building = selectedCountry.templesBuilding ?? [0,0,0,0];
+                    const buildCycles = selectedCountry.templesBuildCycles ?? [0,0,0,0];
                     const specLabel = selectedCountry.templeSpec === 'conversion' ? '⚡ Expansão da Fé' : selectedCountry.templeSpec === 'resistance' ? '🛡️ Bastião da Doutrina' : null;
+
+                    const totalBuilt = temples.reduce((a, b) => a + b, 0);
 
                     return (
                       <>
-                        {/* Current status */}
-                        <div className="bg-[#171308] border border-[#cfb53b]/20 rounded p-3 flex flex-col gap-1.5">
-                          <div className="flex justify-between text-[10px] font-mono">
-                            <span className="flex items-center gap-1.5 text-[#dfcfa0]/70">
-                              <Building2 className="w-3.5 h-3.5 text-[#cfb53b]" />
-                              Templo Atual:
-                              {currentTempleName
-                                ? <span className="text-[#cfb53b] font-bold ml-1">{currentTempleName}</span>
-                                : <span className="text-zinc-500 ml-1">Nenhum</span>}
-                            </span>
-                            <span className="text-[#dfcfa0]/50">Nível {selectedCountry.templeLevel}/4</span>
-                          </div>
-                          {specLabel && <div className="text-[9px] text-blue-400/80 font-mono">{specLabel}</div>}
-                          <div className="flex justify-between text-[9px] font-mono text-[#dfcfa0]/50">
-                            <span>Missionários enviados: {selectedCountry.missionariesSent}</span>
-                            <span>Presença: {selectedCountry.cyclesPresent} ciclos</span>
-                          </div>
-                          {/* Temple level progress dots */}
-                          <div className="flex gap-1.5 mt-1">
-                            {[1,2,3,4].map(l => (
-                              <div key={l} className={`flex-1 h-1.5 rounded-full ${l <= selectedCountry.templeLevel ? 'bg-[#cfb53b]' : 'bg-zinc-700'}`} />
-                            ))}
-                          </div>
+                        {/* Header summary */}
+                        <div className="flex justify-between items-center text-[10px] font-mono text-[#dfcfa0]/50 pb-0.5">
+                          <span>Missionários: {selectedCountry.missionariesSent} · Presença: {selectedCountry.cyclesPresent} ciclos</span>
+                          {specLabel && <span className="text-blue-400/80">{specLabel}</span>}
                         </div>
 
-                        {/* Build action */}
-                        {isBuilding ? (
-                          <div className="flex flex-col gap-2">
-                            <div className="py-2.5 px-3 rounded bg-yellow-950/40 border border-yellow-700/40 text-[11px] text-yellow-300 font-bold text-center">
-                              🏗️ Construindo {pendingName}... ({buildCyclesLeft} ciclos restantes)
-                            </div>
-                            <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
-                              <div className="h-full bg-yellow-500 rounded-full transition-all" style={{ width: `${buildProgress}%` }} />
-                            </div>
-                          </div>
-                        ) : selectedCountry.templeLevel >= 4 ? (
-                          <div className="py-2.5 px-3 rounded bg-amber-950/40 border border-[#cfb53b]/30 text-[11px] text-[#cfb53b] font-bold text-center">
-                            🏛️ Santuário Máximo Atingido
-                          </div>
-                        ) : canBuildNext && cost ? (
-                          <div className="flex flex-col gap-1.5">
-                            {presenceReq > 0 && (
-                              <div className={`text-[9px] font-mono px-2 py-0.5 rounded ${meetsPresence ? 'text-green-400/70' : 'text-red-400/70'}`}>
-                                {meetsPresence ? '✓' : '✗'} Presença mínima: {Math.round(presenceReq * 100)}% (atual: {(convertPct * 100).toFixed(1)}%)
+                        {/* 4 level cards */}
+                        {[0,1,2,3].map(lvl => {
+                          const count = temples[lvl];
+                          const inProgress = building[lvl];
+                          const cyclesLeft = buildCycles[lvl];
+                          const cost = templeCosts[lvl];
+                          const name = traitNames[lvl] ?? `Nível ${lvl+1}`;
+                          const presenceReq = PRESENCE_REQ[lvl];
+                          const meetsPresence = convertPct >= presenceReq;
+                          const missionReq = UNLOCK_MISSIONS[lvl];
+                          const meetsMissions = selectedCountry.missionariesSent >= missionReq;
+                          const needsPrevLevel = lvl > 0 && temples[lvl-1] === 0;
+                          const cyclesReq = lvl === 2 ? 25 : lvl === 3 ? 50 : 0;
+                          const meetsCycles = selectedCountry.cyclesPresent >= cyclesReq;
+                          const canUnlock = meetsMissions && meetsPresence && !needsPrevLevel && meetsCycles;
+                          const canAfford = cost ? faith >= cost.faith && fervor >= cost.fervor && tithe >= cost.tithe : false;
+                          const totalBuildTime = BUILD_CYCLES_ARR[lvl];
+                          const buildProgress = inProgress > 0 && cyclesLeft > 0
+                            ? Math.round(((totalBuildTime - cyclesLeft) / totalBuildTime) * 100)
+                            : 0;
+
+                          return (
+                            <div key={lvl} className={`rounded-lg border p-3 flex flex-col gap-2 ${count > 0 ? 'border-[#cfb53b]/30 bg-[#1a1308]' : 'border-zinc-800/60 bg-black/20'}`}>
+                              {/* Level header */}
+                              <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[9px] font-mono font-bold text-[#cfb53b]/60 uppercase tracking-wider">{LEVEL_LABELS[lvl]}</span>
+                                  <span className="text-[11px] font-serif font-bold text-[#dfcfa0]">{name}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  {count > 0 && (
+                                    <span className="text-[10px] font-mono font-bold text-[#cfb53b]">{count} ✓</span>
+                                  )}
+                                  {inProgress > 0 && (
+                                    <span className="text-[9px] font-mono text-yellow-400 animate-pulse">{inProgress} 🏗️</span>
+                                  )}
+                                </div>
                               </div>
-                            )}
-                            <button
-                              onClick={() => onOpenTemple(selectedCountry.id)}
-                              disabled={!canAfford || !meetsPresence}
-                              className={`py-2.5 px-3 rounded text-xs font-bold flex justify-between items-center transition-all ${canAfford && meetsPresence ? 'bg-[#1a2a1a] hover:bg-[#213021] text-green-300 border border-green-700/50 cursor-pointer' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}
-                            >
-                              <span className="flex items-center gap-1.5">
-                                <Building2 className="w-4 h-4 text-green-400" /> Construir {nextTempleName}
-                                <span className="text-[9px] text-zinc-400 font-normal">({BUILD_CYCLES[nextLevel - 1]} ciclos)</span>
-                              </span>
-                              <span className="font-mono text-[9px] bg-black/30 px-1.5 py-0.5 rounded flex gap-1">
-                                <span>{cost.faith} Fé</span>
-                                <span>{cost.fervor} Ferv</span>
-                                <span className="text-emerald-400">{cost.tithe} Díz</span>
-                              </span>
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="py-2.5 px-3 rounded bg-zinc-900/50 border border-zinc-700/30 text-[10px] text-zinc-500 text-center">
-                            {selectedCountry.missionariesSent === 0
-                              ? 'Envie missionários para desbloquear templos'
-                              : nextLevel === 3 && (selectedCountry.cyclesPresent ?? 0) < 25
-                                ? `${nextTempleName} requer 25 ciclos de presença (atual: ${selectedCountry.cyclesPresent ?? 0})`
-                                : nextLevel === 4 && (selectedCountry.cyclesPresent ?? 0) < 50
-                                  ? `${nextTempleName} requer 50 ciclos de presença (atual: ${selectedCountry.cyclesPresent ?? 0})`
-                                  : `Próximo: ${nextTempleName} — requer mais conversões`}
+
+                              {/* Build progress bar (if building) */}
+                              {inProgress > 0 && (
+                                <div className="flex flex-col gap-0.5">
+                                  <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                                    <div className="h-full bg-yellow-500 rounded-full transition-all" style={{ width: `${buildProgress}%` }} />
+                                  </div>
+                                  <span className="text-[8px] font-mono text-yellow-400/70">{cyclesLeft} ciclos restantes</span>
+                                </div>
+                              )}
+
+                              {/* Unlock requirements if locked */}
+                              {!canUnlock && (
+                                <div className="flex flex-col gap-0.5 text-[8px] font-mono">
+                                  {!meetsMissions && <span className="text-red-400/70">✗ {missionReq} missionários (atual: {selectedCountry.missionariesSent})</span>}
+                                  {needsPrevLevel && <span className="text-red-400/70">✗ Requer {traitNames[lvl-1] ?? `Nível ${lvl}`} construído</span>}
+                                  {!meetsPresence && presenceReq > 0 && <span className="text-red-400/70">✗ {Math.round(presenceReq*100)}% conversão (atual: {(convertPct*100).toFixed(1)}%)</span>}
+                                  {!meetsCycles && cyclesReq > 0 && <span className="text-red-400/70">✗ {cyclesReq} ciclos presença (atual: {selectedCountry.cyclesPresent})</span>}
+                                </div>
+                              )}
+
+                              {/* Build button */}
+                              {canUnlock && cost && (
+                                <button
+                                  onClick={() => onOpenTemple(selectedCountry.id, lvl + 1)}
+                                  disabled={!canAfford}
+                                  className={`py-2 px-3 rounded text-[11px] font-bold flex justify-between items-center transition-all ${canAfford ? 'bg-[#1a2a1a] hover:bg-[#213021] text-green-300 border border-green-700/50 cursor-pointer' : 'bg-zinc-900/50 text-zinc-600 border border-zinc-800/40 cursor-not-allowed'}`}
+                                >
+                                  <span className="flex items-center gap-1.5">
+                                    <Building2 className="w-3.5 h-3.5" /> + Construir
+                                    <span className="text-[8px] text-zinc-500 font-normal">({BUILD_CYCLES_ARR[lvl]} ciclos)</span>
+                                  </span>
+                                  <span className="font-mono text-[8px] bg-black/30 px-1.5 py-0.5 rounded flex gap-1">
+                                    <span className={faith >= cost.faith ? '' : 'text-red-400'}>{cost.faith} Fé</span>
+                                    {cost.fervor > 0 && <span className={fervor >= cost.fervor ? '' : 'text-red-400'}>{cost.fervor} Ferv</span>}
+                                    <span className={`text-emerald-400 ${tithe >= cost.tithe ? '' : '!text-red-400'}`}>{cost.tithe} Díz</span>
+                                  </span>
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+
+                        {/* Empty state */}
+                        {totalBuilt === 0 && !building.some(b => b > 0) && selectedCountry.missionariesSent === 0 && (
+                          <div className="text-[9px] text-zinc-500 font-mono text-center py-1">
+                            Envie missionários para desbloquear templos
                           </div>
                         )}
                       </>

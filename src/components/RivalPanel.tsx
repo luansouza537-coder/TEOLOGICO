@@ -37,7 +37,7 @@ export default function RivalPanel({
   const avgResistance = countries.reduce((a, c) => a + c.resistance, 0) / countries.length;
   const avgViolence = countries.reduce((a, c) => a + c.violence, 0) / countries.length;
   const activeCountries = countries.filter(c => c.converts > 0).length;
-  const establishedTemples = countries.filter(c => (c.templeLevel ?? 0) >= 2).length;
+  const establishedTemples = countries.filter(c => (c.temples?.[1] ?? 0) > 0 || (c.temples?.[2] ?? 0) > 0 || (c.temples?.[3] ?? 0) > 0).length;
   const totalInfiltratedLeaders = countries.filter(c => c.leaderInfiltration >= 100).length;
   const superpowers = ['usa', 'china', 'india', 'germany'];
   const superpowersControlled = countries.filter(c => superpowers.includes(c.id) && c.converts >= c.population * 0.5 && c.leaderInfiltration >= 100).length;
@@ -55,7 +55,7 @@ export default function RivalPanel({
     if (religionTrait === 'Syncretist') inc *= 0.7;
     if (hasMoralA) inc *= 0.80;
     if (hasRelogioJuizo) inc *= 0.7;
-    const propheticL4 = countries.filter(c => religionTrait === 'Prophetic' && (c.templeLevel ?? 0) >= 4).length;
+    const propheticL4 = countries.filter(c => religionTrait === 'Prophetic' && (c.temples?.[3] ?? 0) > 0).length;
     if (propheticL4 > 0) inc *= Math.pow(0.85, propheticL4);
     return inc;
   };

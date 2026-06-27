@@ -88,7 +88,7 @@ function createCountryIcon(country: Country, isSelected: boolean, showLabels: bo
   const size = isSelected ? 18 : 14;
   const borderWidth = isSelected ? 3 : 1.5;
 
-  const hasTemple = (country.templeLevel ?? 0) > 0;
+  const hasTemple = (country.temples ?? []).some(t => t > 0);
   const hasLeader = (country.leaderInfiltration ?? 0) >= 100;
 
   const convertsStr = showLabels && country.converts >= 1_000
