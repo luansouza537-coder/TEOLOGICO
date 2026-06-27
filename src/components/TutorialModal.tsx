@@ -85,9 +85,9 @@ export default function TutorialModal({ victoryGoal, onClose }: TutorialModalPro
             </div>
             <ul className="space-y-3 mb-6">
               {STEPS[step].items.map(item => (
-                <li key={item.label} className="flex gap-2.5">
-                  <span className="text-[#cfb53b] font-bold font-mono text-xs pt-0.5 shrink-0 w-16">{item.label}</span>
-                  <span className="text-[#dfcfa0]/70 text-xs leading-relaxed">{item.desc}</span>
+                <li key={item.label} className="flex flex-col gap-0.5">
+                  <span className="text-[#cfb53b] font-bold font-mono text-xs">{item.label}</span>
+                  <span className="text-[#dfcfa0]/70 text-xs leading-relaxed pl-2">{item.desc}</span>
                 </li>
               ))}
             </ul>
