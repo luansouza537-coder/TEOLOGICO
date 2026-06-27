@@ -1388,6 +1388,13 @@ export default function App() {
       presetCountries = presetCountries.map(c => ({ ...c, resistance: Math.max(0, c.resistance - 10) }));
     }
 
+    // Play soundtrack directly inside the user gesture so mobile browsers allow it
+    if (soundtrackRef.current && !isMuted) {
+      soundtrackRef.current.volume = 0.35;
+      soundtrackRef.current.currentTime = 0;
+      soundtrackRef.current.play().catch(() => {});
+    }
+
     setState({
       started: true,
       religionName: name,
@@ -1423,6 +1430,7 @@ export default function App() {
   // Reset Game fully
   const handleResetGame = () => {
     playSound('alert');
+    if (soundtrackRef.current) { soundtrackRef.current.pause(); soundtrackRef.current.currentTime = 0; }
     setPhaseNotification(null);
     localStorage.removeItem('religion_simulator_state_v2');
     setState({

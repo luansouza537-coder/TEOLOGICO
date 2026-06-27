@@ -13,6 +13,45 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
   const [phase, setPhase] = useState<'video' | 'logo' | 'done'>('video');
   const [logoVisible, setLogoVisible] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = new Audio('/splash-music.mp3');
+    audio.loop = true;
+    audio.volume = 0;
+    audioRef.current = audio;
+    return () => {
+      audio.pause();
+      audio.currentTime = 0;
+    };
+  }, []);
+
+  // Fade in music volume over 1.5s
+  const startMusic = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.play().catch(() => {});
+    let v = 0;
+    const step = setInterval(() => {
+      v = Math.min(0.75, v + 0.05);
+      audio.volume = v;
+      if (v >= 0.75) clearInterval(step);
+    }, 75);
+  };
+
+  // Fade out music volume over 800ms then stop
+  const stopMusic = (cb?: () => void) => {
+    const audio = audioRef.current;
+    if (!audio) { cb?.(); return; }
+    const step = setInterval(() => {
+      audio.volume = Math.max(0, audio.volume - 0.08);
+      if (audio.volume <= 0) {
+        clearInterval(step);
+        audio.pause();
+        cb?.();
+      }
+    }, 50);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -20,15 +59,22 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
       setTimeout(() => setLogoVisible(true), 50);
       setTimeout(() => {
         setPhase('done');
-        setTimeout(onComplete, 600);
+        stopMusic(() => setTimeout(onComplete, 300));
       }, 2800);
     }, 4500);
     return () => clearTimeout(timer);
   }, [onComplete]);
 
   const handleSkip = () => {
+    if (phase === 'done') return;
+    // First touch starts music; second touch skips
+    const audio = audioRef.current;
+    if (!audio || audio.paused) {
+      startMusic();
+      return;
+    }
     setPhase('done');
-    setTimeout(onComplete, 300);
+    stopMusic(() => setTimeout(onComplete, 200));
   };
 
   return (
@@ -37,7 +83,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
       onClick={handleSkip}
       style={{ opacity: phase === 'done' ? 0 : 1, transition: 'opacity 0.6s ease' }}
     >
-      {/* Background video */}
+      {/* Background video — muted, music comes from audio element */}
       <video
         ref={videoRef}
         src="/splash.mp4"
@@ -81,10 +127,10 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
         </p>
       </div>
 
-      {/* Skip hint — video phase */}
+      {/* Skip / touch hint */}
       {phase === 'video' && (
         <div className="absolute bottom-8 right-6 text-[9px] text-white/25 font-mono tracking-widest">
-          TOQUE PARA PULAR
+          TOQUE PARA COMEÇAR
         </div>
       )}
     </div>
