@@ -953,14 +953,18 @@ export default function App() {
         const activeCountriesCount = updatedCountries.filter(c => c.converts > 0).length;
         const convertedRate2 = totalPopCount > 0 ? (totalConvertsCount / totalPopCount) : 0;
 
-        let rivalIncrement = 0.2; // base
+        let rivalIncrement = 0.15; // base (reduced from 0.2 for fairer early game)
 
-        // Rival thrives when faith is weak or resistance is high
-        if (avgResistance > 60) rivalIncrement += 0.4;
-        else if (avgResistance > 40) rivalIncrement += 0.2;
+        // Grace period: rival doesn't advance in the first 20 cycles
+        if (prev.cycle < 20) rivalIncrement = 0;
+        else {
+          // Rival thrives when faith is weak or resistance is high
+          if (avgResistance > 60) rivalIncrement += 0.4;
+          else if (avgResistance > 40) rivalIncrement += 0.2;
 
-        // Rival fills the void when player has little presence
-        if (activeCountriesCount < 3) rivalIncrement += 0.2;
+          // Rival fills the void when player has very little presence (raised threshold from 3 to 2)
+          if (activeCountriesCount < 2) rivalIncrement += 0.1;
+        }
 
         // Rival retreats before established faith
         if (convertedRate2 > 0.5) rivalIncrement *= 0.3;
@@ -2055,6 +2059,25 @@ export default function App() {
           </span>
         </div>
 
+        {/* Temple hint — shown when player can afford to build but hasn't yet */}
+        {(() => {
+          const templeReadyCountry = state.countries.find(c =>
+            c.missionariesSent >= 1 && c.templeLevel === 0 && c.templePending === 0 && state.faith >= 40
+          );
+          if (!templeReadyCountry) return null;
+          return (
+            <div
+              className="flex items-center gap-2 px-3 py-1 bg-[#1a1400] border-t border-[#cfb53b]/30 cursor-pointer"
+              onClick={() => { setActiveTab('map'); }}
+            >
+              <span className="text-[8px] font-mono text-[#cfb53b] animate-pulse">💡</span>
+              <span className="text-[8px] font-mono text-[#cfb53b]/80 flex-1">
+                Pronto para construir um Templo em <strong className="text-[#cfb53b]">{templeReadyCountry.name}</strong> — toque no país → aba Templo
+              </span>
+            </div>
+          );
+        })()}
+
       </header>
 
       {/* Global Pause Alert */}
@@ -2199,6 +2222,7 @@ export default function App() {
               countries={state.countries}
               rivalName={state.rivalName}
               rivalProgress={state.rivalProgress}
+              cycle={state.cycle}
               victoryGoal={state.victoryGoal}
               resistanceStreak={state.resistanceStreak}
               religionTrait={state.religionTrait}

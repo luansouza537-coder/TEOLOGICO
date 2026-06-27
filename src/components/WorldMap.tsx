@@ -205,19 +205,29 @@ export default function WorldMap({
 
               {/* Tab bar */}
               <div className="flex gap-1 mt-3">
-                {(['info', 'acoes', 'templo'] as SheetTab[]).map(tab => (
-                  <button
-                    key={tab}
-                    onClick={() => setSheetTab(tab)}
-                    className={`flex-1 py-1 text-[10px] font-mono uppercase tracking-wider rounded border transition-all ${
-                      sheetTab === tab
-                        ? 'bg-[#cfb53b] text-[#1e1a0c] border-[#cfb53b] font-bold'
-                        : 'bg-transparent text-[#cfb53b]/50 border-[#cfb53b]/20 hover:text-[#cfb53b]'
-                    }`}
-                  >
-                    {tab === 'info' ? 'Info' : tab === 'acoes' ? 'Ações' : 'Templo'}
-                  </button>
-                ))}
+                {(['info', 'acoes', 'templo'] as SheetTab[]).map(tab => {
+                  const canBuildHere = tab === 'templo'
+                    && selectedCountry.missionariesSent >= 1
+                    && selectedCountry.templeLevel === 0
+                    && selectedCountry.templePending === 0
+                    && faith >= 40;
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => setSheetTab(tab)}
+                      className={`relative flex-1 py-1 text-[10px] font-mono uppercase tracking-wider rounded border transition-all ${
+                        sheetTab === tab
+                          ? 'bg-[#cfb53b] text-[#1e1a0c] border-[#cfb53b] font-bold'
+                          : 'bg-transparent text-[#cfb53b]/50 border-[#cfb53b]/20 hover:text-[#cfb53b]'
+                      }`}
+                    >
+                      {tab === 'info' ? 'Info' : tab === 'acoes' ? 'Ações' : 'Templo'}
+                      {canBuildHere && (
+                        <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#cfb53b] rounded-full animate-pulse" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -454,6 +464,11 @@ export default function WorldMap({
               {/* ── TEMPLO TAB ── */}
               {sheetTab === 'templo' && (
                 <div className="flex flex-col gap-3 pt-1">
+                  {selectedCountry.templeLevel === 0 && selectedCountry.templePending === 0 && (
+                    <div className="bg-[#cfb53b]/10 border border-[#cfb53b]/30 rounded-lg px-3 py-2 text-[9px] text-[#dfcfa0]/70 font-mono leading-relaxed">
+                      🏛️ Templos aceleram conversões e reduzem resistência na região. Construa um aqui para fortalecer sua presença — depois evolua até nível 4 para bônus máximos.
+                    </div>
+                  )}
                   {(() => {
                     const PRESENCE_REQ = [0, 0.10, 0.25, 0.50];
                     const BUILD_CYCLES = [3, 6, 10, 15];
