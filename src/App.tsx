@@ -98,6 +98,7 @@ export default function App() {
             tags: c.tags ?? ['Secular'],
             lastActionCycle: c.lastActionCycle ?? 0,
             convertsHistory: c.convertsHistory ?? [],
+            coupDone: c.coupDone ?? false,
           }));
           // Migrate old saves: add new countries that didn't exist when the save was created
           const existingIds = new Set(parsed.countries.map((c: any) => c.id));
