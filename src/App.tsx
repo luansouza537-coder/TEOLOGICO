@@ -1278,7 +1278,7 @@ export default function App() {
   }, [state.started, state.paused, state.isGameOver]);
 
   // Handle Religion Initialization
-  const handleStartGame = (name: string, trait: ReligionTrait, goal: VictoryGoalType) => {
+  const handleStartGame = (name: string, trait: ReligionTrait, goal: VictoryGoalType, foundingDogmaIds: string[] = []) => {
     // Fresh countries initialization (giving focus to USA first)
     const presetCountries = INITIAL_COUNTRIES.map((c) => {
       if (c.id === 'usa') {
@@ -1298,7 +1298,7 @@ export default function App() {
       paused: false,
       gameSpeed: 1,
       selectedCountryId: 'usa',
-      dogmas: INITIAL_DOGMAS.map(d => ({ ...d, purchased: false })),
+      dogmas: INITIAL_DOGMAS.map(d => ({ ...d, purchased: foundingDogmaIds.includes(d.id) })),
       countries: presetCountries,
       eventActive: null,
       rivalProgress: 0,
@@ -1813,7 +1813,7 @@ export default function App() {
   }
 
   if (appScreen === 'creation' || !state.started) {
-    return <CreationScreen onStart={(name: string, trait: ReligionTrait, goal: VictoryGoalType) => { handleStartGame(name, trait, goal); setAppScreen('game'); }} />;
+    return <CreationScreen onStart={(name: string, trait: ReligionTrait, goal: VictoryGoalType, foundingDogmaIds: string[]) => { handleStartGame(name, trait, goal, foundingDogmaIds); setAppScreen('game'); }} />;
   }
 
   // Formatting helpers
