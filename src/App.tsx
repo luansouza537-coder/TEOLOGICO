@@ -2359,6 +2359,7 @@ export default function App() {
             templeNames={TEMPLE_NAMES}
             floatingTexts={floatingTexts}
             tithe={state.tithe}
+            activeDogmaIds={state.dogmas.filter((d) => d.purchased).map((d) => d.id)}
           />
         )}
 
