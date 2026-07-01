@@ -65,6 +65,7 @@ interface WorldMapProps {
   templeCosts: { faith: number; fervor: number; tithe: number }[];
   templeNames: Record<string, string[]>;
   floatingTexts?: { id: number; text: string; x: number; y: number; colorClass: string; countryId?: string }[];
+  activeDogmaIds: string[];
 }
 
 type SheetTab = 'info' | 'acoes' | 'templo';
@@ -86,7 +87,8 @@ export default function WorldMap({
   totalTemples,
   templeCosts,
   templeNames,
-  floatingTexts = []
+  floatingTexts = [],
+  activeDogmaIds
 }: WorldMapProps) {
   const selectedCountry = countries.find((c) => c.id === selectedCountryId) ?? null;
   const [sheetTab, setSheetTab] = useState<SheetTab>('info');
@@ -453,16 +455,25 @@ export default function WorldMap({
                   })()}
 
                   {/* ACTION 4: Ecstasy Ritual */}
-                  {trait === 'Mistical' && (
-                    <button
-                      onClick={() => onPerformEcstasyRitual(selectedCountry.id)}
-                      disabled={faith < 50 || fervor < 10 || selectedCountry.converts === 0}
-                      className={`py-2.5 px-3 rounded text-xs font-bold flex justify-between items-center transition-all ${faith >= 50 && fervor >= 10 && selectedCountry.converts > 0 ? 'bg-amber-950 text-[#cfb53b] hover:bg-amber-900 border border-[#cfb53b] cursor-pointer' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}
-                    >
-                      <span className="flex items-center gap-1.5"><Star className="w-4 h-4 text-[#cfb53b]" /> Ritual de Êxtase Coletivo</span>
-                      <span className="font-mono text-[9px] bg-black/30 px-1.5 py-0.5 rounded flex gap-1"><span>50 Fé</span><span>10 Ferv</span></span>
-                    </button>
-                  )}
+                  {trait === 'Mistical' && (() => {
+                    const hasTranscendencia = activeDogmaIds.includes('transcendencia_fisica');
+                    const ritualEnabled = faith >= 50 && fervor >= 10 && selectedCountry.converts > 0 && hasTranscendencia;
+                    return (
+                      <>
+                        <button
+                          onClick={() => onPerformEcstasyRitual(selectedCountry.id)}
+                          disabled={!ritualEnabled}
+                          className={`py-2.5 px-3 rounded text-xs font-bold flex justify-between items-center transition-all ${ritualEnabled ? 'bg-amber-950 text-[#cfb53b] hover:bg-amber-900 border border-[#cfb53b] cursor-pointer' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}
+                        >
+                          <span className="flex items-center gap-1.5"><Star className="w-4 h-4 text-[#cfb53b]" /> Ritual de Êxtase Coletivo</span>
+                          <span className="font-mono text-[9px] bg-black/30 px-1.5 py-0.5 rounded flex gap-1"><span>50 Fé</span><span>10 Ferv</span></span>
+                        </button>
+                        {!hasTranscendencia && (
+                          <p className="text-[9px] text-zinc-500 text-center mt-1">Requer dogma: Transcendência Física</p>
+                        )}
+                      </>
+                    );
+                  })()}
 
                   {/* ACTION 5: Coup d'état — only shown for opressor/autoritario */}
                   {['opressor', 'autoritario'].includes(selectedCountry.regimeType) && (() => {

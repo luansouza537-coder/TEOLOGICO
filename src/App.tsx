@@ -420,7 +420,7 @@ export default function App() {
             cyclesPresent += 1;
 
             // Base growth rate — logistic model: scales with existing convert base, not raw population
-            let growthFactor = 0.05;
+            let growthFactor = 0.018;
 
             // OBSTÁCULO 1 — BARREIRAS LINGUÍSTICAS E CULTURAIS
             const linguisticLen = (getDoc('doc_tradition') === 'B' || getDoc('doc_education') === 'A') ? 10 : 15;
@@ -438,8 +438,9 @@ export default function App() {
 
             // FASE 2 — NUCLEAÇÃO: crescimento lento até atingir massa crítica mínima
             const convertPctNucl = (converts / pop) * 100;
-            if (convertPctNucl < 1) growthFactor *= 0.3;
-            else if (convertPctNucl < 5) growthFactor *= 0.7;
+            if (convertPctNucl < 1) growthFactor *= 0.2;
+            else if (convertPctNucl < 5) growthFactor *= 0.5;
+            else if (convertPctNucl < 15) growthFactor *= 0.75;
 
             // Apply religion core trait influence
             if (prev.religionTrait === 'Syncretist') {
@@ -557,13 +558,13 @@ export default function App() {
 
             // FASE 5 — LÍDERES COMUNITÁRIOS: rede de líderes locais acelera a difusão
             const convertPctLocal = (converts / pop);
-            if (convertPctLocal > 0.10) growthFactor *= 1.10;
+            if (convertPctLocal > 0.15) growthFactor *= 1.08;
 
             // FASE 6 — MASSA CRÍTICA: efeito de rede social quando credo é dominante
-            if (convertPctLocal > 0.25 && !isLeaderConverted(c.id)) growthFactor *= 1.20;
+            if (convertPctLocal > 0.40 && !isLeaderConverted(c.id)) growthFactor *= 1.15;
 
             // Country special traits
-            if (c.id === 'brazil') growthFactor *= 1.4; // Brasil: conversão orgânica 40% mais rápida
+            if (c.id === 'brazil') growthFactor *= 1.2; // Brasil: conversão orgânica 20% mais rápida
             if (c.id === 'south_africa' && activeDogmaIds.some(id => ['caridade_global', 'assistencia_medica', 'rede_ajuda_mutua'].includes(id))) growthFactor *= 1.5; // África do Sul: ações humanitárias triplicam impacto
             if (c.id === 'indonesia') {
               const convertFracIndo = c.population > 0 ? c.converts / c.population : 0;
@@ -2548,7 +2549,7 @@ export default function App() {
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { label: 'Missionários', value: totalMissionaries, color: 'text-[#cfb53b]' },
-                    { label: 'Líderes', value: `${totalLeaders}/12`, color: 'text-sky-400' },
+                    { label: 'Líderes', value: `${totalLeaders}/${state.countries.length}`, color: 'text-sky-400' },
                     { label: 'Templos', value: state.totalTemples, color: 'text-green-400' },
                     { label: 'Dogmas', value: `${activeDogmas.length}/${state.dogmas.length}`, color: 'text-amber-300' },
                     { label: 'Resistência', value: `${avgResistance.toFixed(1)}%`, color: 'text-red-500' },
