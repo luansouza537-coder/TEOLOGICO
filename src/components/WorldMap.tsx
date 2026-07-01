@@ -38,6 +38,58 @@ const COUNTRY_LORE: Record<string, string> = {
   cuba: 'Sob décadas de ateísmo estatal, a espiritualidade cubana sobreviveu em sussurros. Os cultos clandestinos guardam uma chama que o regime nunca apagou — só quem chegar com paciência colherá essa colheita proibida.',
 };
 
+
+const COUNTRY_NEIGHBORS_WM: Record<string, string[]> = {
+  usa:          ['mexico', 'cuba'],
+  mexico:       ['usa', 'haiti', 'colombia', 'cuba'],
+  brazil:       ['mexico', 'south_africa', 'nigeria', 'colombia'],
+  germany:      ['russia', 'ukraine'],
+  russia:       ['germany', 'china', 'iran', 'ukraine'],
+  china:        ['russia', 'india', 'japan', 'south_korea'],
+  india:        ['china', 'iran', 'indonesia'],
+  japan:        ['china', 'australia', 'south_korea', 'indonesia', 'philippines'],
+  egypt:        ['saudi_arabia', 'nigeria', 'ethiopia'],
+  saudi_arabia: ['egypt', 'iran'],
+  south_africa: ['brazil', 'nigeria'],
+  australia:    ['japan', 'indonesia'],
+  turkey:       ['germany', 'egypt', 'saudi_arabia', 'iran', 'ukraine'],
+  iran:         ['saudi_arabia', 'russia', 'india'],
+  south_korea:  ['japan', 'china', 'philippines'],
+  indonesia:    ['japan', 'australia', 'india', 'philippines'],
+  nigeria:      ['egypt', 'south_africa', 'brazil', 'ethiopia'],
+  haiti:        ['mexico', 'usa', 'colombia', 'cuba'],
+  ukraine:      ['germany', 'russia'],
+  ethiopia:     ['egypt', 'nigeria'],
+  philippines:  ['indonesia', 'south_korea', 'japan'],
+  colombia:     ['mexico', 'brazil', 'haiti'],
+  cuba:         ['usa', 'mexico', 'haiti'],
+};
+
+const THEOCRACY_LORE: Record<string, string> = {
+  usa: 'O sonho americano foi reescrito. A nova fé tornou-se constituição viva — cada lei, cada escola, cada discurso público carrega a marca do credo que conquistou a superpotência.',
+  china: 'O Partido dobrou-se diante do Sagrado. Pela primeira vez em séculos, uma doutrina espiritual governa o bilhão de almas do dragão adormecido.',
+  brazil: 'A nação mais religiosa do planeta encontrou sua fé definitiva. Os tambores do Carnaval celebram o credo — e o Brasil irradia espiritualidade por toda a América do Sul.',
+  india: 'O subcontinente dos mil deuses escolheu um. Templos e parlamentos compartilham o mesmo símbolo sagrado.',
+  russia: 'O Kremlin tombou diante do Sagrado. O povo eslavo encontrou finalmente a fé que unifica as almas fragmentadas pelo século XX.',
+  germany: 'A nação que secularizou a Europa abraçou o transcendente. Filósofos e teólogos reescrevem juntos a constituição.',
+  egypt: 'A terra dos faraós reencontrou o divino. As pirâmides contemplam o novo credo que governa o Nilo.',
+  saudi_arabia: 'A Meca do Islã caiu diante de outro credo. O que parecia impossível tornou-se realidade.',
+  japan: 'O Japão que resistia em silêncio agora fala em uníssono. O arquipélago irradia fé para todo o Pacífico.',
+  mexico: 'A Virgem de Guadalupe foi substituída. O México abraçou o novo credo com fervor ancestral.',
+  south_africa: 'A ferida do apartheid foi curada pelo sagrado. A nação arco-íris encontrou sua cor definitiva.',
+  nigeria: 'O gigante africano curvou-se ao novo credo. Cem milhões de vozes cantam o mesmo hino sagrado.',
+  iran: 'A teocracia do Islã foi substituída. O Irã, que vivia sob leis sagradas, encontrou um novo sagrado.',
+  indonesia: 'O maior país muçulmano do mundo abriu seus portos ao novo credo. As ilhas cantam em uníssono.',
+  ukraine: 'A nação forjada na resistência encontrou sua paz no sagrado. As feridas da guerra cicatrizam sob o novo credo.',
+  ethiopia: 'A mais antiga tradição cristã do mundo se renova. A Etiópia lidera o continente espiritual africano.',
+  colombia: 'A terra dos contrastes radicais encontrou sua harmonia no sagrado. Cartéis e catedrais compartilham a mesma fé.',
+  cuba: 'A chama que o regime nunca apagou tornou-se fogueira. Cuba ressurgiu das cinzas do ateísmo estatal.',
+  philippines: 'O arquipélago de fé intensa abraçou o novo credo com o mesmo fervor católico que sempre o definiu.',
+  south_korea: 'A nação que cresceu entre conflitos encontrou no sagrado sua nova identidade coletiva.',
+  haiti: 'A nação mais pobre do continente encontrou riqueza espiritual. O Haiti se tornou farol do sagrado nas Américas.',
+  australia: 'O pragmatismo anglo-saxão cedeu ao transcendente. O continente-ilha tornou-se santuário no Pacífico.',
+};
+
 const CONTINENTS = [
   { id: 'na', name: 'América do Norte', path: 'M 40,110 L 50,105 L 70,115 L 80,105 L 120,95 L 150,90 L 180,95 L 200,80 L 220,100 L 240,90 L 255,105 L 270,100 L 290,115 L 285,135 L 270,140 L 260,165 L 275,175 L 255,190 L 248,225 L 235,230 L 230,220 L 210,225 L 195,245 L 184,260 L 165,285 L 150,290 L 146,280 L 156,260 L 130,250 L 115,225 L 105,215 L 110,195 L 125,188 L 115,165 L 90,145 L 75,135 L 50,130 L 35,120 Z' },
   { id: 'sa', name: 'América do Sul', path: 'M 170,290 L 190,285 L 220,285 L 248,310 L 275,320 L 315,315 L 335,325 L 345,345 L 330,380 L 300,420 L 270,450 L 255,475 L 245,475 L 240,440 L 230,410 L 212,380 L 192,350 L 175,325 Z' },
@@ -66,6 +118,9 @@ interface WorldMapProps {
   templeNames: Record<string, string[]>;
   floatingTexts?: { id: number; text: string; x: number; y: number; colorClass: string; countryId?: string }[];
   activeDogmaIds: string[];
+  onIrradiateMission: (countryId: string) => void;
+  onPromulgateLaw: (countryId: string, law: "faith_mandate" | "divine_tithe" | "holy_peace") => void;
+  cycle: number;
 }
 
 type SheetTab = 'info' | 'acoes' | 'templo';
@@ -88,7 +143,10 @@ export default function WorldMap({
   templeCosts,
   templeNames,
   floatingTexts = [],
-  activeDogmaIds
+  activeDogmaIds,
+  onIrradiateMission,
+  onPromulgateLaw,
+  cycle
 }: WorldMapProps) {
   const selectedCountry = countries.find((c) => c.id === selectedCountryId) ?? null;
   const [sheetTab, setSheetTab] = useState<SheetTab>('info');
@@ -317,11 +375,16 @@ export default function WorldMap({
                   </div>
 
                   {/* Lore */}
-                  {COUNTRY_LORE[selectedCountry.id] && (
+                  {(selectedCountry.coupDone || selectedCountry.regimeType === 'teocracia') && THEOCRACY_LORE[selectedCountry.id] ? (
+                    <div className="border-l-2 border-sky-500/40 pl-2 bg-sky-950/20 rounded-r p-2">
+                      <p className="text-[9px] font-bold text-sky-400 uppercase tracking-wider mb-1">✦ Teocracia Estabelecida</p>
+                      <p className="text-[10px] text-sky-200/70 leading-relaxed italic">{THEOCRACY_LORE[selectedCountry.id]}</p>
+                    </div>
+                  ) : COUNTRY_LORE[selectedCountry.id] ? (
                     <p className="text-[10px] text-[#dfcfa0]/60 leading-relaxed italic border-l-2 border-[#cfb53b]/20 pl-2">
                       {COUNTRY_LORE[selectedCountry.id]}
                     </p>
-                  )}
+                  ) : null}
                 </div>
               )}
 
@@ -472,6 +535,64 @@ export default function WorldMap({
                           <p className="text-[9px] text-zinc-500 text-center mt-1">Requer dogma: Transcendência Física</p>
                         )}
                       </>
+                    );
+                  })()}
+
+
+                  {/* ACTION 6: Theocracy special actions */}
+                  {selectedCountry.regimeType === 'teocracia' && selectedCountry.coupDone && (() => {
+                    const neighborIds = COUNTRY_NEIGHBORS_WM[selectedCountry.id] ?? [];
+                    const hasUnseeded = countries.some(c => neighborIds.includes(c.id) && c.missionariesSent === 0);
+                    const LAWS: { id: 'faith_mandate' | 'divine_tithe' | 'holy_peace'; label: string; desc: string }[] = [
+                      { id: 'faith_mandate', label: '📖 Fé Obrigatória', desc: '+20% conv/ciclo' },
+                      { id: 'divine_tithe', label: '💰 Dízimo Sagrado', desc: '+35% dízimo' },
+                      { id: 'holy_peace', label: '☮ Paz Divina', desc: 'Violência -1/ciclo' },
+                    ];
+                    const cooldownRemaining = Math.max(0, 15 - (cycle - (selectedCountry.lastLawCycle ?? -99)));
+                    const onCooldown = cooldownRemaining > 0;
+                    return (
+                      <div className="flex flex-col gap-2 p-2.5 rounded border border-sky-700/40 bg-sky-950/20">
+                        <p className="text-[9px] font-bold text-sky-400 uppercase tracking-wider font-mono">⚜ Poderes Teocráticos</p>
+
+                        {/* Irradiar Fé */}
+                        <button
+                          onClick={() => onIrradiateMission(selectedCountry.id)}
+                          disabled={faith < 60 || !hasUnseeded}
+                          className={`py-2 px-3 rounded text-xs font-bold flex justify-between items-center transition-all ${faith >= 60 && hasUnseeded ? 'bg-sky-900 text-sky-100 hover:bg-sky-800 border border-sky-600/50 cursor-pointer' : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'}`}
+                        >
+                          <span>📡 Irradiar Fé aos Vizinhos</span>
+                          <span className="font-mono text-[9px] bg-black/30 px-1.5 py-0.5 rounded">60 Fé</span>
+                        </button>
+                        {!hasUnseeded && <p className="text-[9px] text-zinc-500 text-center">Todos os vizinhos já foram semeados</p>}
+
+                        {/* Leis Teocráticas */}
+                        <div className="flex flex-col gap-1">
+                          <p className="text-[9px] text-sky-300/70 font-mono">
+                            Lei Ativa: {selectedCountry.theocraticLaw ? LAWS.find(l => l.id === selectedCountry.theocraticLaw)?.label ?? '—' : 'Nenhuma'}
+                            {onCooldown && <span className="text-zinc-500 ml-2">(troca em {cooldownRemaining} ciclos)</span>}
+                          </p>
+                          {LAWS.map(law => (
+                            <button
+                              key={law.id}
+                              onClick={() => onPromulgateLaw(selectedCountry.id, law.id)}
+                              disabled={faith < 40 || fervor < 15 || onCooldown || selectedCountry.theocraticLaw === law.id}
+                              className={`py-1.5 px-2 rounded text-[10px] flex justify-between items-center transition-all ${
+                                selectedCountry.theocraticLaw === law.id
+                                  ? 'bg-sky-950/80 border border-sky-600 text-sky-300 cursor-default'
+                                  : faith >= 40 && fervor >= 15 && !onCooldown
+                                  ? 'bg-[#1e1a0a] hover:bg-[#252010] border border-[#cfb53b]/20 text-[#dfcfa0] cursor-pointer'
+                                  : 'bg-zinc-900 border border-zinc-800/30 text-zinc-600 cursor-not-allowed'
+                              }`}
+                            >
+                              <span>{law.label}</span>
+                              <span className="text-[9px] opacity-60">{law.desc}</span>
+                            </button>
+                          ))}
+                          {(faith < 40 || fervor < 15) && !onCooldown && (
+                            <p className="text-[9px] text-zinc-500 text-center">Requer 40 Fé · 15 Fervor</p>
+                          )}
+                        </div>
+                      </div>
                     );
                   })()}
 

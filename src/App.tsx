@@ -100,6 +100,8 @@ export default function App() {
             lastActionCycle: c.lastActionCycle ?? 0,
             convertsHistory: c.convertsHistory ?? [],
             coupDone: c.coupDone ?? false,
+            theocraticLaw: c.theocraticLaw ?? null,
+            lastLawCycle: c.lastLawCycle ?? -99,
           }));
           // Migrate old saves: add new countries that didn't exist when the save was created
           const existingIds = new Set(parsed.countries.map((c: any) => c.id));
@@ -589,6 +591,10 @@ export default function App() {
             if (chinaLeaderConverted && ['china', 'india', 'japan'].includes(c.id)) growthFactor *= 1.5;
             if (indiaLeaderConverted && ['india', 'south_africa', 'egypt'].includes(c.id)) growthFactor *= 1.3;
 
+            // Theocratic law passive effects
+            if (c.regimeType === "teocracia" && c.theocraticLaw === "faith_mandate") growthFactor *= 1.20;
+            if (c.regimeType === "teocracia" && c.theocraticLaw === "holy_peace") violence = Math.max(0, violence - 1.0);
+
             // Cap growthFactor to prevent runaway stacking from dogma + doctrine combinations
             growthFactor = Math.min(growthFactor, 0.15);
 
@@ -982,7 +988,7 @@ export default function App() {
             const tier1 = Math.min(c.converts, 200_000);
             const tier2 = Math.min(Math.max(c.converts - 200_000, 0), 800_000);
             const tier3 = Math.max(c.converts - 1_000_000, 0);
-            const localBase = tier1 / 400_000 + tier2 / 800_000 + tier3 / 1_000_000;
+            const localBase = (tier1 / 400_000 + tier2 / 800_000 + tier3 / 1_000_000) * (c.regimeType === "teocracia" && c.theocraticLaw === "divine_tithe" ? 1.35 : 1.0);
             const ct = c.temples ?? [0,0,0,0];
             const totalTempleCount = ct.reduce((s, n) => s + n, 0);
             const maxLvl = Math.max(0, ...ct.map((n, i) => n > 0 ? i + 1 : 0));
@@ -1936,6 +1942,42 @@ export default function App() {
   };
 
   // Coup d'état — convert dictatorship to allied theocracy
+
+  const irradiateMission = (countryId: string) => {
+    if (state.faith < 60) return;
+    const neighbors = COUNTRY_NEIGHBORS[countryId] ?? [];
+    const target = state.countries.find(c => neighbors.includes(c.id) && c.missionariesSent === 0);
+    if (!target) return;
+    const src = state.countries.find(c => c.id === countryId);
+    if (src) {
+      addFloatingText('Missão Irradiada!', target.coordinates.x, target.coordinates.y, 'text-[#cfb53b] font-bold font-serif', target.id);
+      addFloatingText('-60 Fé', src.coordinates.x, src.coordinates.y, 'text-red-400 font-mono font-bold', countryId);
+    }
+    setState(prev => ({
+      ...prev,
+      faith: prev.faith - 60,
+      countries: prev.countries.map(c =>
+        c.id === target.id ? { ...c, missionariesSent: 1, lastActionCycle: prev.cycle } : c
+      ),
+    }));
+  };
+
+  const LAW_COOLDOWN = 15;
+  const promulgateLaw = (countryId: string, law: 'faith_mandate' | 'divine_tithe' | 'holy_peace') => {
+    const country = state.countries.find(c => c.id === countryId);
+    if (!country || state.faith < 40 || state.fervor < 15) return;
+    if ((state.cycle - (country.lastLawCycle ?? -99)) < LAW_COOLDOWN) return;
+    addFloatingText('Lei Promulgada', country.coordinates.x, country.coordinates.y, 'text-sky-300 font-bold font-mono', countryId);
+    setState(prev => ({
+      ...prev,
+      faith: prev.faith - 40,
+      fervor: prev.fervor - 15,
+      countries: prev.countries.map(c =>
+        c.id === countryId ? { ...c, theocraticLaw: law, lastLawCycle: prev.cycle } : c
+      ),
+    }));
+  };
+
   const stageCoup = (countryId: string) => {
     const countryObj = state.countries.find(c => c.id === countryId);
     if (!countryObj) return;
@@ -2354,6 +2396,9 @@ export default function App() {
             onPerformEcstasyRitual={performEcstasyRitual}
             onOpenTemple={openTemple}
             onStageCoup={stageCoup}
+            onIrradiateMission={irradiateMission}
+            onPromulgateLaw={promulgateLaw}
+            cycle={state.cycle}
             totalTemples={state.totalTemples}
             templeCosts={TEMPLE_COSTS}
             templeNames={TEMPLE_NAMES}

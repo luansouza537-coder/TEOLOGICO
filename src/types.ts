@@ -34,6 +34,8 @@ export interface Country {
   lastActionCycle: number; // last cycle the player took an action in this country (for inactivity decay)
   convertsHistory: number[]; // rolling history of convert counts (last 50 cycles)
   coupDone?: boolean; // true if this country's regime was converted via a player coup
+  theocraticLaw?: 'faith_mandate' | 'divine_tithe' | 'holy_peace' | null;
+  lastLawCycle?: number;
 }
 
 export interface Dogma {
