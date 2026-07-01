@@ -87,13 +87,13 @@ export default function DogmasPanel({ dogmas, faith, fervor, trait, faithPhase, 
               disabled={!isAffordable || d.purchased}
               className={`py-1.5 px-3 rounded text-[10px] font-bold transition-all ${
                 d.purchased
-                  ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                  ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed opacity-60'
                   : isAffordable
                   ? 'bg-[#cfb53b] text-[#1e1a0c] hover:bg-[#e6ca4a] cursor-pointer'
                   : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
               }`}
             >
-              {d.purchased ? 'Já consagrado' : isAffordable ? 'Consagrar Dogma' : 'Fé/Fervor insuficiente'}
+              {d.purchased ? 'Já Consagrado' : isAffordable ? 'Consagrar Dogma' : 'Fé/Fervor insuficiente'}
             </button>
           </div>
         )}

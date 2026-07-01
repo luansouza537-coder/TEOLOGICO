@@ -4,6 +4,14 @@
  */
 
 import React from 'react';
+
+const COUNTRY_FLAGS: Record<string, string> = {
+  usa: '🇺🇸', brazil: '🇧🇷', china: '🇨🇳', india: '🇮🇳', russia: '🇷🇺',
+  germany: '🇩🇪', japan: '🇯🇵', mexico: '🇲🇽', egypt: '🇪🇬', south_africa: '🇿🇦',
+  australia: '🇦🇺', indonesia: '🇮🇩', south_korea: '🇰🇷', nigeria: '🇳🇬', iran: '🇮🇷',
+  saudi_arabia: '🇸🇦', haiti: '🇭🇹', ukraine: '🇺🇦', ethiopia: '🇪🇹',
+  philippines: '🇵🇭', colombia: '🇨🇴', cuba: '🇨🇺',
+};
 import { Country } from '../types';
 import { UserCheck, Shield, Crown, Sparkles, TrendingUp, AlertTriangle } from 'lucide-react';
 

@@ -738,6 +738,7 @@ export default function App() {
                 const wasZero = newTemples[lvl] === 0;
                 newTemples[lvl] += newBuilding[lvl];
                 newBuilding[lvl] = 0;
+                setTimeout(() => playFileSound('temple', isMutedRef.current), 100);
                 if (lvl === 1 && wasZero) setSpecChoiceQueue(q => [...q, c.id]);
                 setTimeout(() => playSound('success'), 50);
               }
@@ -882,14 +883,15 @@ export default function App() {
         const cubaIdx = updatedCountries.findIndex(c => c.id === 'cuba');
         if (cubaIdx !== -1) {
           const cubaC = updatedCountries[cubaIdx];
+          // Culto dispara a cada 15 ciclos MAS só quando Cuba tem menos de 5% convertidos
           if (cubaC.converts > 0 && cubaC.cyclesPresent >= 15 && cubaC.cyclesPresent % 15 === 0
               && cubaC.converts < cubaC.population * 0.05) {
-            const bonusConverts = Math.floor(cubaC.population * 0.008);
+            const bonusConverts = Math.floor(cubaC.population * 0.008); // era 0.02, reduzido para 0.008
             updatedCountries[cubaIdx] = {
               ...cubaC,
               converts: Math.min(cubaC.population, cubaC.converts + bonusConverts),
             };
-            cubaFervorBonus = 15;
+            cubaFervorBonus = 15; // era 30
           }
           // líder convertido → resistência zero
           if (cubaC.leaderInfiltration >= 100) {
