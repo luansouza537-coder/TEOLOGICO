@@ -578,7 +578,7 @@ export default function App() {
 
             // Temple growth bonus (stacks per temple count per level)
             if (_hasAnyTemple && hasTithe) {
-              const GROWTH_PER = [0.015, 0.025, 0.04, 0.06];
+              const GROWTH_PER = [0.006, 0.012, 0.022, 0.040];
               const totalGrowthBonus = _temples.reduce((s, count, i) => s + count * GROWTH_PER[i], 0);
               growthFactor *= (1 + Math.min(totalGrowthBonus, 0.5));
               if (c.templeSpec === 'conversion') growthFactor *= 1.20;
@@ -739,6 +739,7 @@ export default function App() {
                 newTemples[lvl] += newBuilding[lvl];
                 newBuilding[lvl] = 0;
                 if (lvl === 1 && wasZero) setSpecChoiceQueue(q => [...q, c.id]);
+                setTimeout(() => playSound('success'), 50);
               }
             }
           }
@@ -881,13 +882,14 @@ export default function App() {
         const cubaIdx = updatedCountries.findIndex(c => c.id === 'cuba');
         if (cubaIdx !== -1) {
           const cubaC = updatedCountries[cubaIdx];
-          if (cubaC.converts > 0 && cubaC.cyclesPresent >= 15 && cubaC.cyclesPresent % 15 === 0) {
-            const bonusConverts = Math.floor(cubaC.population * 0.02);
+          if (cubaC.converts > 0 && cubaC.cyclesPresent >= 15 && cubaC.cyclesPresent % 15 === 0
+              && cubaC.converts < cubaC.population * 0.05) {
+            const bonusConverts = Math.floor(cubaC.population * 0.008);
             updatedCountries[cubaIdx] = {
               ...cubaC,
               converts: Math.min(cubaC.population, cubaC.converts + bonusConverts),
             };
-            cubaFervorBonus = 30;
+            cubaFervorBonus = 15;
           }
           // líder convertido → resistência zero
           if (cubaC.leaderInfiltration >= 100) {
@@ -977,12 +979,12 @@ export default function App() {
             const tier1 = Math.min(c.converts, 200_000);
             const tier2 = Math.min(Math.max(c.converts - 200_000, 0), 800_000);
             const tier3 = Math.max(c.converts - 1_000_000, 0);
-            const localBase = tier1 / 800_000 + tier2 / 1_600_000 + tier3 / 2_000_000;
+            const localBase = tier1 / 400_000 + tier2 / 800_000 + tier3 / 1_000_000;
             const ct = c.temples ?? [0,0,0,0];
+            const totalTempleCount = ct.reduce((s, n) => s + n, 0);
             const maxLvl = Math.max(0, ...ct.map((n, i) => n > 0 ? i + 1 : 0));
-            const templeBonus = maxLvl === 0 ? 1.0 : maxLvl === 1 ? 1.3 : maxLvl === 2 ? 1.8 : maxLvl === 3 ? 2.5 : 4.0;
-            const extraBonus = 1 + Math.max(0, ct[0] - 1) * 0.05 + Math.max(0, ct[1] - 1) * 0.08 + Math.max(0, ct[2] - 1) * 0.12 + Math.max(0, ct[3] - 1) * 0.18;
-            titheGained += localBase * templeBonus * extraBonus;
+            const templeBonus = 1.0 + maxLvl * 0.4 + totalTempleCount * 0.08;
+            titheGained += localBase * templeBonus;
           }
         });
         titheGained = Math.floor(titheGained);
@@ -1023,10 +1025,10 @@ export default function App() {
         updatedCountries.forEach((c) => {
           const t = c.temples ?? [0,0,0,0];
           if (!t.some(n => n > 0)) return;
-          if (prev.religionTrait === 'Mistical') faithGained += t[2] * 2 + t[3] * 4;
-          if (prev.religionTrait === 'Prophetic') { const hi = t[2] + t[3]; faithGained += hi * 3; fervorGained += hi; }
-          if (prev.religionTrait === 'Activist') faithGained += t[3] * 3;
-          if (prev.religionTrait === 'Syncretist') faithGained += t[3] * 5;
+          if (prev.religionTrait === 'Mistical') faithGained += Math.floor(t[0] * 0.5) + t[1] * 1 + t[2] * 2 + t[3] * 4;
+          if (prev.religionTrait === 'Prophetic') { faithGained += t[0] * 1 + t[1] * 2 + t[2] * 3 + t[3] * 5; fervorGained += t[2] + t[3]; }
+          if (prev.religionTrait === 'Activist') faithGained += Math.floor(t[0] * 0.5) + t[1] * 1 + t[2] * 2 + t[3] * 3;
+          if (prev.religionTrait === 'Syncretist') faithGained += t[0] * 1 + t[1] * 2 + t[2] * 3 + t[3] * 5;
         });
 
         // DOUTRINAS — efeitos globais de Fé e Fervor

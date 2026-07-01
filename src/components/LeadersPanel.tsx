@@ -7,6 +7,14 @@ import React from 'react';
 import { Country } from '../types';
 import { UserCheck, Shield, Crown, Sparkles, TrendingUp, AlertTriangle } from 'lucide-react';
 
+const COUNTRY_FLAGS: Record<string, string> = {
+  usa: '🇺🇸', brazil: '🇧🇷', china: '🇨🇳', india: '🇮🇳', russia: '🇷🇺',
+  germany: '🇩🇪', japan: '🇯🇵', mexico: '🇲🇽', egypt: '🇪🇬', south_africa: '🇿🇦',
+  australia: '🇦🇺', indonesia: '🇮🇩', south_korea: '🇰🇷', nigeria: '🇳🇬', iran: '🇮🇷',
+  saudi_arabia: '🇸🇦', haiti: '🇭🇹', ukraine: '🇺🇦', ethiopia: '🇪🇹',
+  philippines: '🇵🇭', colombia: '🇨🇴', cuba: '🇨🇺',
+};
+
 interface LeadersPanelProps {
   countries: Country[];
   faith: number;
@@ -86,7 +94,7 @@ export default function LeadersPanel({ countries, faith, fervor, totalTemples, g
               <div className="flex justify-between items-start">
                 <div>
                   <span className="text-[10px] uppercase font-mono tracking-wider font-semibold opacity-75">
-                    {c.name}
+                    {COUNTRY_FLAGS[c.id] ?? ''} {c.name}
                   </span>
                   <span className="text-[9px] font-mono text-[#dfcfa0]/40 ml-2 capitalize">{c.regimeType}</span>
                 </div>
@@ -105,7 +113,7 @@ export default function LeadersPanel({ countries, faith, fervor, totalTemples, g
                   {c.leaderName}
                 </h4>
                 <p className="text-[10px] text-[#dfcfa0]/50 mt-0.5">
-                  {convertPct}% pop · Res {c.resistance}%
+                  {convertPct}% pop · Res {Math.round(c.resistance * 10) / 10}%
                 </p>
               </div>
 

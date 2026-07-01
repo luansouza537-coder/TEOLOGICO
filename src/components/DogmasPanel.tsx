@@ -84,14 +84,16 @@ export default function DogmasPanel({ dogmas, faith, fervor, trait, faithPhase, 
             </p>
             <button
               onClick={() => { onPurchaseDogma(d.id); setExpandedId(null); }}
-              disabled={!isAffordable}
+              disabled={!isAffordable || d.purchased}
               className={`py-1.5 px-3 rounded text-[10px] font-bold transition-all ${
-                isAffordable
+                d.purchased
+                  ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                  : isAffordable
                   ? 'bg-[#cfb53b] text-[#1e1a0c] hover:bg-[#e6ca4a] cursor-pointer'
                   : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
               }`}
             >
-              {isAffordable ? 'Consagrar Dogma' : 'Fé/Fervor insuficiente'}
+              {d.purchased ? 'Já consagrado' : isAffordable ? 'Consagrar Dogma' : 'Fé/Fervor insuficiente'}
             </button>
           </div>
         )}

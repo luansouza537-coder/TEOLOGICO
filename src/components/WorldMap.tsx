@@ -10,6 +10,14 @@ import { Crosshair, ShieldAlert, HeartHandshake, Skull, Crown, Star, Network, Bu
 import { calcPeaceEffectiveness } from '../utils/peaceEffectiveness';
 import WorldMapFlat from './WorldMapFlat';
 
+const COUNTRY_FLAGS: Record<string, string> = {
+  usa: '🇺🇸', brazil: '🇧🇷', china: '🇨🇳', india: '🇮🇳', russia: '🇷🇺',
+  germany: '🇩🇪', japan: '🇯🇵', mexico: '🇲🇽', egypt: '🇪🇬', south_africa: '🇿🇦',
+  australia: '🇦🇺', indonesia: '🇮🇩', south_korea: '🇰🇷', nigeria: '🇳🇬', iran: '🇮🇷',
+  saudi_arabia: '🇸🇦', haiti: '🇭🇹', ukraine: '🇺🇦', ethiopia: '🇪🇹',
+  philippines: '🇵🇭', colombia: '🇨🇴', cuba: '🇨🇺',
+};
+
 const COUNTRY_LORE: Record<string, string> = {
   usa: 'A maior potência ocidental vive uma guerra cultural interna. Evangelicalismo, ateísmo progressista e ceticismo tecnológico disputam corações num país de 335 milhões de almas fragmentadas.',
   china: 'O Partido controla cada palavra impressa e cada culto autorizado. Sob a superfície do ateísmo estatal, milhões buscam em segredo algo além do materialismo oficial.',
@@ -185,7 +193,7 @@ export default function WorldMap({
                     </span>
                   </div>
                   <h2 className="text-xl font-bold font-serif text-[#cfb53b] mt-0.5 leading-tight">
-                    {selectedCountry.name}
+                    {COUNTRY_FLAGS[selectedCountry.id] ?? ''} {selectedCountry.name}
                   </h2>
                   <div className="text-[10px] font-mono text-[#dfcfa0]/50">
                     {(selectedCountry.population > 0 ? (selectedCountry.converts / selectedCountry.population * 100) : 0).toFixed(selectedCountry.converts / selectedCountry.population < 0.01 ? 3 : 1)}% convertido · {(selectedCountry.population / 1_000_000).toFixed(0)}M hab
