@@ -125,7 +125,7 @@ export default function LeadersPanel({ countries, faith, fervor, totalTemples, g
                   </span>
                   <span className={`${isConverted ? 'text-sky-300 font-extrabold' : 'text-gray-300'}`}>
                     {c.leaderInfiltration.toFixed(1)}%
-                    {!isConverted && <span className="text-[9px] text-[#dfcfa0]/40 ml-1">(+0.2/ciclo)</span>}
+                    {!isConverted && c.leaderInfiltration < 30 && <span className="text-[9px] text-[#dfcfa0]/40 ml-1">(passivo até 30%)</span>}
                   </span>
                 </div>
                 <div className="w-full h-2 bg-black/60 rounded overflow-hidden border border-[#cfb53b]/10">

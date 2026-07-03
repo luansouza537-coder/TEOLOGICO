@@ -677,16 +677,22 @@ export default function App() {
               }
             }
 
-            // Natural passive leader conversion (requires real presence)
-            if (leaderInfiltration < 100) {
-              let leaderGrowth = 0.03; // very slow base — player must actively infiltrate
+            // Natural passive leader conversion — requires 5% converts, capped at 30%
+            // Beyond 30% requires active player "Semear Doutrina" actions
+            const leaderConvertPct = converts / pop;
+            if (leaderInfiltration < 30 && leaderConvertPct >= 0.05) {
+              let leaderGrowth = 0.03;
               if (hasLobbyPolitico) leaderGrowth *= 2.0;
               if (hasEcumenicalAlliance) leaderGrowth *= 1.3;
               if (prev.religionTrait === 'Prophetic' && _hasAnyTemple) {
                 const totalLvl = _temples.reduce((s, count, i) => s + count * (i + 1), 0);
-                leaderGrowth += Math.min(0.32, 0.08 * totalLvl);
+                leaderGrowth += Math.min(0.20, 0.05 * totalLvl);
               }
-              leaderInfiltration = Math.min(100, leaderInfiltration + leaderGrowth);
+              leaderInfiltration = Math.min(30, leaderInfiltration + leaderGrowth);
+            }
+            // Decay: infiltration fades when presence is negligible (< 1% converts)
+            if (leaderConvertPct < 0.01 && leaderInfiltration > 0 && leaderInfiltration < 100) {
+              leaderInfiltration = Math.max(0, leaderInfiltration - 0.12);
             }
           }
 
@@ -1719,6 +1725,10 @@ export default function App() {
     if (hasVN && ['opressor', 'autoritario'].includes(countryObj.regimeType)) baseFaith = Math.floor(baseFaith * 0.75);
     const russiaConv = (state.countries.find(c => c.id === 'russia')?.leaderInfiltration ?? 0) >= 100;
     if (russiaConv) { baseFaith = Math.round(baseFaith * 0.8); baseFervor = Math.round(baseFervor * 0.8); }
+    // Scale cost with resistance — high resistance = more expensive
+    const resistanceMult = 1 + (countryObj.resistance / 150);
+    baseFaith = Math.round(baseFaith * resistanceMult);
+    baseFervor = Math.round(baseFervor * resistanceMult);
     return { faith: baseFaith, fervor: baseFervor, canAct };
   };
 
