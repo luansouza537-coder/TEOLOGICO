@@ -17,20 +17,37 @@ class ErrorBoundary extends Component<{ children: ReactNode }, EBState> {
   }
   render() {
     if (this.state.error) {
+      const isDomError = this.state.error.message.includes('removeChild') || this.state.error.message.includes('not a child');
       return (
         <div style={{ background: '#0e0b04', color: '#cfb53b', fontFamily: 'monospace', padding: '2rem', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>⚠ Erro ao carregar CREDO</div>
-          <div style={{ fontSize: '0.75rem', color: '#dfcfa0', maxWidth: '400px', textAlign: 'center', lineHeight: 1.6 }}>
-            {this.state.error.message}
-          </div>
-          <div style={{ fontSize: '0.7rem', color: '#dfcfa0aa', maxWidth: '400px', textAlign: 'center' }}>
-            Isso pode ser causado por um save incompatível com a versão atual do jogo.
-          </div>
+          {isDomError ? (
+            <>
+              <div style={{ fontSize: '0.85rem', color: '#dfcfa0', maxWidth: '400px', textAlign: 'center', lineHeight: 1.8, background: '#1a1408', border: '1px solid #cfb53b44', borderRadius: '8px', padding: '1rem' }}>
+                Seu navegador ou um tradutor automático modificou a página e causou um conflito.
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#dfcfa0aa', maxWidth: '380px', textAlign: 'center', lineHeight: 1.7 }}>
+                <strong style={{ color: '#cfb53b' }}>Como resolver:</strong><br />
+                1. Abra o link diretamente no Chrome ou Safari<br />
+                2. Desative a tradução automática para este site<br />
+                3. Se veio do Facebook, toque em ⋯ e escolha Abrir no navegador
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: '0.75rem', color: '#dfcfa0', maxWidth: '400px', textAlign: 'center', lineHeight: 1.6 }}>
+                {this.state.error.message}
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#dfcfa0aa', maxWidth: '400px', textAlign: 'center' }}>
+                Isso pode ser causado por um save incompatível com a versão atual do jogo.
+              </div>
+            </>
+          )}
           <button
             onClick={() => this.handleReset()}
             style={{ marginTop: '1rem', background: '#cfb53b', color: '#1e1a0c', border: 'none', padding: '0.75rem 1.5rem', fontFamily: 'monospace', fontWeight: 'bold', fontSize: '0.875rem', cursor: 'pointer', borderRadius: '4px' }}
           >
-            Limpar dados e reiniciar
+            {isDomError ? 'Tentar novamente' : 'Limpar dados e reiniciar'}
           </button>
         </div>
       );
