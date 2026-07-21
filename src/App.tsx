@@ -612,11 +612,15 @@ export default function App() {
 
             // INACTIVITY DECAY: fiéis se perdem quando o jogador ignora o país por muito tempo
             const cyclesSinceAction = prev.cycle - (c.lastActionCycle ?? 0);
-            if (cyclesSinceAction > 15 && (_temples[2] === 0 && _temples[3] === 0)) {
-              const decayRate = cyclesSinceAction > 30 ? 0.005 : 0.002;
+            if (cyclesSinceAction > 20 && (_temples[2] === 0 && _temples[3] === 0)) {
+              // Decaimento suave para não criar espiral de morte na fase inicial (<1%)
+              const convertFracDecay = converts / pop;
+              const decayRate = cyclesSinceAction > 40
+                ? (convertFracDecay < 0.01 ? 0.002 : 0.004)   // fase inicial: 0.2%, estabelecido: 0.4%
+                : (convertFracDecay < 0.01 ? 0.001 : 0.002);
               const decayed = Math.floor(converts * decayRate);
               converts = Math.max(0, converts - decayed);
-              if (decayed > 0 && cyclesSinceAction === 16) {
+              if (decayed > 0 && cyclesSinceAction === 21) {
                 decayLogs.push(`⚠️ ALERTA: ${c.name} está perdendo fiéis por falta de atenção!`);
               }
             }
@@ -647,7 +651,7 @@ export default function App() {
             // TAG: Devoto — nationalism is 30% stronger (grows faster / decays slower)
             const devotoBonusMult = (c.tags ?? []).includes('Devoto') ? 1.3 : 1.0;
             if (convertFrac < 0.05 && !_hasAnyTemple && converts === 0) {
-              localReligionStrength = Math.min(95, localReligionStrength + 0.3 * devotoBonusMult);
+              localReligionStrength = Math.min(70, localReligionStrength + 0.15 * devotoBonusMult); // capped at 70, slower hardening
             } else if (convertFrac > 0.30 && _hasAnyTemple) {
               localReligionStrength = Math.max(5, localReligionStrength - 0.5 / devotoBonusMult);
             } else {
@@ -1110,7 +1114,10 @@ export default function App() {
         const activeCountriesCount = updatedCountries.filter(c => c.converts > 0).length;
         const convertedRate2 = totalPopCount > 0 ? (totalConvertsCount / totalPopCount) : 0;
 
-        let rivalIncrement = 0.04; // base (symbolic pressure)
+        // Base rival pressure escalates over time to create meaningful threat
+        // 0–60: grace period (0); 60–200: slow (0.08); 200+: accelerates to 0.15
+        const rivalBase = prev.cycle < 200 ? 0.08 : 0.12;
+        let rivalIncrement = rivalBase + Math.min(0.06, (Math.max(0, prev.cycle - 200)) * 0.0003);
 
         // Grace period: rival frozen for first 60 cycles
         if (prev.cycle < 60) rivalIncrement = 0;
