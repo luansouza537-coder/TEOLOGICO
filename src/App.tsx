@@ -2127,10 +2127,13 @@ export default function App() {
   const totalConvertedWorld = state.countries.reduce((acc, curr) => acc + curr.converts, 0);
   const avgProgress = (totalConvertedWorld / totalWorldPopulation) * 100;
 
-  // Victory pace indicator (#4)
+  // Victory pace indicator (#4) + victoryProgress for HUD
   let victoryPaceText = '';
+  let victoryProgress: { current: number; target: number; label: string } = { current: 0, target: 1, label: '—' };
+
   if (state.victoryGoal === 'GlobalEcstasy') {
     const progress = totalWorldPopulation > 0 ? totalConvertedWorld / totalWorldPopulation : 0;
+    const pct = progress * 100;
     const remaining = 0.8 - progress;
     const rate = state.cycle > 5 ? progress / state.cycle : 0;
     if (remaining <= 0) {
@@ -2139,16 +2142,21 @@ export default function App() {
       const est = rate > 0 ? Math.ceil(remaining / rate) : 0;
       victoryPaceText = rate > 0 && est > 0 && est < 99999 ? `~${est} ciclos` : '—';
     }
+    const pctLabel = pct >= 1 ? `${pct.toFixed(1)}%` : `${pct.toFixed(3)}%`;
+    victoryProgress = { current: pct, target: 80, label: `🌍 ${pctLabel} / 80%` };
   } else if (state.victoryGoal === 'OneFlock') {
     const superPowers = ['usa', 'china', 'india', 'germany'];
     const converted = state.countries.filter(c => superPowers.includes(c.id) && c.converts / c.population >= 0.5 && c.leaderInfiltration >= 100).length;
     victoryPaceText = `${converted}/4 potências`;
+    victoryProgress = { current: converted, target: 4, label: `👑 ${converted}/4 potências` };
   } else if (state.victoryGoal === 'TheEnlightened') {
     const count = state.countries.filter(c => c.leaderInfiltration >= 100).length;
     victoryPaceText = `${count}/14 líderes`;
+    victoryProgress = { current: count, target: 14, label: `✦ ${count}/14 líderes` };
   } else if (state.victoryGoal === 'PerpetualPeace') {
     const peaceful = state.countries.filter(c => c.violence < 20).length;
     victoryPaceText = `${peaceful}/${state.countries.length} nações`;
+    victoryProgress = { current: peaceful, target: state.countries.length, label: `☮ ${peaceful}/${state.countries.length} nações em paz` };
   }
 
   const traitNames: Record<ReligionTrait, string> = {
@@ -2416,6 +2424,8 @@ export default function App() {
             onIrradiateMission={irradiateMission}
             onPromulgateLaw={promulgateLaw}
             cycle={state.cycle}
+            victoryGoal={state.victoryGoal}
+            victoryProgress={victoryProgress}
             totalTemples={state.totalTemples}
             templeCosts={TEMPLE_COSTS}
             templeNames={TEMPLE_NAMES}

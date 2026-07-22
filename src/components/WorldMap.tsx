@@ -107,6 +107,8 @@ interface WorldMapProps {
   fervor: number;
   tithe: number;
   trait: ReligionTrait;
+  victoryGoal: string;
+  victoryProgress: { current: number; target: number; label: string };
   onSendMissionary: (countryId: string) => void;
   onPacifyCountry: (countryId: string, tier: 1 | 2 | 3) => void;
   onInfiltrateLeader: (countryId: string) => void;
@@ -146,7 +148,8 @@ export default function WorldMap({
   activeDogmaIds,
   onIrradiateMission,
   onPromulgateLaw,
-  cycle
+  cycle,
+  victoryProgress,
 }: WorldMapProps) {
   const selectedCountry = countries.find((c) => c.id === selectedCountryId) ?? null;
   const [sheetTab, setSheetTab] = useState<SheetTab>('info');
@@ -203,6 +206,8 @@ export default function WorldMap({
           selectedCountryId={selectedCountryId}
           onSelectCountry={onSelectCountry}
           floatingTexts={floatingTexts}
+          trait={trait}
+          victoryProgress={victoryProgress}
         />
       </div>
 
